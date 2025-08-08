@@ -164,11 +164,11 @@ function renderAllFaces(state) {
 
   let entries = Array.from(SPECIES_MAP.values());
 
-  // 絞り込み（名前）
+  // 名前フィルタ（ひら/カタ同一視）
   if (normQuery) {
     entries = entries.filter(ent => normalizeJP(ent.name).includes(normQuery));
   }
-  // 絞り込み（睡眠タイプ／レア度）※「種に一つでも該当行があれば残す」
+  // 種に1行でもマッチすれば残す
   if (filterStyle) {
     entries = entries.filter(ent => ent.rows.some(r => r.Style === filterStyle));
   }
@@ -176,7 +176,7 @@ function renderAllFaces(state) {
     entries = entries.filter(ent => ent.rows.some(r => r.DisplayRarity === filterRarity));
   }
 
-  // ソート
+  // ソート（列は出さないがキーとしては使う）
   entries.sort((a,b)=>{
     if (sortBy === 'name-asc') return a.name.localeCompare(b.name, 'ja');
     if (sortBy === 'style-asc') {
@@ -190,21 +190,19 @@ function renderAllFaces(state) {
     return a.no.localeCompare(b.no, 'ja'); // no-asc
   });
 
-  // ★ 現在の表示対象を保持 → 全体一括ON/OFFで使用
+  // ★ 現在の表示対象を保持（全体一括ON/OFF用）
   LAST_RENDER_ENTRIES = entries;
 
-  // 描画（※「睡眠タイプ」「レア度」列は削除）
+  // --- 行描画（睡眠タイプ/レア度カラムなし）---
   tbody.innerHTML = entries.map(ent => {
     const no = ent.no, name = ent.name;
 
     const cells = CHECKABLE_STARS.map(star => {
-      const exists = speciesHasStar(ent, star);
+      const exists = ent.rows.some(r => r.DisplayRarity === star);
       const checked = getChecked(state, no, star);
       const disabled = !exists;
-      const tdClass = checked ? 'cell-checked' : '';
-      const tdDisabled = disabled ? 'cell-disabled' : '';
       return `
-        <td class="text-center ${tdClass} ${tdDisabled}">
+        <td class="text-center ${checked ? 'cell-checked' : ''} ${disabled ? 'cell-disabled' : ''}">
           <input type="checkbox" class="form-check-input"
             data-no="${no}" data-star="${star}"
             ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''}>
@@ -226,7 +224,7 @@ function renderAllFaces(state) {
       </tr>`;
   }).join('');
 
-  // イベント付与
+  // チェックイベント
   tbody.querySelectorAll('input[type="checkbox"]').forEach(chk => {
     chk.addEventListener('change', (e)=>{
       const no = e.target.dataset.no;
@@ -234,10 +232,11 @@ function renderAllFaces(state) {
       setChecked(state, no, star, e.target.checked);
       e.target.closest('td').classList.toggle('cell-checked', e.target.checked);
       renderSummary(state);
-      renderRankSearch(state); // 未入手一覧更新
+      renderRankSearch(state);
     });
   });
 
+  // 行まとめ（一括ON/OFF）
   tbody.querySelectorAll('button[data-bulk]').forEach(btn=>{
     btn.addEventListener('click', (e)=>{
       const no = e.currentTarget.dataset.no;
@@ -247,7 +246,6 @@ function renderAllFaces(state) {
         : 'すべての寝顔のチェックを解除します。よろしいですか？';
       if (!confirm(msg)) return;
       setRowAll(state, no, mode === 'on');
-      // 見た目更新
       CHECKABLE_STARS.forEach(star=>{
         const input = tbody.querySelector(`input[data-no="${no}"][data-star="${star}"]`);
         if (input && !input.disabled) {
