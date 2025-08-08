@@ -1,0 +1,526 @@
+// ===================== 設定 =====================
+const DATA_URL = './pokemon_data_cleaned.json';
+const STORAGE_KEY = 'psleep-check-v1';
+
+const FIELD_KEYS = [
+  'ワカクサ本島', 'シアンの砂浜', 'トープ洞窟', 'ウノハナ雪原',
+  'ラピスラズリ湖畔', 'ゴールド旧発電所', 'ワカクサ本島EX'
+];
+
+const SLEEP_TYPES = ['うとうと', 'すやすや', 'ぐっすり'];
+const RARITIES = ['☆1', '☆2', '☆3', '☆4', '☆5']; // 表示用
+const CHECKABLE_STARS = ['☆1','☆2','☆3','☆4'];   // チェック対象（5は対象外）
+
+// ランクの内部マッピング（「ノーマル/スーパー/ハイパー/マスター」→ 1…35）
+function mapRankToNumber(s) {
+  if (!s) return null;
+  // 既に数字文字列（例: "12"）のケース
+  const maybeNum = String(s).trim();
+  if (/^\d+$/.test(maybeNum)) {
+    const n = parseInt(maybeNum, 10);
+    return (n >= 1 && n <= 35) ? n : null;
+  }
+  // 日本語表記
+  const m = String(s).trim().match(/(ノーマル|スーパー|ハイパー|マスター)\s*([0-9１-９]+)$/);
+  if (!m) return null;
+  const stage = m[1];
+  const idx = parseInt(m[2].replace(/[^\d]/g,''), 10);
+  if (stage === 'ノーマル') return (idx>=1&&idx<=5) ? idx : null;
+  if (stage === 'スーパー') return (idx>=1&&idx<=5) ? 5+idx : null;  // 6..10
+  if (stage === 'ハイパー') return (idx>=1&&idx<=5) ? 10+idx : null; // 11..15
+  if (stage === 'マスター') return (idx>=1&&idx<=20)? 15+idx : null; // 16..35
+  return null;
+}
+
+// 文字正規化（検索用）：NFKC→カタカナ→ひらがな→長音などゆるく
+function normalizeJP(s) {
+  if (!s) return '';
+  let out = s.normalize('NFKC').toLowerCase();
+  // 全角カタカナ → ひらがな
+  out = out.replace(/[\u30A1-\u30F6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+  // 半角カナ（NFKCである程度吸収）／長音や空白の緩め削除
+  out = out.replace(/[ーｰ‐\-・\s]/g, '');
+  return out;
+}
+
+// ===================== 状態保存 =====================
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : { checked: {} };
+  } catch {
+    return { checked: {} };
+  }
+}
+function saveState(state) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+function setChecked(state, no, star, val) {
+  if (!state.checked[no]) state.checked[no] = {};
+  state.checked[no][star] = !!val;
+  saveState(state);
+}
+function getChecked(state, no, star) {
+  return !!(state.checked?.[no]?.[star]);
+}
+function setRowAll(state, no, val) {
+  CHECKABLE_STARS.forEach(star => setChecked(state, no, star, val));
+}
+
+// ===================== データロード & 整形 =====================
+let RAW_ROWS = [];         // 原始データ（行：種別×睡眠タイプ×レア度）
+let SPECIES_MAP = new Map(); // key: `${No}__${Name}` → { no, name, styles:Set, rarities:Set, rows:[] }
+
+async function loadData() {
+  const res = await fetch(DATA_URL);
+  const json = await res.json();
+  const rows = Array.isArray(json) ? json : (json['すべての寝顔一覧'] || []);
+  RAW_ROWS = rows.map(r => ({
+    ID: r.ID,
+    No: normalizeNo(r.No),
+    Name: r.Name,
+    Style: r.Style,
+    DisplayRarity: r.DisplayRarity,
+    fields: Object.fromEntries(FIELD_KEYS.map(k => [k, (r[k] ?? '').trim()])),
+  }));
+  buildSpeciesIndex();
+}
+
+function normalizeNo(noRaw) {
+  const s = String(noRaw ?? '').trim();
+  const num = parseInt(s.replace(/^0+/, '') || '0', 10);
+  if (Number.isNaN(num)) return s;
+  // 4桁ゼロ埋め。ただし1000以上はそのまま
+  if (num >= 1000) return String(num);
+  return String(num).padStart(4, '0');
+}
+
+function buildSpeciesIndex() {
+  SPECIES_MAP.clear();
+  for (const row of RAW_ROWS) {
+    const key = `${row.No}__${row.Name}`;
+    if (!SPECIES_MAP.has(key)) {
+      SPECIES_MAP.set(key, {
+        no: row.No, name: row.Name,
+        styles: new Set(), rarities: new Set(), rows: []
+      });
+    }
+    const ent = SPECIES_MAP.get(key);
+    if (row.Style) ent.styles.add(row.Style);
+    if (row.DisplayRarity) ent.rarities.add(row.DisplayRarity);
+    ent.rows.push(row);
+  }
+}
+
+// 指定の種（No/Name）に、その☆（☆1..☆4）が「存在するか」を判定（行があるか）
+function speciesHasStar(entry, star) {
+  return entry.rows.some(r => r.DisplayRarity === star);
+}
+
+// 指定フィールドで、その行（=種×タイプ×レア度）が何ランクで出るか（数値）を返す
+function getFieldRankNum(row, fieldKey) {
+  const raw = row.fields[fieldKey] || '';
+  return mapRankToNumber(raw);
+}
+
+// ===================== サマリー =====================
+function renderSummary(state) {
+  const root = document.getElementById('summaryGrid');
+  // 集計：field × sleepType
+  const head = `
+    <table class="table table-sm align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>睡眠タイプ＼フィールド</th>
+          ${FIELD_KEYS.map(f => `<th class="text-center">${f}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+        ${SLEEP_TYPES.map(style => {
+          const tds = FIELD_KEYS.map(field => {
+            // 分母：このフィールドに出現する行（=row）数（空文字以外）
+            let denom = 0, num = 0;
+            for (const row of RAW_ROWS) {
+              if (row.Style !== style) continue;
+              const rankNum = getFieldRankNum(row, field);
+              if (rankNum) {
+                denom++;
+                // その行に対応するチェックは「種No×そのレア度」のどれかが入手済みなら1カウント
+                const no = row.No;
+                const star = row.DisplayRarity;
+                if (CHECKABLE_STARS.includes(star) && getChecked(state, no, star)) num++;
+              }
+            }
+            const rate = denom ? Math.round((num/denom)*100) : 0;
+            return `<td class="text-center">${num} / ${denom} (${rate}%)</td>`;
+          }).join('');
+          return `<tr><th>${style}</th>${tds}</tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+  root.innerHTML = head;
+}
+
+// ===================== 全寝顔チェックシート =====================
+function renderAllFaces(state) {
+  const tbody = document.querySelector('#allFacesTable tbody');
+  const searchName = document.getElementById('searchName').value.trim();
+  const filterStyle = document.getElementById('filterStyle').value;
+  const filterRarity = document.getElementById('filterRarity').value;
+  const sortBy = document.getElementById('sortBy').value;
+
+  const normQuery = normalizeJP(searchName);
+
+  let entries = Array.from(SPECIES_MAP.values());
+
+  // 絞り込み（名前）
+  if (normQuery) {
+    entries = entries.filter(ent => normalizeJP(ent.name).includes(normQuery));
+  }
+  // 絞り込み（睡眠タイプ／レア度）※「種に一つでも該当行があれば残す」
+  if (filterStyle) {
+    entries = entries.filter(ent => ent.rows.some(r => r.Style === filterStyle));
+  }
+  if (filterRarity) {
+    entries = entries.filter(ent => ent.rows.some(r => r.DisplayRarity === filterRarity));
+  }
+
+  // ソート
+  entries.sort((a,b)=>{
+    if (sortBy === 'name-asc') return a.name.localeCompare(b.name, 'ja');
+    if (sortBy === 'style-asc') {
+      const aKey = firstStyleKey(a), bKey = firstStyleKey(b);
+      return aKey.localeCompare(bKey, 'ja');
+    }
+    if (sortBy === 'rarity-asc') {
+      const aR = firstRarityVal(a), bR = firstRarityVal(b);
+      return aR - bR;
+    }
+    // no-asc (default)
+    return a.no.localeCompare(b.no, 'ja');
+  });
+
+  // 描画
+  tbody.innerHTML = entries.map(ent => {
+    const no = ent.no, name = ent.name;
+    const style = firstStyleKey(ent);
+    const rarity = firstRarityLabel(ent);
+
+    const cells = CHECKABLE_STARS.map(star => {
+      const exists = speciesHasStar(ent, star);
+      const checked = getChecked(state, no, star);
+      const disabled = !exists;
+      const tdClass = checked ? 'cell-checked' : '';
+      const tdDisabled = disabled ? 'cell-disabled' : '';
+      return `
+        <td class="text-center ${tdClass} ${tdDisabled}">
+          <input type="checkbox" class="form-check-input"
+            data-no="${no}" data-star="${star}"
+            ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''}>
+        </td>`;
+    }).join('');
+
+    const bulkBtn = `
+      <div class="btn-group btn-group-sm" role="group">
+        <button type="button" class="btn btn-outline-primary" data-bulk="on" data-no="${no}">一括ON</button>
+        <button type="button" class="btn btn-outline-secondary" data-bulk="off" data-no="${no}">一括OFF</button>
+      </div>`;
+
+    return `
+      <tr>
+        <td>${no}</td>
+        <td>${escapeHtml(name)}</td>
+        <td>${style || '-'}</td>
+        <td>${rarity || '-'}</td>
+        ${cells}
+        <td class="text-center">${bulkBtn}</td>
+      </tr>`;
+  }).join('');
+
+  // イベント付与
+  tbody.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+    chk.addEventListener('change', (e)=>{
+      const no = e.target.dataset.no;
+      const star = e.target.dataset.star;
+      setChecked(state, no, star, e.target.checked);
+      // 行の色再反映
+      e.target.closest('td').classList.toggle('cell-checked', e.target.checked);
+      renderSummary(state);
+      renderRankSearch(state); // 未入手一覧更新
+    });
+  });
+
+  tbody.querySelectorAll('button[data-bulk]').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      const no = e.currentTarget.dataset.no;
+      const mode = e.currentTarget.dataset.bulk; // on/off
+      const msg = mode === 'on'
+        ? 'すべての寝顔をチェックします。よろしいですか？'
+        : 'すべての寝顔のチェックを解除します。よろしいですか？';
+      if (!confirm(msg)) return;
+      setRowAll(state, no, mode === 'on');
+      // 見た目更新
+      CHECKABLE_STARS.forEach(star=>{
+        const input = tbody.querySelector(`input[data-no="${no}"][data-star="${star}"]`);
+        if (input && !input.disabled) {
+          input.checked = (mode === 'on');
+          input.closest('td').classList.toggle('cell-checked', input.checked);
+        }
+      });
+      renderSummary(state);
+      renderRankSearch(state);
+    });
+  });
+}
+
+function firstStyleKey(ent){
+  // 複数ある場合は固定並びで一番小さいものを代表表示
+  const arr = Array.from(ent.styles);
+  const order = {'うとうと':1,'すやすや':2,'ぐっすり':3};
+  arr.sort((a,b)=>(order[a]||9)-(order[b]||9));
+  return arr[0] || '';
+}
+function firstRarityLabel(ent){
+  const arr = Array.from(ent.rarities);
+  const idx = r=> RARITIES.indexOf(r);
+  arr.sort((a,b)=> idx(a)-idx(b));
+  return arr[0] || '';
+}
+function firstRarityVal(ent){
+  const r = firstRarityLabel(ent);
+  const i = RARITIES.indexOf(r);
+  return i < 0 ? 99 : i;
+}
+function escapeHtml(s){ return s?.replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])) || ''; }
+
+// ===================== フィールド別 =====================
+function setupFieldTabs() {
+  const tabsUl = document.getElementById('fieldTabs');
+  const content = document.getElementById('fieldTabsContent');
+  tabsUl.innerHTML = FIELD_KEYS.map((f,i)=>`
+    <li class="nav-item" role="presentation">
+      <button class="nav-link ${i===0?'active':''}" data-bs-toggle="tab" data-bs-target="#pane-field-${i}" type="button" role="tab">${f}</button>
+    </li>`).join('');
+  content.innerHTML = FIELD_KEYS.map((f,i)=>`
+    <div class="tab-pane fade ${i===0?'show active':''}" id="pane-field-${i}" role="tabpanel">
+      <div class="table-responsive">
+        <table class="table table-sm align-middle table-hover mb-0">
+          <thead class="table-light sticky-header">
+            <tr>
+              <th>No</th>
+              <th>ポケモン名</th>
+              <th>睡眠タイプ</th>
+              <th>レア度</th>
+              <th class="text-center">☆1</th>
+              <th class="text-center">☆2</th>
+              <th class="text-center">☆3</th>
+              <th class="text-center">☆4</th>
+            </tr>
+          </thead>
+          <tbody data-field="${f}"></tbody>
+        </table>
+      </div>
+    </div>`).join('');
+}
+
+function renderFieldTables(state) {
+  FIELD_KEYS.forEach(field=>{
+    const tbody = document.querySelector(`#fieldTabsContent tbody[data-field="${field}"]`);
+    // 行作成：このフィールドに「1つでも出現する」行がある種だけ表示
+    const rows = [];
+    for (const ent of SPECIES_MAP.values()) {
+      // エントリ行（代表のタイプ/レア度を併記）
+      // ☆列は「その☆の行がこのフィールドで出現するか」を判定
+      const appearAny = ent.rows.some(r => getFieldRankNum(r, field));
+      if (!appearAny) continue;
+
+      const cells = CHECKABLE_STARS.map(star=>{
+        const hasRow = ent.rows.find(r => r.DisplayRarity === star);
+        if (!hasRow) {
+          // そもそもこの☆が存在しない
+          return `<td class="text-center cell-disabled">出現しない</td>`;
+        }
+        const rankNum = getFieldRankNum(hasRow, field);
+        if (!rankNum) {
+          return `<td class="text-center cell-disabled">出現しない</td>`;
+        }
+        // 出現する → チェック可
+        const checked = getChecked(state, ent.no, star);
+        const tdClass = checked ? 'cell-checked' : '';
+        return `<td class="text-center ${tdClass}">
+          <input type="checkbox" class="form-check-input"
+            data-no="${ent.no}" data-star="${star}"
+            ${checked ? 'checked' : ''}>
+        </td>`;
+      }).join('');
+
+      rows.push(`
+        <tr>
+          <td>${ent.no}</td>
+          <td>${escapeHtml(ent.name)}</td>
+          <td>${firstStyleKey(ent) || '-'}</td>
+          <td>${firstRarityLabel(ent) || '-'}</td>
+          ${cells}
+        </tr>
+      `);
+    }
+    tbody.innerHTML = rows.join('');
+
+    // クリックで同期
+    tbody.querySelectorAll('input[type="checkbox"]').forEach(chk=>{
+      chk.addEventListener('change', (e)=>{
+        const no = e.target.dataset.no;
+        const star = e.target.dataset.star;
+        setChecked(state, no, star, e.target.checked);
+        e.target.closest('td').classList.toggle('cell-checked', e.target.checked);
+        // 他タブも同期
+        renderAllFaces(state);
+        renderSummary(state);
+        renderRankSearch(state);
+      });
+    });
+  });
+}
+
+// ===================== ランク検索（未入手のみ） =====================
+function setupRankSearchControls() {
+  const sel = document.getElementById('searchField');
+  sel.innerHTML = FIELD_KEYS.map(f=>`<option value="${f}">${f}</option>`).join('');
+  document.getElementById('searchField').addEventListener('change', ()=>renderRankSearch(loadState()));
+  document.getElementById('searchRank').addEventListener('input', ()=>renderRankSearch(loadState()));
+}
+
+function renderRankSearch(state) {
+  const field = document.getElementById('searchField').value || FIELD_KEYS[0];
+  const rank = Math.max(1, Math.min(35, parseInt(document.getElementById('searchRank').value||'1',10)));
+  const tbody = document.querySelector('#rankSearchTable tbody');
+
+  const items = [];
+  for (const row of RAW_ROWS) {
+    const rNum = getFieldRankNum(row, field);
+    if (!rNum || rNum > rank) continue; // 選択ランク以下のみ
+    // 未入手のみ
+    if (CHECKABLE_STARS.includes(row.DisplayRarity) && getChecked(state, row.No, row.DisplayRarity)) continue;
+    // イベント・バリアントはそのまま出せばOK（Summaryは自然に0/0）
+    items.push(row);
+  }
+  // ソートは No→レア度→タイプ
+  items.sort((a,b)=>{
+    const c1 = a.No.localeCompare(b.No,'ja'); if (c1) return c1;
+    const iA = RARITIES.indexOf(a.DisplayRarity), iB = RARITIES.indexOf(b.DisplayRarity);
+    const c2 = (iA-iB); if (c2) return c2;
+    return a.Style.localeCompare(b.Style,'ja');
+  });
+
+  tbody.innerHTML = items.map(r=>`
+    <tr>
+      <td>${r.No}</td>
+      <td>${escapeHtml(r.Name)}</td>
+      <td>${r.Style || '-'}</td>
+      <td>${r.DisplayRarity || '-'}</td>
+      <td>${getFieldRankNum(r, field) ?? '-'}</td>
+    </tr>
+  `).join('');
+}
+
+// ===================== バックアップ/復旧 =====================
+function downloadText(filename, text) {
+  const blob = new Blob([text], {type:'application/json;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function setupBackupUI() {
+  const btnExport = document.getElementById('btnExport');
+  const fileImportReplace = document.getElementById('fileImportReplace');
+  const fileImportMerge = document.getElementById('fileImportMerge');
+  const btnReset = document.getElementById('btnReset');
+
+  btnExport.addEventListener('click', ()=>{
+    const state = loadState();
+    downloadText('psleep-check-export.json', JSON.stringify(state, null, 2));
+  });
+
+  fileImportReplace.addEventListener('change', async (e)=>{
+    const file = e.target.files?.[0]; if (!file) return;
+    const text = await file.text();
+    try {
+      const obj = JSON.parse(text);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+      alert('インポート（置換）しました。');
+      // 再描画
+      const state = loadState();
+      renderAllFaces(state);
+      renderFieldTables(state);
+      renderSummary(state);
+      renderRankSearch(state);
+    } catch {
+      alert('JSONの読み込みに失敗しました。');
+    } finally {
+      e.target.value = '';
+    }
+  });
+
+  fileImportMerge.addEventListener('change', async (e)=>{
+    const file = e.target.files?.[0]; if (!file) return;
+    const text = await file.text();
+    try {
+      const incoming = JSON.parse(text);
+      const state = loadState();
+      // ざっくりマージ：checked のみ対象
+      if (incoming?.checked && typeof incoming.checked === 'object') {
+        for (const no of Object.keys(incoming.checked)) {
+          for (const star of Object.keys(incoming.checked[no])) {
+            setChecked(state, no, star, !!incoming.checked[no][star]);
+          }
+        }
+      }
+      alert('インポート（マージ）しました。');
+      renderAllFaces(state);
+      renderFieldTables(state);
+      renderSummary(state);
+      renderRankSearch(state);
+    } catch {
+      alert('JSONの読み込みに失敗しました。');
+    } finally {
+      e.target.value = '';
+    }
+  });
+
+  btnReset.addEventListener('click', ()=>{
+    if (!confirm('保存データをすべて消去します。よろしいですか？')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    const state = loadState();
+    renderAllFaces(state);
+    renderFieldTables(state);
+    renderSummary(state);
+    renderRankSearch(state);
+  });
+}
+
+// ===================== 初期化 =====================
+async function main() {
+  await loadData();
+
+  // UI初期化
+  setupFieldTabs();
+  setupRankSearchControls();
+  setupBackupUI();
+
+  // 初回描画
+  const state = loadState();
+  renderSummary(state);
+  renderAllFaces(state);
+  renderFieldTables(state);
+  renderRankSearch(state);
+
+  // フィルタ/ソートイベント
+  document.getElementById('searchName').addEventListener('input', ()=>renderAllFaces(loadState()));
+  document.getElementById('filterStyle').addEventListener('change', ()=>renderAllFaces(loadState()));
+  document.getElementById('filterRarity').addEventListener('change', ()=>renderAllFaces(loadState()));
+  document.getElementById('sortBy').addEventListener('change', ()=>renderAllFaces(loadState()));
+}
+
+document.addEventListener('DOMContentLoaded', main);
