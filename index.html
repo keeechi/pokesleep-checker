@@ -84,25 +84,26 @@
               </div>
             </div>
 
+            <!-- ★ 全体一括ON/OFFボタン -->
             <div class="d-flex flex-wrap gap-2 mb-2">
               <button id="btnAllOn" class="btn btn-outline-primary btn-sm">すべて一括ON</button>
               <button id="btnAllOff" class="btn btn-outline-secondary btn-sm">すべて一括OFF</button>
               <span class="text-muted small ms-auto">※ 現在の絞り込み結果に対して適用</span>
             </div>
-            
+
             <div class="table-responsive" id="allFacesTableWrap">
               <table class="table table-sm align-middle table-hover mb-0" id="allFacesTable">
                 <thead class="table-light sticky-header">
-  <tr>
-    <th style="min-width:72px;">No</th>
-    <th style="min-width:140px;">ポケモン名</th>
-    <th class="text-center" style="min-width:72px;">☆1</th>
-    <th class="text-center" style="min-width:72px;">☆2</th>
-    <th class="text-center" style="min-width:72px;">☆3</th>
-    <th class="text-center" style="min-width:72px;">☆4</th>
-    <th class="text-center" style="min-width:120px;">行まとめ</th>
-  </tr>
-</thead>
+                  <tr>
+                    <th style="min-width:72px;">No</th>
+                    <th style="min-width:140px;">ポケモン名</th>
+                    <th class="text-center" style="min-width:72px;">☆1</th>
+                    <th class="text-center" style="min-width:72px;">☆2</th>
+                    <th class="text-center" style="min-width:72px;">☆3</th>
+                    <th class="text-center" style="min-width:72px;">☆4</th>
+                    <th class="text-center" style="min-width:120px;">行まとめ</th>
+                  </tr>
+                </thead>
                 <tbody><!-- JSで描画 --></tbody>
               </table>
             </div>
