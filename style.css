@@ -1,0 +1,29 @@
+/* 文字や表の基本 */
+body { background: #f8fafc; }
+table { font-size: 0.95rem; }
+thead.table-light.sticky-header th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+/* チェック状態の配色 */
+.cell-checked {
+  background: #e7f1ff !important; /* 青系（Bootstrapに寄せる） */
+}
+.cell-disabled {
+  color: #6c757d;
+  background: #f1f3f5;
+}
+
+/* スクロール時の見やすさ */
+#allFacesTableWrap {
+  max-height: 70vh;
+  overflow: auto;
+}
+
+/* 小さめ端末の余白 */
+@media (max-width: 576px) {
+  #summary .card-body { padding: 0.75rem; }
+  .form-label { margin-bottom: 0.25rem; }
+}
