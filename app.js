@@ -14,13 +14,11 @@ const CHECKABLE_STARS = ['☆1','☆2','☆3','☆4'];   // チェック対象�
 // ランクの内部マッピング（「ノーマル/スーパー/ハイパー/マスター」→ 1…35）
 function mapRankToNumber(s) {
   if (!s) return null;
-  // 既に数字文字列（例: "12"）のケース
   const maybeNum = String(s).trim();
   if (/^\d+$/.test(maybeNum)) {
     const n = parseInt(maybeNum, 10);
     return (n >= 1 && n <= 35) ? n : null;
   }
-  // 日本語表記
   const m = String(s).trim().match(/(ノーマル|スーパー|ハイパー|マスター)\s*([0-9１-９]+)$/);
   if (!m) return null;
   const stage = m[1];
@@ -32,14 +30,12 @@ function mapRankToNumber(s) {
   return null;
 }
 
-// 文字正規化（検索用）：NFKC→カタカナ→ひらがな→長音などゆるく
+// 文字正規化（検索用）
 function normalizeJP(s) {
   if (!s) return '';
   let out = s.normalize('NFKC').toLowerCase();
-  // 全角カタカナ → ひらがな
-  out = out.replace(/[\u30A1-\u30F6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
-  // 半角カナ（NFKCである程度吸収）／長音や空白の緩め削除
-  out = out.replace(/[ーｰ‐\-・\s]/g, '');
+  out = out.replace(/[\u30A1-\u30F6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60)); // カタカナ→ひらがな
+  out = out.replace(/[ーｰ‐\-・\s]/g, ''); // 長音・空白など除去
   return out;
 }
 
@@ -68,8 +64,9 @@ function setRowAll(state, no, val) {
 }
 
 // ===================== データロード & 整形 =====================
-let RAW_ROWS = [];         // 原始データ（行：種別×睡眠タイプ×レア度）
-let SPECIES_MAP = new Map(); // key: `${No}__${Name}` → { no, name, styles:Set, rarities:Set, rows:[] }
+let RAW_ROWS = [];            // 原始データ（行：種別×睡眠タイプ×レア度）
+let SPECIES_MAP = new Map();  // key: `${No}__${Name}` → { no, name, styles:Set, rarities:Set, rows:[] }
+let LAST_RENDER_ENTRIES = []; // ★ 全寝顔タブの現在の絞り込み結果を保持
 
 async function loadData() {
   const res = await fetch(DATA_URL);
@@ -90,7 +87,6 @@ function normalizeNo(noRaw) {
   const s = String(noRaw ?? '').trim();
   const num = parseInt(s.replace(/^0+/, '') || '0', 10);
   if (Number.isNaN(num)) return s;
-  // 4桁ゼロ埋め。ただし1000以上はそのまま
   if (num >= 1000) return String(num);
   return String(num).padStart(4, '0');
 }
@@ -112,12 +108,10 @@ function buildSpeciesIndex() {
   }
 }
 
-// 指定の種（No/Name）に、その☆（☆1..☆4）が「存在するか」を判定（行があるか）
 function speciesHasStar(entry, star) {
   return entry.rows.some(r => r.DisplayRarity === star);
 }
 
-// 指定フィールドで、その行（=種×タイプ×レア度）が何ランクで出るか（数値）を返す
 function getFieldRankNum(row, fieldKey) {
   const raw = row.fields[fieldKey] || '';
   return mapRankToNumber(raw);
@@ -126,7 +120,6 @@ function getFieldRankNum(row, fieldKey) {
 // ===================== サマリー =====================
 function renderSummary(state) {
   const root = document.getElementById('summaryGrid');
-  // 集計：field × sleepType
   const head = `
     <table class="table table-sm align-middle mb-0">
       <thead class="table-light">
@@ -138,14 +131,12 @@ function renderSummary(state) {
       <tbody>
         ${SLEEP_TYPES.map(style => {
           const tds = FIELD_KEYS.map(field => {
-            // 分母：このフィールドに出現する行（=row）数（空文字以外）
             let denom = 0, num = 0;
             for (const row of RAW_ROWS) {
               if (row.Style !== style) continue;
               const rankNum = getFieldRankNum(row, field);
               if (rankNum) {
                 denom++;
-                // その行に対応するチェックは「種No×そのレア度」のどれかが入手済みなら1カウント
                 const no = row.No;
                 const star = row.DisplayRarity;
                 if (CHECKABLE_STARS.includes(star) && getChecked(state, no, star)) num++;
@@ -196,15 +187,15 @@ function renderAllFaces(state) {
       const aR = firstRarityVal(a), bR = firstRarityVal(b);
       return aR - bR;
     }
-    // no-asc (default)
-    return a.no.localeCompare(b.no, 'ja');
+    return a.no.localeCompare(b.no, 'ja'); // no-asc
   });
 
-  // 描画
+  // ★ 現在の表示対象を保持 → 全体一括ON/OFFで使用
+  LAST_RENDER_ENTRIES = entries;
+
+  // 描画（※「睡眠タイプ」「レア度」列は削除）
   tbody.innerHTML = entries.map(ent => {
     const no = ent.no, name = ent.name;
-    const style = firstStyleKey(ent);
-    const rarity = firstRarityLabel(ent);
 
     const cells = CHECKABLE_STARS.map(star => {
       const exists = speciesHasStar(ent, star);
@@ -230,8 +221,6 @@ function renderAllFaces(state) {
       <tr>
         <td>${no}</td>
         <td>${escapeHtml(name)}</td>
-        <td>${style || '-'}</td>
-        <td>${rarity || '-'}</td>
         ${cells}
         <td class="text-center">${bulkBtn}</td>
       </tr>`;
@@ -243,7 +232,6 @@ function renderAllFaces(state) {
       const no = e.target.dataset.no;
       const star = e.target.dataset.star;
       setChecked(state, no, star, e.target.checked);
-      // 行の色再反映
       e.target.closest('td').classList.toggle('cell-checked', e.target.checked);
       renderSummary(state);
       renderRankSearch(state); // 未入手一覧更新
@@ -274,7 +262,6 @@ function renderAllFaces(state) {
 }
 
 function firstStyleKey(ent){
-  // 複数ある場合は固定並びで一番小さいものを代表表示
   const arr = Array.from(ent.styles);
   const order = {'うとうと':1,'すやすや':2,'ぐっすり':3};
   arr.sort((a,b)=>(order[a]||9)-(order[b]||9));
@@ -326,25 +313,20 @@ function setupFieldTabs() {
 function renderFieldTables(state) {
   FIELD_KEYS.forEach(field=>{
     const tbody = document.querySelector(`#fieldTabsContent tbody[data-field="${field}"]`);
-    // 行作成：このフィールドに「1つでも出現する」行がある種だけ表示
     const rows = [];
     for (const ent of SPECIES_MAP.values()) {
-      // エントリ行（代表のタイプ/レア度を併記）
-      // ☆列は「その☆の行がこのフィールドで出現するか」を判定
       const appearAny = ent.rows.some(r => getFieldRankNum(r, field));
       if (!appearAny) continue;
 
       const cells = CHECKABLE_STARS.map(star=>{
         const hasRow = ent.rows.find(r => r.DisplayRarity === star);
         if (!hasRow) {
-          // そもそもこの☆が存在しない
           return `<td class="text-center cell-disabled">出現しない</td>`;
         }
         const rankNum = getFieldRankNum(hasRow, field);
         if (!rankNum) {
           return `<td class="text-center cell-disabled">出現しない</td>`;
         }
-        // 出現する → チェック可
         const checked = getChecked(state, ent.no, star);
         const tdClass = checked ? 'cell-checked' : '';
         return `<td class="text-center ${tdClass}">
@@ -366,14 +348,12 @@ function renderFieldTables(state) {
     }
     tbody.innerHTML = rows.join('');
 
-    // クリックで同期
     tbody.querySelectorAll('input[type="checkbox"]').forEach(chk=>{
       chk.addEventListener('change', (e)=>{
         const no = e.target.dataset.no;
         const star = e.target.dataset.star;
         setChecked(state, no, star, e.target.checked);
         e.target.closest('td').classList.toggle('cell-checked', e.target.checked);
-        // 他タブも同期
         renderAllFaces(state);
         renderSummary(state);
         renderRankSearch(state);
@@ -398,13 +378,10 @@ function renderRankSearch(state) {
   const items = [];
   for (const row of RAW_ROWS) {
     const rNum = getFieldRankNum(row, field);
-    if (!rNum || rNum > rank) continue; // 選択ランク以下のみ
-    // 未入手のみ
+    if (!rNum || rNum > rank) continue;
     if (CHECKABLE_STARS.includes(row.DisplayRarity) && getChecked(state, row.No, row.DisplayRarity)) continue;
-    // イベント・バリアントはそのまま出せばOK（Summaryは自然に0/0）
     items.push(row);
   }
-  // ソートは No→レア度→タイプ
   items.sort((a,b)=>{
     const c1 = a.No.localeCompare(b.No,'ja'); if (c1) return c1;
     const iA = RARITIES.indexOf(a.DisplayRarity), iB = RARITIES.indexOf(b.DisplayRarity);
@@ -450,7 +427,6 @@ function setupBackupUI() {
       const obj = JSON.parse(text);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
       alert('インポート（置換）しました。');
-      // 再描画
       const state = loadState();
       renderAllFaces(state);
       renderFieldTables(state);
@@ -469,7 +445,6 @@ function setupBackupUI() {
     try {
       const incoming = JSON.parse(text);
       const state = loadState();
-      // ざっくりマージ：checked のみ対象
       if (incoming?.checked && typeof incoming.checked === 'object') {
         for (const no of Object.keys(incoming.checked)) {
           for (const star of Object.keys(incoming.checked[no])) {
@@ -504,23 +479,53 @@ function setupBackupUI() {
 async function main() {
   await loadData();
 
-  // UI初期化
   setupFieldTabs();
   setupRankSearchControls();
   setupBackupUI();
 
-  // 初回描画
   const state = loadState();
   renderSummary(state);
   renderAllFaces(state);
   renderFieldTables(state);
   renderRankSearch(state);
 
-  // フィルタ/ソートイベント
   document.getElementById('searchName').addEventListener('input', ()=>renderAllFaces(loadState()));
   document.getElementById('filterStyle').addEventListener('change', ()=>renderAllFaces(loadState()));
   document.getElementById('filterRarity').addEventListener('change', ()=>renderAllFaces(loadState()));
   document.getElementById('sortBy').addEventListener('change', ()=>renderAllFaces(loadState()));
+
+  // ★ 全体一括ON/OFF
+  document.getElementById('btnAllOn').addEventListener('click', ()=>{
+    if (!confirm('すべての寝顔をチェックします。よろしいですか？')) return;
+    const state = loadState();
+    for (const ent of LAST_RENDER_ENTRIES) {
+      CHECKABLE_STARS.forEach(star=>{
+        if (speciesHasStar(ent, star)) {
+          setChecked(state, ent.no, star, true);
+        }
+      });
+    }
+    renderAllFaces(state);
+    renderFieldTables(state);
+    renderSummary(state);
+    renderRankSearch(state);
+  });
+
+  document.getElementById('btnAllOff').addEventListener('click', ()=>{
+    if (!confirm('すべての寝顔のチェックを解除します。よろしいですか？')) return;
+    const state = loadState();
+    for (const ent of LAST_RENDER_ENTRIES) {
+      CHECKABLE_STARS.forEach(star=>{
+        if (speciesHasStar(ent, star)) {
+          setChecked(state, ent.no, star, false);
+        }
+      });
+    }
+    renderAllFaces(state);
+    renderFieldTables(state);
+    renderSummary(state);
+    renderRankSearch(state);
+  });
 }
 
 document.addEventListener('DOMContentLoaded', main);
