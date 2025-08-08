@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ja" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ポケモンスリープ 寝顔コレクションツール</title>
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header class="container py-3">
+    <h1 class="h3 mb-1">ポケモンスリープ 寝顔コレクション</h1>
+    <p class="text-muted mb-0">チェックは自動保存（localStorage: <code>psleep-check-v1</code>）。バックアップ/復旧は「バックアップ・復旧」タブから。</p>
+  </header>
+
+  <main class="container">
+    <!-- Summary -->
+    <section id="summary" class="mb-3">
+      <div class="card">
+        <div class="card-body">
+          <h2 class="h5 mb-3">サマリー（フィールド × 睡眠タイプ）</h2>
+          <div id="summaryGrid" class="table-responsive">
+            <!-- JSで挿入 -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs sticky-top bg-white pt-3" id="mainTabs" role="tablist" style="top:0;">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tab-allfaces" data-bs-toggle="tab" data-bs-target="#pane-allfaces" type="button" role="tab">全寝顔チェックシート</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-byfield" data-bs-toggle="tab" data-bs-target="#pane-byfield" type="button" role="tab">フィールド別寝顔一覧</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-search" data-bs-toggle="tab" data-bs-target="#pane-search" type="button" role="tab">現在のフィールド・ランクから検索</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-backup" data-bs-toggle="tab" data-bs-target="#pane-backup" type="button" role="tab">バックアップ・復旧</button>
+      </li>
+    </ul>
+
+    <div class="tab-content pb-5" id="mainTabsContent">
+      <!-- 全寝顔チェックシート -->
+      <div class="tab-pane fade show active pt-3" id="pane-allfaces" role="tabpanel" aria-labelledby="tab-allfaces">
+        <div class="card">
+          <div class="card-body">
+            <div class="row g-2 align-items-end mb-3">
+              <div class="col-12 col-md-4">
+                <label class="form-label">名前検索（ひらがな/カタカナ区別なし・ワイルドカード）</label>
+                <input id="searchName" class="form-control" placeholder="例）きも → キモリ / ヤルキモノ がヒット">
+              </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label">睡眠タイプ</label>
+                <select id="filterStyle" class="form-select">
+                  <option value="">すべて</option>
+                  <option value="うとうと">うとうと</option>
+                  <option value="すやすや">すやすや</option>
+                  <option value="ぐっすり">ぐっすり</option>
+                </select>
+              </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label">レア度</label>
+                <select id="filterRarity" class="form-select">
+                  <option value="">すべて</option>
+                  <option value="☆1">☆1</option>
+                  <option value="☆2">☆2</option>
+                  <option value="☆3">☆3</option>
+                  <option value="☆4">☆4</option>
+                  <option value="☆5">☆5</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-2">
+                <label class="form-label">並び替え</label>
+                <select id="sortBy" class="form-select">
+                  <option value="no-asc">No昇順</option>
+                  <option value="name-asc">名前昇順</option>
+                  <option value="style-asc">睡眠タイプ</option>
+                  <option value="rarity-asc">レア度</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="table-responsive" id="allFacesTableWrap">
+              <table class="table table-sm align-middle table-hover mb-0" id="allFacesTable">
+                <thead class="table-light sticky-header">
+                  <tr>
+                    <th style="min-width:72px;">No</th>
+                    <th style="min-width:140px;">ポケモン名</th>
+                    <th style="min-width:96px;">睡眠タイプ</th>
+                    <th style="min-width:80px;">レア度</th>
+                    <th class="text-center" style="min-width:72px;">☆1</th>
+                    <th class="text-center" style="min-width:72px;">☆2</th>
+                    <th class="text-center" style="min-width:72px;">☆3</th>
+                    <th class="text-center" style="min-width:72px;">☆4</th>
+                    <th class="text-center" style="min-width:120px;">行まとめ</th>
+                  </tr>
+                </thead>
+                <tbody><!-- JSで描画 --></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- フィールド別寝顔一覧 -->
+      <div class="tab-pane fade pt-3" id="pane-byfield" role="tabpanel" aria-labelledby="tab-byfield">
+        <div class="card">
+          <div class="card-body">
+            <ul class="nav nav-pills mb-3" id="fieldTabs" role="tablist">
+              <!-- JSで7フィールド分を挿入 -->
+            </ul>
+            <div class="tab-content" id="fieldTabsContent">
+              <!-- JSで各フィールドの表を挿入 -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 現在のフィールド・ランクから検索 -->
+      <div class="tab-pane fade pt-3" id="pane-search" role="tabpanel" aria-labelledby="tab-search">
+        <div class="card">
+          <div class="card-body">
+            <div class="row g-2 align-items-end mb-3">
+              <div class="col-12 col-md-6">
+                <label class="form-label">フィールド</label>
+                <select id="searchField" class="form-select"></select>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label">ランク（1〜35）</label>
+                <input id="searchRank" type="number" min="1" max="35" step="1" class="form-control" value="1">
+              </div>
+            </div>
+            <p class="text-muted small mb-2">選択ランク以下で出現する「未入手」の寝顔のみ表示します（例：ハイパー5=15を選択→1〜15が対象）。</p>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle table-hover mb-0" id="rankSearchTable">
+                <thead class="table-light sticky-header">
+                  <tr>
+                    <th>No</th>
+                    <th>ポケモン名</th>
+                    <th>睡眠タイプ</th>
+                    <th>レア度</th>
+                    <th>必要ランク</th>
+                  </tr>
+                </thead>
+                <tbody><!-- JSで描画 --></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- バックアップ・復旧 -->
+      <div class="tab-pane fade pt-3" id="pane-backup" role="tabpanel" aria-labelledby="tab-backup">
+        <div class="card">
+          <div class="card-body">
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              <button id="btnExport" class="btn btn-primary">エクスポート（JSON保存）</button>
+              <label class="btn btn-outline-secondary mb-0">
+                インポート（置換）
+                <input id="fileImportReplace" type="file" accept="application/json" hidden>
+              </label>
+              <label class="btn btn-outline-secondary mb-0">
+                インポート（マージ）
+                <input id="fileImportMerge" type="file" accept="application/json" hidden>
+              </label>
+              <button id="btnReset" class="btn btn-danger ms-auto">すべて初期化</button>
+            </div>
+            <p class="text-muted small mb-0">※ 保存キー：<code>psleep-check-v1</code></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="container py-4 text-center text-muted small">
+    &copy; 2025 寝顔コレクションツール（非公式ファンツール）
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
