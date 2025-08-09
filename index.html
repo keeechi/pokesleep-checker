@@ -1,188 +1,232 @@
-<!DOCTYPE html>
-<html lang="ja" dir="ltr">
+<!doctype html>
+<html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>寝顔チェッカー for ポケモンスリープ</title>
-
-  <!-- Google Fonts（やわらかめ） -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap" rel="stylesheet">
 
   <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- ほんのり丸い日本語フォント -->
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;600;800&display=swap" rel="stylesheet">
 
-  <!-- 追加の軽いスタイル（必要なら既存style.cssに移動OK） -->
   <style>
-    :root { --cell-checked-bg: rgba(13,110,253,.1); }
-    body { font-family: "M PLUS Rounded 1c", system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", Meiryo, sans-serif; }
-    .sticky-header th { position: sticky; top: 0; z-index: 1; }
-    .cell-checked { background: var(--cell-checked-bg); }
-    .cell-disabled { color: #6c757d; }
-    .cell-absent { color: #adb5bd; } /* 存在しない寝顔（チェックボックス自体を出さない） */
+    :root{
+      --c-utouto:#ffffad;
+      --c-suyasuya:#b2ffff;
+      --c-gussuri:#add6ff;
+    }
+    body{ font-family: "M PLUS Rounded 1c", system-ui, -apple-system, "Noto Sans JP", sans-serif; background:#f6f7f9; }
+    header h1{ font-weight:800; letter-spacing: .04em; }
+    .app-card{ background:#fff; border-radius:16px; box-shadow:0 2px 10px rgba(0,0,0,.05); }
+    .summary-icon{ width:88px; height:40px; object-fit:contain; display:inline-block; }
+    .summary-table th, .summary-table td{ vertical-align:middle; }
+    .field-head{ font-weight:800; letter-spacing:.08em }
+    .progress{ height:10px; background:#e9ecef }
+    .cell-wrap{ min-width:180px }
+    .cell-top-line{ display:flex; align-items:center; gap:.5rem; justify-content:space-between }
+    .badge-add{ font-weight:700 }
+    .crown{ width:18px; height:18px; vertical-align:-3px }
+    .sticky-tools{ top:0; z-index:3 }
+    /* スマホ最適化：Summaryはカード風に */
+    @media (max-width: 768px){
+      .summary-table thead{ display:none }
+      .summary-table tbody tr{ display:block; margin-bottom:14px; padding:10px 12px; border:1px solid #e9ecef; border-radius:12px; background:#fff }
+      .summary-table tbody tr td, .summary-table tbody tr th{ display:block; width:100% }
+      .cell-wrap{ min-width:unset }
+      .summary-icon{ width:96px; height:44px }
+    }
+    /* 全寝顔チェックシート（横スクロール） */
+    .table-wrap{ overflow:auto; border-radius:12px; }
+    .tbl thead th{ position:sticky; top:0; background:#fff; z-index:2 }
+    .star-col{ text-align:center; width:96px }
+    .row-actions{ white-space:nowrap }
+    .name-col{ min-width:200px }
+    .no-col{ width:72px }
+    .filters .form-select, .filters .form-control{ background:#fff }
+    .chip{ border-radius:999px; padding:.25rem .65rem; border:1px solid #d0d7de; background:#fff }
   </style>
-
-  <link rel="stylesheet" href="./style.css"><!-- あれば -->
 </head>
 <body>
-  <header class="container py-3">
-    <h1 class="h3 mb-0">寝顔チェッカー for ポケモンスリープ</h1>
-  </header>
+  <div class="container py-3 py-md-4">
+    <header class="mb-3">
+      <h1 class="h2 h-md1">寝顔チェッカー for ポケモンスリープ</h1>
+    </header>
 
-  <main class="container">
-    <!-- Summary（タイトル行は削除） -->
-    <section id="summary" class="mb-3">
-      <div class="card">
-        <div class="card-body">
-          <div id="summaryGrid" class="table-responsive"><!-- JSで挿入 --></div>
+    <!-- Summary（アイコン行＋+nバッジ＋王冠） -->
+    <section class="app-card p-3 p-md-4 mb-3">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <div class="d-flex align-items-center gap-2">
+          <span class="chip">ハイライト表示</span>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="toggleHighlight" checked>
+            <label class="form-check-label" for="toggleHighlight">直近7日 +n / 100% 王冠</label>
+          </div>
         </div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="chip">並び替え</span>
+          <select id="sortSelect" class="form-select form-select-sm" style="width:180px">
+            <option value="no-asc">No昇順</option>
+            <option value="no-desc">No降順</option>
+            <option value="name-asc">名前昇順</option>
+            <option value="name-desc">名前降順</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table summary-table mb-0">
+          <thead>
+            <tr>
+              <th style="width:110px"></th>
+              <th class="text-center field-head">ワカクサ</th>
+              <th class="text-center field-head">シアン</th>
+              <th class="text-center field-head">トープ</th>
+              <th class="text-center field-head">ウノハナ</th>
+              <th class="text-center field-head">ラピス</th>
+              <th class="text-center field-head">ゴールド</th>
+              <th class="text-center field-head">ワカクサEX</th>
+            </tr>
+          </thead>
+          <tbody id="summaryBody">
+            <!-- うとうと / すやすや / ぐっすり ＋ 合計 をJSで -->
+          </tbody>
+        </table>
       </div>
     </section>
 
-    <!-- Tabs -->
-    <ul class="nav nav-tabs sticky-top bg-white pt-3" id="mainTabs" role="tablist" style="top:0;">
-      <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="tab-allfaces" data-bs-toggle="tab" data-bs-target="#pane-allfaces" type="button" role="tab">全寝顔チェックシート</button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link" id="tab-byfield" data-bs-toggle="tab" data-bs-target="#pane-byfield" type="button" role="tab">フィールド別寝顔一覧</button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link" id="tab-search" data-bs-toggle="tab" data-bs-target="#pane-search" type="button" role="tab">現在のフィールド・ランクから検索</button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link" id="tab-backup" data-bs-toggle="tab" data-bs-target="#pane-backup" type="button" role="tab">バックアップ・復旧</button>
-      </li>
+    <!-- タブ -->
+    <ul class="nav nav-pills mb-2" id="mainTabs" role="tablist">
+      <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-all">全寝顔チェックシート</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-field">フィールド別寝顔一覧</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-find">現在のフィールド・ランクから検索</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-backup">バックアップ・復旧</button></li>
     </ul>
 
-    <div class="tab-content pb-5" id="mainTabsContent">
+    <div class="tab-content">
       <!-- 全寝顔チェックシート -->
-      <div class="tab-pane fade show active pt-3" id="pane-allfaces" role="tabpanel" aria-labelledby="tab-allfaces">
-        <div class="card">
-          <div class="card-body">
-            <div class="row g-2 align-items-end mb-3">
-              <div class="col-12 col-md-6">
-                <label class="form-label">名前検索</label>
-                <input id="searchName" class="form-control" placeholder="例）きも → キモリ / ヤルキモノ がヒット">
-              </div>
-              <div class="col-6 col-md-3">
-                <label class="form-label">睡眠タイプ</label>
-                <select id="filterStyle" class="form-select">
-                  <option value="">すべて</option>
-                  <option value="うとうと">うとうと</option>
-                  <option value="すやすや">すやすや</option>
-                  <option value="ぐっすり">ぐっすり</option>
-                </select>
-              </div>
-              <div class="col-6 col-md-3">
-                <label class="form-label">並び替え</label>
-                <select id="sortBy" class="form-select">
-                  <option value="no-asc">No昇順</option>
-                  <option value="no-desc">No降順</option>
-                  <option value="name-asc">名前昇順</option>
-                  <option value="name-desc">名前降順</option>
-                </select>
+      <div class="tab-pane fade show active" id="tab-all">
+        <div class="app-card p-3 p-md-4">
+          <div class="row g-2 align-items-end filters">
+            <div class="col-12 col-md-6">
+              <label class="form-label">名前検索</label>
+              <input type="text" class="form-control" id="filterName" placeholder="例）きも → キモリ / ヤルキモノがヒット" />
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label">睡眠タイプ</label>
+              <select class="form-select" id="filterStyle">
+                <option value="">すべて</option>
+                <option value="うとうと">うとうと</option>
+                <option value="すやすや">すやすや</option>
+                <option value="ぐっすり">ぐっすり</option>
+              </select>
+            </div>
+            <div class="col-6 col-md-3 text-md-end">
+              <div class="d-flex gap-2 justify-content-end">
+                <button class="btn btn-outline-primary btn-sm" id="btnAllOn">すべて一括ON</button>
+                <button class="btn btn-outline-secondary btn-sm" id="btnAllOff">すべて一括OFF</button>
               </div>
             </div>
+          </div>
 
-            <!-- 全体一括ON/OFF（確認ダイアログは維持） -->
-            <div class="d-flex flex-wrap gap-2 mb-2">
-              <button id="btnAllOn" class="btn btn-outline-primary btn-sm">すべて一括ON</button>
-              <button id="btnAllOff" class="btn btn-outline-secondary btn-sm">すべて一括OFF</button>
-              <span class="text-muted small ms-auto">※ 現在の絞り込み結果に対して適用</span>
-            </div>
-
-            <div class="table-responsive" id="allFacesTableWrap">
-              <table class="table table-sm align-middle table-hover mb-0" id="allFacesTable">
-                <thead class="table-light sticky-header">
-                  <tr>
-                    <th style="min-width:72px;">No</th>
-                    <th style="min-width:140px;">ポケモン名</th>
-                    <th class="text-center" style="min-width:72px;">☆1</th>
-                    <th class="text-center" style="min-width:72px;">☆2</th>
-                    <th class="text-center" style="min-width:72px;">☆3</th>
-                    <th class="text-center" style="min-width:72px;">☆4</th>
-                    <th class="text-center" style="min-width:120px;">行まとめ</th>
-                  </tr>
-                </thead>
-                <tbody><!-- JSで描画 --></tbody>
-              </table>
-            </div>
+          <div class="table-wrap mt-3">
+            <table class="table align-middle tbl">
+              <thead>
+                <tr>
+                  <th class="no-col">No</th>
+                  <th class="name-col">ポケモン名</th>
+                  <th class="star-col">☆1</th>
+                  <th class="star-col">☆2</th>
+                  <th class="star-col">☆3</th>
+                  <th class="star-col">☆4</th>
+                  <th class="row-actions text-center">行まとめ</th>
+                </tr>
+              </thead>
+              <tbody id="allBody"></tbody>
+            </table>
           </div>
         </div>
       </div>
 
-      <!-- フィールド別寝顔一覧 -->
-      <div class="tab-pane fade pt-3" id="pane-byfield" role="tabpanel" aria-labelledby="tab-byfield">
-        <div class="card">
-          <div class="card-body">
-            <ul class="nav nav-pills mb-3" id="fieldTabs" role="tablist"><!-- JS --></ul>
-            <div class="tab-content" id="fieldTabsContent"><!-- JS --></div>
+      <!-- フィールド別（簡易） -->
+      <div class="tab-pane fade" id="tab-field">
+        <div class="app-card p-3 p-md-4">
+          <div class="mb-3">
+            <label class="form-label">フィールド選択</label>
+            <select id="fieldSelect" class="form-select">
+              <option value="ワカクサ本島">ワカクサ</option>
+              <option value="シアンの砂浜">シアン</option>
+              <option value="トープ洞窟">トープ</option>
+              <option value="ウノハナ雪原">ウノハナ</option>
+              <option value="ラピスラズリ湖畔">ラピス</option>
+              <option value="ゴールド旧発電所">ゴールド</option>
+              <option value="ワカクサ本島EX">ワカクサEX</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table class="table align-middle tbl">
+              <thead>
+                <tr>
+                  <th class="no-col">No</th>
+                  <th class="name-col">ポケモン名</th>
+                  <th class="star-col">☆1</th>
+                  <th class="star-col">☆2</th>
+                  <th class="star-col">☆3</th>
+                  <th class="star-col">☆4</th>
+                  <th class="row-actions text-center">行まとめ</th>
+                </tr>
+              </thead>
+              <tbody id="fieldBody"></tbody>
+            </table>
           </div>
         </div>
       </div>
 
-      <!-- 現在のフィールド・ランクから検索 -->
-      <div class="tab-pane fade pt-3" id="pane-search" role="tabpanel" aria-labelledby="tab-search">
-        <div class="card">
-          <div class="card-body">
-            <div class="row g-2 align-items-end mb-3">
-              <div class="col-12 col-md-6">
-                <label class="form-label">フィールド</label>
-                <select id="searchField" class="form-select"></select>
-              </div>
-              <div class="col-12 col-md-6">
-                <label class="form-label">ランク（1〜35）</label>
-                <input id="searchRank" type="number" min="1" max="35" step="1" class="form-control" value="1">
-              </div>
+      <!-- 現在のフィールド・ランクから検索（閲覧のみ） -->
+      <div class="tab-pane fade" id="tab-find">
+        <div class="app-card p-3 p-md-4">
+          <div class="row g-2">
+            <div class="col-12 col-md-6">
+              <label class="form-label">フィールド</label>
+              <select id="findField" class="form-select">
+                <option value="ワカクサ本島">ワカクサ</option>
+                <option value="シアンの砂浜">シアン</option>
+                <option value="トープ洞窟">トープ</option>
+                <option value="ウノハナ雪原">ウノハナ</option>
+                <option value="ラピスラズリ湖畔">ラピス</option>
+                <option value="ゴールド旧発電所">ゴールド</option>
+                <option value="ワカクサ本島EX">ワカクサEX</option>
+              </select>
             </div>
-            <p class="text-muted small mb-2">選択ランク以下で出現する「未入手」の寝顔のみ表示します。</p>
-            <div class="table-responsive">
-              <table class="table table-sm align-middle table-hover mb-0" id="rankSearchTable">
-                <thead class="table-light sticky-header">
-                  <tr>
-                    <th>No</th>
-                    <th>ポケモン名</th>
-                    <th>睡眠タイプ</th>
-                    <th>レア度</th>
-                    <th>必要ランク</th>
-                  </tr>
-                </thead>
-                <tbody><!-- JSで描画 --></tbody>
-              </table>
+            <div class="col-12 col-md-6">
+              <label class="form-label">ランク（1〜35）</label>
+              <input id="findRank" type="number" class="form-control" min="1" max="35" value="15">
             </div>
           </div>
+          <div id="findList" class="mt-3"></div>
         </div>
       </div>
 
       <!-- バックアップ・復旧 -->
-      <div class="tab-pane fade pt-3" id="pane-backup" role="tabpanel" aria-labelledby="tab-backup">
-        <div class="card">
-          <div class="card-body">
-            <div class="d-flex flex-wrap gap-2 mb-3">
-              <button id="btnExport" class="btn btn-primary">エクスポート（JSON保存）</button>
-              <label class="btn btn-outline-secondary mb-0">
-                インポート（置換）
-                <input id="fileImportReplace" type="file" accept="application/json" hidden>
-              </label>
-              <label class="btn btn-outline-secondary mb-0">
-                インポート（マージ）
-                <input id="fileImportMerge" type="file" accept="application/json" hidden>
-              </label>
-              <button id="btnReset" class="btn btn-danger ms-auto">すべて初期化</button>
+      <div class="tab-pane fade" id="tab-backup">
+        <div class="app-card p-3 p-md-4">
+          <div class="d-flex flex-wrap gap-2">
+            <button id="btnExport" class="btn btn-primary">進捗をJSONでエクスポート</button>
+            <label class="btn btn-outline-secondary mb-0">
+              JSONをインポート<input id="fileImport" type="file" accept="application/json" hidden>
+            </label>
+            <div class="form-check ms-2">
+              <input class="form-check-input" type="checkbox" id="includeDates" checked>
+              <label class="form-check-label" for="includeDates">日時も含める</label>
             </div>
           </div>
+          <p class="text-muted mt-2 mb-0 small">ローカル保存キー：psleep-check-v2</p>
         </div>
       </div>
     </div>
-  </main>
-
-  <footer class="container py-4 text-center text-muted small">
-    &copy; 2025 寝顔チェッカー（非公式ファンツール）
-  </footer>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="./app.js"></script>
+  <script src="main.js"></script>
 </body>
 </html>
