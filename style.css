@@ -27,3 +27,11 @@ thead.table-light.sticky-header th {
   #summary .card-body { padding: 0.75rem; }
   .form-label { margin-bottom: 0.25rem; }
 }
+
+/* アイコンの設定 */
+.summary-icon {
+  width: 84px;            /* 表の高さに合わせて微調整 */
+  height: 40px;
+  object-fit: contain;    /* 縦横比を維持 */
+  display: inline-block;
+}
