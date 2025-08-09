@@ -21,6 +21,13 @@ const SLEEP_TYPES = ['うとうと', 'すやすや', 'ぐっすり'];
 const RARITIES = ['☆1', '☆2', '☆3', '☆4', '☆5']; // 表示用
 const CHECKABLE_STARS = ['☆1','☆2','☆3','☆4'];   // チェック対象
 
+// リポジトリ内相対パス
+const STYLE_ICON = {
+  'うとうと': 'assets/icons/01-uto.png',
+  'すやすや': 'assets/icons/02-suya.png',
+  'ぐっすり': 'assets/icons/03-gu.png',
+};
+
 // ランクの内部マッピング（1..35）
 function mapRankToNumber(s) {
   if (!s) return null;
@@ -139,7 +146,12 @@ function renderSummary(state) {
             const {num, denom, rate} = calcFor(style, field);
             return `<td class="text-center">${num} / ${denom} (${rate}%)</td>`;
           }).join('');
-          return `<tr><th>${style}</th>${tds}</tr>`;
+          return `<tr>
+  <th class="text-start align-middle">
+    <img src="${STYLE_ICON[style]}" alt="${style}" class="summary-icon" loading="lazy">
+  </th>
+  ${tds}
+</tr>`;
         }).join('')}
         ${(() => { // 合計行
           const tds = FIELD_KEYS.map(field => {
