@@ -35,3 +35,17 @@ thead.table-light.sticky-header th {
   object-fit: contain;    /* 縦横比を維持 */
   display: inline-block;
 }
+
+/* ===================== 全寝顔：名前セルを星と同幅に＆横スクロール ===================== */
+#allFacesTable .name-cell {
+  min-width: 72px;
+  width: 72px;
+  max-width: 72px;
+  padding-right: 0.25rem;
+}
+
+#allFacesTable .name-scroll {
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
