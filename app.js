@@ -212,13 +212,14 @@ function renderAllFaces(state) {
         <button type="button" class="btn btn-outline-secondary" data-bulk="off" data-no="${no}">一括OFF</button>
       </div>`;
 
-    return `
-      <tr>
-        <td>${no}</td>
-        <td>${escapeHtml(name)}</td>
-        ${cells}
-        <td class="text-center">${bulkBtn}</td>
-      </tr>`;
+return `
+  <tr>
+    <td class="name-cell">
+      <div class="name-scroll" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+    </td>
+    ${cells}
+    <td class="text-center">${bulkBtn}</td>
+  </tr>`;
   }).join('');
 
   // チェックイベント
