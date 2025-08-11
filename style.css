@@ -36,37 +36,3 @@ thead.table-light.sticky-header th {
   display: inline-block;
 }
 
-/* ===================== 全寝顔：名前セルを星と同幅に＆横スクロール ===================== */
-#allFacesTable .name-cell {
-  min-width: 72px;
-  width: 72px;
-  max-width: 72px;
-  padding-right: 0.25rem;
-}
-
-#allFacesTable .name-scroll {
-  overflow-x: auto;
-  white-space: nowrap;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* アイコンセルのスタイル */
-#allFacesTable .name-cell {
-  min-width: 72px;
-  width: 72px;
-  max-width: 72px;
-  padding: 4px 0;
-}
-
-#allFacesTable .poke-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#allFacesTable .poke-icon svg {
-  display: block;
-  border: 1px solid #bbb;
-  border-radius: 10px;
-  overflow: hidden;
-}
