@@ -239,9 +239,11 @@ function renderAllFaces(state) {
 
 return `
   <tr>
-    <td class="name-cell">
-      <div class="name-scroll" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
-    </td>
+<td class="name-cell">
+<div class="poke-icon" title="${escapeHtml(name)}">
+${renderPokemonIconById(ent.noStr || toDex4(ent.No), 64)}
+</div>
+</td>
     ${cells}
     <td class="text-center">${bulkBtn}</td>
   </tr>`;
