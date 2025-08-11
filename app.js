@@ -119,6 +119,38 @@ function countAddedLast7Days(filterFn){
   return n;
 }
 
+// 4桁ゼロ埋め（1000以上はそのまま）
+function toDex4(no) {
+  const n = Number(no);
+  return n >= 1000 ? String(n) : String(n).padStart(4, '0');
+}
+
+// 矩形データからインラインSVGを生成
+function renderPokemonIconById(iconId, sizePx = 64) {
+  const table = (window.pokemonRectData || {});
+  const data = table[iconId];
+
+  if (!data) {
+    // フォールバック（データなしの場合）
+    return `
+      <svg width="${sizePx}" height="${sizePx}" viewBox="0 0 ${sizePx} ${sizePx}">
+        <rect x="0" y="0" width="${sizePx}" height="${sizePx}" fill="#eee" stroke="#bbb"/>
+        <text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" font-size="10" fill="#666">${iconId}</text>
+      </svg>`;
+  }
+
+  let rects = '';
+  for (const r of data) {
+    const x = (r.x * sizePx).toFixed(1);
+    const y = (r.y * sizePx).toFixed(1);
+    const w = (r.w * sizePx).toFixed(1);
+    const h = (r.h * sizePx).toFixed(1);
+    const rx = r.r != null ? (r.r * sizePx).toFixed(1) : null;
+    rects += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${r.color}"${rx ? ` rx="${rx}" ry="${rx}"` : ''}/>`;
+  }
+  return `<svg width="${sizePx}" height="${sizePx}" viewBox="0 0 ${sizePx} ${sizePx}">${rects}</svg>`;
+}
+
 // ===========================
 // Fetch & normalize
 // ===========================
