@@ -21,6 +21,31 @@ const SLEEP_TYPES = ['うとうと', 'すやすや', 'ぐっすり'];
 const RARITIES = ['☆1', '☆2', '☆3', '☆4', '☆5']; // 表示用
 const CHECKABLE_STARS = ['☆1','☆2','☆3','☆4'];   // チェック対象
 
+// 矩形データからインラインSVGを作って返す（なければフォールバック）
+function renderPokemonIconById(iconId, sizePx = 64) {
+  const data = (window.pokemonRectData || {})[iconId];
+  if (!data) {
+    // フォールバック：枠だけ出す
+    return `
+      <svg width="${sizePx}" height="${sizePx}" viewBox="0 0 ${sizePx} ${sizePx}">
+        <rect x="0" y="0" width="${sizePx}" height="${sizePx}" fill="#eee" stroke="#999"/>
+        <text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" font-size="10" fill="#666">
+          ${iconId}
+        </text>
+      </svg>`;
+  }
+  let rects = '';
+  for (const r of data) {
+    const x = (r.x * sizePx).toFixed(1);
+    const y = (r.y * sizePx).toFixed(1);
+    const w = (r.w * sizePx).toFixed(1);
+    const h = (r.h * sizePx).toFixed(1);
+    const rx = r.r != null ? (r.r * sizePx).toFixed(1) : null;
+    rects += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${r.color}"${rx ? ` rx="${rx}" ry="${rx}"` : ''}/>`;
+  }
+  return `<svg width="${sizePx}" height="${sizePx}" viewBox="0 0 ${sizePx} ${sizePx}">${rects}</svg>`;
+}
+
 // リポジトリ内相対パス
 const STYLE_ICON = {
   'うとうと': 'assets/icons/01-uto.png',
