@@ -116,7 +116,33 @@ function getFieldRankNum(row, fieldKey) {
 // 4桁ゼロ埋め（1000以上はそのまま）
 function toDex4(no) {
   const n = Number(no);
+  if (!Number.isFinite(n)) return null;  // ← NaN対策
   return n >= 1000 ? String(n) : String(n).padStart(4, '0');
+}
+
+// ent から安全にアイコン用キー（4桁）を作る
+function getIconKey(ent) {
+  // もっとも確実: No（数値 or 数字文字列）
+  let n = ent?.No ?? ent?.no ?? ent?.dex;
+  if (typeof n === 'string') n = n.trim();
+  const k1 = toDex4(n);
+  if (k1) return k1;
+
+  // 既にゼロ埋め済みの文字列を持っているケース
+  if (typeof ent?.noStr === 'string' && /^\d{4,}$/.test(ent.noStr)) {
+    return ent.noStr.slice(0, 4); // 念のため4桁に制限
+  }
+
+  // 最後の手段: ID から推測（なければ諦める）
+  // 例: "1000101" のようなIDを持つ場合 → 末尾3桁が顔バリエーションという前提なら、
+  // 先頭〜中間から No を推測する（あなたの実データ規則に合わせて調整: ここでは先頭4桁を採用）
+  if (ent?.ID && /^\d{4,}$/.test(String(ent.ID))) {
+    // ★必要に応じてロジック変更（以下は例）
+    let guess = String(ent.ID).slice(1, 5);    // 「1000101」→「0001」的な取り方
+    if (/^\d+$/.test(guess)) return guess.padStart(4, '0');
+  }
+
+  return null;
 }
 
 // 矩形データからインラインSVGを生成
@@ -248,7 +274,7 @@ return `
   <tr>
     <td class="name-cell">
       <div class="poke-icon" title="${escapeHtml(ent.Name)}">
-        ${renderPokemonIconById(ent.noStr || toDex4(ent.No), 64)}
+        ${renderPokemonIconById(getIconKey(ent), 64)}
       </div>
     </td>
     ${cells}
