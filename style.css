@@ -49,3 +49,24 @@ thead.table-light.sticky-header th {
   white-space: nowrap;
   -webkit-overflow-scrolling: touch;
 }
+
+/* アイコンセルのスタイル */
+#allFacesTable .name-cell {
+  min-width: 72px;
+  width: 72px;
+  max-width: 72px;
+  padding: 4px 0;
+}
+
+#allFacesTable .poke-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#allFacesTable .poke-icon svg {
+  display: block;
+  border: 1px solid #bbb;
+  border-radius: 10px;
+  overflow: hidden;
+}
