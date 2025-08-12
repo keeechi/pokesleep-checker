@@ -120,42 +120,26 @@ function toDex4(no) {
   return n >= 1000 ? String(n) : String(n).padStart(4, '0');
 }
 
-// ent から安全にアイコン用キー（4桁）を作る
-function getIconKey(ent) {
-  // もっとも確実: No（数値 or 数字文字列）
-  let n = ent?.No ?? ent?.no ?? ent?.dex;
-  if (typeof n === 'string') n = n.trim();
-  const k1 = toDex4(n);
-  if (k1) return k1;
-
-  // 既にゼロ埋め済みの文字列を持っているケース
-  if (typeof ent?.noStr === 'string' && /^\d{4,}$/.test(ent.noStr)) {
-    return ent.noStr.slice(0, 4); // 念のため4桁に制限
-  }
-
-  // 最後の手段: ID から推測（なければ諦める）
-  // 例: "1000101" のようなIDを持つ場合 → 末尾3桁が顔バリエーションという前提なら、
-  // 先頭〜中間から No を推測する（あなたの実データ規則に合わせて調整: ここでは先頭4桁を採用）
-  if (ent?.ID && /^\d{4,}$/.test(String(ent.ID))) {
-    // ★必要に応じてロジック変更（以下は例）
-    let guess = String(ent.ID).slice(1, 5);    // 「1000101」→「0001」的な取り方
-    if (/^\d+$/.test(guess)) return guess.padStart(4, '0');
-  }
-
-  return null;
+// --- アイコンキー生成（Noベースに簡素化） ---
+function getIconKeyFromNo(no) {
+  if (no == null) return null;
+  // すでに "0001" のような4桁ゼロ埋め or 4桁以上の数字文字列にも対応
+  if (typeof no === 'string' && /^\d{4,}$/.test(no)) return no.slice(0, 4);
+  const k = toDex4(no);
+  return k || null;
 }
 
 // 矩形データからインラインSVGを生成
 function renderPokemonIconById(iconId, sizePx = 64) {
   const table = (window.pokemonRectData || {});
-  const data = table[iconId];
+  const data = iconId ? table[iconId] : null;
 
   if (!data) {
     // フォールバック（データなしの場合）
     return `
       <svg width="${sizePx}" height="${sizePx}" viewBox="0 0 ${sizePx} ${sizePx}">
         <rect x="0" y="0" width="${sizePx}" height="${sizePx}" fill="#eee" stroke="#bbb"/>
-        <text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" font-size="10" fill="#666">${iconId}</text>
+        <text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" font-size="10" fill="#666">${iconId ?? '----'}</text>
       </svg>`;
   }
 
@@ -270,11 +254,11 @@ function renderAllFaces(state) {
         <button type="button" class="btn btn-outline-secondary" data-bulk="off" data-no="${no}">一括OFF</button>
       </div>`;
 
-return `
+    return `
   <tr>
     <td class="name-cell">
-      <div class="poke-icon" title="${escapeHtml(ent.Name)}">
-        ${renderPokemonIconById(getIconKey(ent), 64)}
+      <div class="poke-icon" title="${escapeHtml(name)}">
+        ${renderPokemonIconById(getIconKeyFromNo(no), 64)}
       </div>
     </td>
     ${cells}
