@@ -28,6 +28,9 @@ const STYLE_ICON = {
   'ぐっすり': 'assets/icons/03-gu.png',
 };
 
+// 追加: ポケモン完成SVGをまとめたJSのパス
+const POKEMON_ICONS_JS = 'assets/icons/pokemon_icons/pokemon_icons.js';
+
 // ランクの内部マッピング（1..35）
 function mapRankToNumber(s) {
   if (!s) return null;
@@ -120,28 +123,63 @@ function toDex4(no) {
   return n >= 1000 ? String(n) : String(n).padStart(4, '0');
 }
 
-// --- アイコンキー生成（Noベースに簡素化） ---
+// --- アイコンキー生成（Noベース） ---
 function getIconKeyFromNo(no) {
   if (no == null) return null;
-  // すでに "0001" のような4桁ゼロ埋め or 4桁以上の数字文字列にも対応
   if (typeof no === 'string' && /^\d{4,}$/.test(no)) return no.slice(0, 4);
   const k = toDex4(no);
   return k || null;
 }
 
-// 矩形データからインラインSVGを生成
-function renderPokemonIconById(iconId, sizePx = 64) {
+// ===================== ポケモン完成SVGローダ & レンダ =====================
+// 期待されうるグローバル名を総当りで参照（pokemon_icons.js の実装差異に備える）
+function getCompletedSVGFromGlobals(iconId) {
+  const candidates = [
+    window.pokemonIcons,       // { "0001": "<svg>...</svg>", ... }
+    window.POKEMON_ICONS,      // 同上
+    window.pokemon_icons,      // 同上
+    window.POKEMON_SVG_MAP,    // 同上
+  ];
+  for (const obj of candidates) {
+    if (obj && typeof obj === 'object' && obj[iconId]) return String(obj[iconId]);
+  }
+  return null;
+}
+
+// SVG文字列に width/height が無ければ付与
+function ensureSvgSize(svgString, sizePx) {
+  if (!svgString) return null;
+  const hasSize = /<svg[^>]*(\bwidth=|\bheight=)/i.test(svgString);
+  if (hasSize) return svgString;
+  return svgString.replace(
+    /<svg/i,
+    `<svg width="${sizePx}" height="${sizePx}"`
+  );
+}
+
+// pokemon_icons.js を動的読み込み（HTML側にscriptが無くてもOK）
+let _iconsLoadingPromise = null;
+function loadPokemonIconsScriptOnce() {
+  if (getCompletedSVGFromGlobals('0001')) return Promise.resolve(); // 既に読込済
+  if (_iconsLoadingPromise) return _iconsLoadingPromise;
+
+  _iconsLoadingPromise = new Promise((resolve) => {
+    const tag = document.createElement('script');
+    tag.src = POKEMON_ICONS_JS;
+    tag.async = true;
+    tag.onload = () => resolve();
+    tag.onerror = () => resolve(); // 読み込み失敗でも先に進む（フォールバック有り）
+    document.head.appendChild(tag);
+  });
+  return _iconsLoadingPromise;
+}
+
+// 旧：矩形データ（window.pokemonRectData）からインラインSVG生成
+function renderFromRects(iconId, sizePx = 64) {
   const table = (window.pokemonRectData || {});
   const data = iconId ? table[iconId] : null;
 
-  if (!data) {
-    // フォールバック（データなしの場合）
-    return `
-      <svg width="${sizePx}" height="${sizePx}" viewBox="0 0 ${sizePx} ${sizePx}">
-        <rect x="0" y="0" width="${sizePx}" height="${sizePx}" fill="#eee" stroke="#bbb"/>
-        <text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" font-size="10" fill="#666">${iconId ?? '----'}</text>
-      </svg>`;
-  }
+  if (!data) return null;
 
   let rects = '';
   for (const r of data) {
@@ -153,6 +191,24 @@ function renderPokemonIconById(iconId, sizePx = 64) {
     rects += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${r.color}"${rx ? ` rx="${rx}" ry="${rx}"` : ''}/>`;
   }
   return `<svg width="${sizePx}" height="${sizePx}" viewBox="0 0 ${sizePx} ${sizePx}">${rects}</svg>`;
+}
+
+// 統合アイコンレンダ
+function renderPokemonIconById(iconId, sizePx = 64) {
+  // 1) 完成SVG（最優先）
+  const completed = getCompletedSVGFromGlobals(iconId);
+  if (completed) return ensureSvgSize(completed, sizePx);
+
+  // 2) 矩形フォールバック
+  const rectSvg = renderFromRects(iconId, sizePx);
+  if (rectSvg) return rectSvg;
+
+  // 3) プレースホルダー
+  return `
+    <svg width="${sizePx}" height="${sizePx}" viewBox="0 0 ${sizePx} ${sizePx}">
+      <rect x="0" y="0" width="${sizePx}" height="${sizePx}" fill="#eee" stroke="#bbb"/>
+      <text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" font-size="10" fill="#666">${iconId ?? '----'}</text>
+    </svg>`;
 }
 
 // ===================== サマリー =====================
@@ -254,11 +310,13 @@ function renderAllFaces(state) {
         <button type="button" class="btn btn-outline-secondary" data-bulk="off" data-no="${no}">一括OFF</button>
       </div>`;
 
+    // ★ ポケモン名カラム: アイコン + No/名前
     return `
   <tr>
     <td class="name-cell">
-      <div class="poke-icon" title="${escapeHtml(name)}">
-        ${renderPokemonIconById(getIconKeyFromNo(no), 64)}
+      <div class="d-flex align-items-center gap-2" title="${escapeHtml(name)}">
+        <div class="poke-icon" style="width:64px;height:64px;flex:0 0 auto;">${renderPokemonIconById(getIconKeyFromNo(no), 64)}</div>
+        <div class="small text-muted">${no}<br><span class="fw-semibold">${escapeHtml(name)}</span></div>
       </div>
     </td>
     ${cells}
@@ -493,6 +551,10 @@ function setupBackupUI() {
 
 // ===================== 初期化 =====================
 async function main() {
+  // 1) 完成SVGの読み込み（すでにHTMLで読み込まれていれば即return）
+  await loadPokemonIconsScriptOnce();
+
+  // 2) データとUI構築
   await loadData();
 
   setupFieldTabs();
