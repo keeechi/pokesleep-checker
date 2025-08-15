@@ -24,28 +24,49 @@ const STYLE_ICON = {
 };
 const POKEMON_ICONS_JS = './assets/icons/pokemon_icons/pokemon_icons.js';
 
-// ★ 追加：アイコンの標準サイズ（ご要望に合わせて 45px）
+// ★ 追加：アイコンの標準サイズ
 const ICON_SIZE = 45;
 
-// ★ 行まとめ縦並び＆列幅調整のためのスタイル調整
+// ===================== レイアウトCSS注入 =====================
+// 行まとめ縦並び＆列幅
 let _listLayoutStyleInjected = false;
 function injectListLayoutCSS() {
   if (_listLayoutStyleInjected) return;
   const style = document.createElement('style');
   style.textContent = `
-    /* ポケモン列を少し広めに確保 */
+    /* ポケモン列を広く見せるための最小幅 */
     td.name-cell { min-width: 180px; }
 
     /* 行まとめ列を細く／ボタンは縦積み */
     td.td-bulk { width: 72px; padding-left: 4px; padding-right: 4px; }
     .bulk-group-vert .btn { display: block; width: 100%; }
-    .bulk-group-vert .btn + .btn { margin-top: 6px; } /* ボタン間に少し隙間 */
+    .bulk-group-vert .btn + .btn { margin-top: 6px; }
   `;
   document.head.appendChild(style);
   _listLayoutStyleInjected = true;
 }
 
-// ランクの内部マッピング（1..35）
+// サマリー表（2pt小さく＆4行レイアウト）
+let _summaryStyleInjected = false;
+function injectSummaryTableCSS() {
+  if (_summaryStyleInjected) return;
+  const style = document.createElement('style');
+  style.textContent = `
+    /* サマリー表全体のフォントを 2pt 小さく */
+    .summary-table { font-size: calc(1rem - 2pt); }
+
+    /* セル内のレイアウトを統一（分子／区切り／分母／％） */
+    .summary-cell { text-align: center; line-height: 1.15; }
+    .summary-cell .sum-top { font-weight: 600; }
+    .summary-cell .sum-hr  { height: 1px; background: currentColor; opacity: .3; margin: 2px 12px; }
+    .summary-cell .sum-mid { }
+    .summary-cell .sum-per { opacity: .75; }
+  `;
+  document.head.appendChild(style);
+  _summaryStyleInjected = true;
+}
+
+// ===================== ランク変換・検索補助 =====================
 function mapRankToNumber(s) {
   if (!s) return null;
   const m = String(s).trim().match(/(ノーマル|スーパー|ハイパー|マスター)\s*([0-9１-９]+)$/);
@@ -59,7 +80,6 @@ function mapRankToNumber(s) {
   return null;
 }
 
-// 検索用正規化（ひら→カナ同一視・長音/空白除去）
 function normalizeJP(s) {
   if (!s) return '';
   let out = s.normalize('NFKC').toLowerCase();
@@ -128,77 +148,61 @@ function buildSpeciesIndex() {
 }
 
 function speciesHasStar(entry, star) { return entry.rows.some(r => r.DisplayRarity === star); }
-
 function getFieldRankNum(row, fieldKey) {
   const raw = row.fields[fieldKey] || '';
   return mapRankToNumber(raw);
 }
 
 // ===================== アイコン生成関連 =====================
-// 4桁ゼロ埋め（1000以上はそのまま）
 function toDex4(no) {
   const n = Number(no);
-  if (!Number.isFinite(n)) return null;  // ← NaN対策
+  if (!Number.isFinite(n)) return null;
   return n >= 1000 ? String(n) : String(n).padStart(4, '0');
 }
-
-// アイコンキー生成（Noベース）
 function getIconKeyFromNo(no) {
   if (no == null) return null;
   if (typeof no === 'string' && /^\d{4,}$/.test(no)) return no.slice(0, 4);
   const k = toDex4(no);
   return k || null;
 }
-
-// 期待されうるグローバル名を総当りで参照（pokemon_icons.js の実装差異に備える）
+// 完成SVGの候補（pokemon_icons.js がどの名前で出すかに備えて総当り）
 function getCompletedSVGFromGlobals(iconId) {
   const candidates = [
-    window.pokemonIcons,       // { "0001": "<svg>...</svg>", ... }
-    window.POKEMON_ICONS,      // 同上
-    window.pokemon_icons,      // 同上
-    window.POKEMON_SVG_MAP,    // 同上
+    window.pokemonIcons,
+    window.POKEMON_ICONS,
+    window.pokemon_icons,
+    window.POKEMON_SVG_MAP,
   ];
   for (const obj of candidates) {
     if (obj && typeof obj === 'object' && obj[iconId]) return String(obj[iconId]);
   }
   return null;
 }
-
-// SVG文字列に width/height が無ければ付与
 function ensureSvgSize(svgString, sizePx) {
   if (!svgString) return null;
   const hasSize = /<svg[^>]*(\bwidth=|\bheight=)/i.test(svgString);
   if (hasSize) return svgString;
-  return svgString.replace(
-    /<svg/i,
-    `<svg width="${sizePx}" height="${sizePx}"`
-  );
+  return svgString.replace(/<svg/i, `<svg width="${sizePx}" height="${sizePx}"`);
 }
-
-// pokemon_icons.js を動的読み込み（HTML側にscriptが無くてもOK）
 let _iconsLoadingPromise = null;
 function loadPokemonIconsScriptOnce() {
-  if (getCompletedSVGFromGlobals('0001')) return Promise.resolve(); // 既に読込済
+  if (getCompletedSVGFromGlobals('0001')) return Promise.resolve();
   if (_iconsLoadingPromise) return _iconsLoadingPromise;
-
   _iconsLoadingPromise = new Promise((resolve) => {
     const tag = document.createElement('script');
     tag.src = POKEMON_ICONS_JS;
     tag.async = true;
     tag.onload = () => resolve();
-    tag.onerror = () => resolve(); // 読み込み失敗でも先に進む（フォールバック有り）
+    tag.onerror = () => resolve(); // 失敗してもフォールバックあり
     document.head.appendChild(tag);
   });
   return _iconsLoadingPromise;
 }
-
 // 旧：矩形データ（window.pokemonRectData）からインラインSVG生成
 function renderFromRects(iconId, sizePx = ICON_SIZE) {
   const table = (window.pokemonRectData || {});
   const data = iconId ? table[iconId] : null;
-
   if (!data) return null;
-
   let rects = '';
   for (const r of data) {
     const x = (r.x * sizePx).toFixed(1);
@@ -210,18 +214,11 @@ function renderFromRects(iconId, sizePx = ICON_SIZE) {
   }
   return `<svg width="${sizePx}" height="${sizePx}" viewBox="0 0 ${sizePx} ${sizePx}">${rects}</svg>`;
 }
-
-// 統合アイコンレンダ
 function renderPokemonIconById(iconId, sizePx = ICON_SIZE) {
-  // 1) 完成SVG（最優先）
   const completed = getCompletedSVGFromGlobals(iconId);
   if (completed) return ensureSvgSize(completed, sizePx);
-
-  // 2) 矩形フォールバック
   const rectSvg = renderFromRects(iconId, sizePx);
   if (rectSvg) return rectSvg;
-
-  // 3) プレースホルダー
   return `
     <svg width="${sizePx}" height="${sizePx}" viewBox="0 0 ${sizePx} ${sizePx}">
       <rect x="0" y="0" width="${sizePx}" height="${sizePx}" fill="#eee" stroke="#bbb"/>
@@ -233,11 +230,11 @@ function renderPokemonIconById(iconId, sizePx = ICON_SIZE) {
 function renderSummary(state) {
   const root = document.getElementById('summaryGrid');
 
-  // フィールド別の集計（既存ロジック）
+  // フィールド別の集計
   const calcFor = (style, field) => {
     let denom = 0, num = 0;
     for (const row of RAW_ROWS) {
-      if (style && row.Style !== style) continue; // styleがnullなら全タイプ合算
+      if (style && row.Style !== style) continue;
       const rankNum = getFieldRankNum(row, field);
       if (rankNum) {
         denom++;
@@ -248,43 +245,52 @@ function renderSummary(state) {
     return { num, denom, rate };
   };
 
-  // ★追加：全体（フィールド無視）の集計
-  //   分母=指定タイプの「すべての寝顔数」
-  //   分子=チェック済み（☆1〜☆4のみ）
+  // 全体（フィールド無視）
   const calcForAll = (style) => {
     let denom = 0, num = 0;
     for (const row of RAW_ROWS) {
-      if (style && row.Style !== style) continue; // nullなら全タイプ合算
-      denom++; // フィールド条件なしで全件カウント
+      if (style && row.Style !== style) continue;
+      denom++;
       if (CHECKABLE_STARS.includes(row.DisplayRarity) && getChecked(state, row.No, row.DisplayRarity)) num++;
     }
     const rate = denom ? Math.round((num / denom) * 100) : 0;
     return { num, denom, rate };
   };
 
+  // セルの統一表示
+  const fmtCell = ({num, denom, rate}, strong = false) => {
+    return `
+      <div class="summary-cell${strong ? ' fw-semibold' : ''}">
+        <div class="sum-top">${num}</div>
+        <div class="sum-hr"></div>
+        <div class="sum-mid">${denom}</div>
+        <div class="sum-per">(${rate}%)</div>
+      </div>
+    `;
+  };
+
   const header = `
-    <table class="table table-sm align-middle mb-0">
+    <table class="table table-sm align-middle mb-0 summary-table">
       <thead class="table-light">
         <tr>
-          <th style="min-width:140px;"></th>
-          <th class="text-center">全体</th>  <!-- ★ 先頭に追加 -->
-          ${FIELD_KEYS.map(f => `<th class="text-center">${FIELD_SHORT[f]}</th>`).join('')}
+          <!-- 第一列（アイコン列） -->
+          <th style="min-width:80px; width:80px;"></th>
+          <!-- 全体列 -->
+          <th class="text-center" style="width:80px;">全体</th>
+          <!-- 各フィールド列 -->
+          ${FIELD_KEYS.map(f => `<th class="text-center" style="width:80px;">${FIELD_SHORT[f]}</th>`).join('')}
         </tr>
       </thead>
       <tbody>
         ${SLEEP_TYPES.map(style => {
-          // ★ まず「全体」セル
           const totalCell = (() => {
-            const {num, denom, rate} = calcForAll(style);
-            return `<td class="text-center fw-semibold">${num} / ${denom} (${rate}%)</td>`;
+            const d = calcForAll(style);
+            return `<td class="text-center">${fmtCell(d)}</td>`;
           })();
-
-          // 既存：各フィールドセル
           const fieldCells = FIELD_KEYS.map(field => {
-            const {num, denom, rate} = calcFor(style, field);
-            return `<td class="text-center">${num} / ${denom} (${rate}%)</td>`;
+            const d = calcFor(style, field);
+            return `<td class="text-center">${fmtCell(d)}</td>`;
           }).join('');
-
           return `<tr>
   <th class="text-start align-middle">
     <img src="${STYLE_ICON[style]}" alt="${style}" class="summary-icon" loading="lazy">
@@ -293,19 +299,15 @@ function renderSummary(state) {
   ${fieldCells}
 </tr>`;
         }).join('')}
-        ${(() => { // 合計行（全タイプ合算）
-          // ★ 合計行の「全体」セル：全タイプ×全件
+        ${(() => { // 合計行
           const allTotal = (() => {
-            const {num, denom, rate} = calcForAll(null);
-            return `<td class="text-center fw-bold">${num} / ${denom} (${rate}%)</td>`;
+            const d = calcForAll(null);
+            return `<td class="text-center">${fmtCell(d, true)}</td>`;
           })();
-
-          // 既存：フィールドごとの合計（全タイプ合算）
           const tds = FIELD_KEYS.map(field => {
-            const {num, denom, rate} = calcFor(null, field);
-            return `<td class="text-center fw-semibold">${num} / ${denom} (${rate}%)</td>`;
+            const d = calcFor(null, field);
+            return `<td class="text-center">${fmtCell(d, true)}</td>`;
           }).join('');
-
           return `<tr class="table-light">
             <th class="fw-semibold">合計</th>
             ${allTotal}
@@ -346,7 +348,6 @@ function renderAllFaces(state) {
     const cells = CHECKABLE_STARS.map(star => {
       const exists = speciesHasStar(ent, star);
       if (!exists) {
-        // ★ 存在しない寝顔：チェックボックスを出さない（ダッシュ表示）
         return `<td class="text-center cell-absent">—</td>`;
       }
       const checked = getChecked(state, no, star);
@@ -358,34 +359,32 @@ function renderAllFaces(state) {
         </td>`;
     }).join('');
 
-const bulkBtn = `
-  <div class="btn-group-vertical btn-group-sm bulk-group-vert" role="group" aria-label="行まとめ">
-    <button type="button" class="btn btn-outline-primary" data-bulk="on" data-no="${no}">一括ON</button>
-    <button type="button" class="btn btn-outline-secondary" data-bulk="off" data-no="${no}">一括OFF</button>
-  </div>`;
+    const bulkBtn = `
+      <div class="btn-group-vertical btn-group-sm bulk-group-vert" role="group" aria-label="行まとめ">
+        <button type="button" class="btn btn-outline-primary" data-bulk="on" data-no="${no}">一括ON</button>
+        <button type="button" class="btn btn-outline-secondary" data-bulk="off" data-no="${no}">一括OFF</button>
+      </div>`;
 
-// ★ ここを変更：アイコンを小さく（ICON_SIZE）＋下に No と名前（小さめ文字）
-return `
-<tr>
-  <td class="name-cell text-center align-middle">
-    <div style="width:${ICON_SIZE + 16}px; margin: 0 auto;">
-      <!-- アイコン -->
-      <div class="poke-icon mx-auto" style="width:${ICON_SIZE}px;height:${ICON_SIZE}px;line-height:0;">
-        ${renderPokemonIconById(getIconKeyFromNo(no), ICON_SIZE)}
-      </div>
-      <!-- Noと名前 -->
-      <div class="mt-1" style="font-size:9px; line-height:1.2; word-break:break-word; white-space:normal;">
-        <div class="text-muted">${no}</div>
-        <div class="fw-semibold" style="max-width:${ICON_SIZE + 8}px; margin:0 auto;">
-          ${escapeHtml(name)}
+    // ポケモン列：中央寄せ＆折返し
+    return `
+  <tr>
+    <td class="name-cell text-center align-middle">
+      <div style="width:${ICON_SIZE + 16}px; margin: 0 auto;">
+        <div class="poke-icon mx-auto" style="width:${ICON_SIZE}px;height:${ICON_SIZE}px;line-height:0;">
+          ${renderPokemonIconById(getIconKeyFromNo(no), ICON_SIZE)}
+        </div>
+        <div class="mt-1" style="font-size:9px; line-height:1.2; word-break:break-word; white-space:normal;">
+          <div class="text-muted">${no}</div>
+          <div class="fw-semibold" style="max-width:${ICON_SIZE + 8}px; margin:0 auto;">
+            ${escapeHtml(name)}
+          </div>
         </div>
       </div>
-    </div>
-  </td>
-  ${cells}
-  <td class="text-center td-bulk">${bulkBtn}</td>
-</tr>`;
-}).join('');
+    </td>
+    ${cells}
+    <td class="text-center td-bulk">${bulkBtn}</td>
+  </tr>`;
+  }).join('');
 
   // チェックイベント
   tbody.querySelectorAll('input[type="checkbox"]').forEach(chk => {
@@ -399,7 +398,7 @@ return `
     });
   });
 
-  // 行まとめ（一括ON/OFF）※ 確認ダイアログは出さない
+  // 行まとめ（一括ON/OFF）
   tbody.querySelectorAll('button[data-bulk]').forEach(btn=>{
     btn.addEventListener('click', (e)=>{
       const no = e.currentTarget.dataset.no;
@@ -468,12 +467,10 @@ function renderFieldTables(state) {
       const cells = CHECKABLE_STARS.map(star=>{
         const hasRow = ent.rows.find(r => r.DisplayRarity === star);
         if (!hasRow) {
-          // そもそも存在しない寝顔
           return `<td class="text-center cell-absent">—</td>`;
         }
         const rankNum = getFieldRankNum(hasRow, field);
         if (!rankNum) {
-          // フィールド上「出現しない」
           return `<td class="text-center cell-disabled">出現しない</td>`;
         }
         const checked = getChecked(state, ent.no, star);
@@ -490,7 +487,6 @@ function renderFieldTables(state) {
           <td>${escapeHtml(ent.name)}</td>
           <td>${firstStyleKey(ent) || '-'}</td>
           <td>${(() => {
-            // 表示用最小レア度
             const rs = ent.rows.map(r=>r.DisplayRarity).filter(Boolean);
             const order = r => RARITIES.indexOf(r);
             rs.sort((a,b)=>order(a)-order(b));
@@ -553,73 +549,11 @@ function renderRankSearch(state) {
   `).join('');
 }
 
-// ===================== バックアップ/復旧 =====================
-function downloadText(filename, text) {
-  const blob = new Blob([text], {type:'application/json;charset=utf-8'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename; a.click();
-  URL.revokeObjectURL(url);
-}
-function setupBackupUI() {
-  const btnExport = document.getElementById('btnExport');
-  const fileImportReplace = document.getElementById('fileImportReplace');
-  const fileImportMerge = document.getElementById('fileImportMerge');
-  const btnReset = document.getElementById('btnReset');
-
-  btnExport.addEventListener('click', ()=>{
-    const state = loadState();
-    downloadText('psleep-check-export.json', JSON.stringify(state, null, 2));
-  });
-
-  fileImportReplace.addEventListener('change', async (e)=>{
-    const file = e.target.files?.[0]; if (!file) return;
-    const text = await file.text();
-    try {
-      const obj = JSON.parse(text);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
-      alert('インポート（置換）しました。');
-      const state = loadState();
-      renderAllFaces(state); renderFieldTables(state); renderSummary(state); renderRankSearch(state);
-    } catch { alert('JSONの読み込みに失敗しました。'); }
-    finally { e.target.value = ''; }
-  });
-
-  fileImportMerge.addEventListener('change', async (e)=>{
-    const file = e.target.files?.[0]; if (!file) return;
-    const text = await file.text();
-    try {
-      const incoming = JSON.parse(text);
-      const state = loadState();
-      if (incoming?.checked && typeof incoming.checked === 'object') {
-        for (const no of Object.keys(incoming.checked)) {
-          for (const star of Object.keys(incoming.checked[no])) {
-            setChecked(state, no, star, !!incoming.checked[no][star]);
-          }
-        }
-      }
-      alert('インポート（マージ）しました。');
-      renderAllFaces(state); renderFieldTables(state); renderSummary(state); renderRankSearch(state);
-    } catch { alert('JSONの読み込みに失敗しました。'); }
-    finally { e.target.value = ''; }
-  });
-
-  btnReset.addEventListener('click', ()=>{
-    if (!confirm('保存データをすべて消去します。よろしいですか？')) return;
-    localStorage.removeItem(STORAGE_KEY);
-    const state = loadState();
-    renderAllFaces(state); renderFieldTables(state); renderSummary(state); renderRankSearch(state);
-  });
-}
-
 // ===================== 初期化 =====================
 async function main() {
-  injectListLayoutCSS();          // ★ 追加：スタイル注入
-  
-  // 1) 完成SVGの読み込み（すでにHTMLで読み込まれていれば即return）
-  await loadPokemonIconsScriptOnce();
-
-  // 2) データとUI構築
+  injectListLayoutCSS();       // 行まとめ列の縦並び＆幅
+  injectSummaryTableCSS();     // サマリー表の見た目統一
+  await loadPokemonIconsScriptOnce(); // 完成SVG読み込み（なければフォールバック）
   await loadData();
 
   setupFieldTabs();
@@ -636,7 +570,7 @@ async function main() {
   document.getElementById('filterStyle').addEventListener('change', ()=>renderAllFaces(loadState()));
   document.getElementById('sortBy').addEventListener('change', ()=>renderAllFaces(loadState()));
 
-  // 全体一括ON/OFF（こちらは誤爆防止のため確認ダイアログを維持）
+  // 全体一括ON/OFF
   document.getElementById('btnAllOn').addEventListener('click', ()=>{
     if (!confirm('すべての寝顔をチェックします。よろしいですか？')) return;
     const state = loadState();
