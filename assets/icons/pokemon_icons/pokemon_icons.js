@@ -1,4 +1,4 @@
-<script>
+<script><![CDATA[
 window.pokemonRectData = {
     // Bulbasaur
     '0001': [
@@ -1251,4 +1251,4 @@ window.pokemonRectData = {
         {x: 0.67, y: 0.75, w: 0.33, h: 0.1, r: 0.4, color: '#5b504e'},
     ],
 };
-</script>
+]]></script>
