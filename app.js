@@ -231,6 +231,18 @@ function renderPokemonIconById(iconId, sizePx = ICON_SIZE) {
 
 // ===================== サマリー =====================
 function renderSummary(state) {
+  // ★ 追加：セルの統一表示（分子／区切り／分母／(％)）
+const fmtCell = ({num, denom, rate}, strong = false) => {
+  return `
+    <div class="summary-cell${strong ? ' fw-semibold' : ''}">
+      <div class="sum-top">${num}</div>
+      <div class="sum-hr"></div>
+      <div class="sum-mid">${denom}</div>
+      <div class="sum-per">(${rate}%)</div>
+    </div>
+  `;
+};
+  
   const root = document.getElementById('summaryGrid');
 
   // フィールド別の集計（既存ロジック）
@@ -262,63 +274,59 @@ function renderSummary(state) {
     return { num, denom, rate };
   };
 
-  const header = `
-    <table class="table table-sm align-middle mb-0">
-<thead class="table-light">
-  <tr>
-    <!-- 第一列（アイコン列）幅を狭く -->
-    <th style="min-width:80px; width:80px;"></th>
+const header = `
+  <table class="table table-sm align-middle mb-0 summary-table">
+    <thead class="table-light">
+      <tr>
+        <!-- 第一列（アイコン列） -->
+        <th style="min-width:80px; width:80px;"></th>
+        <!-- 全体列 -->
+        <th class="text-center" style="width:80px;">全体</th>
+        <!-- 各フィールド列 -->
+        ${FIELD_KEYS.map(f => `<th class="text-center" style="width:80px;">${FIELD_SHORT[f]}</th>`).join('')}
+      </tr>
+    </thead>
+    <tbody>
+      ${SLEEP_TYPES.map(style => {
+        // 「全体」セル（強調は不要なら false のまま）
+        const totalCell = (() => {
+          const d = calcForAll(style);
+          return `<td class="text-center">${fmtCell(d)}</td>`;
+        })();
 
-    <!-- 全体列：幅を固定 -->
-    <th class="text-center" style="width:80px;">全体</th>
+        // 各フィールドセル
+        const fieldCells = FIELD_KEYS.map(field => {
+          const d = calcFor(style, field);
+          return `<td class="text-center">${fmtCell(d)}</td>`;
+        }).join('');
 
-    <!-- 各フィールド列：幅を固定 -->
-    ${FIELD_KEYS.map(f => `<th class="text-center" style="width:80px;">${FIELD_SHORT[f]}</th>`).join('')}
-  </tr>
-</thead>
-      <tbody>
-        ${SLEEP_TYPES.map(style => {
-          // ★ まず「全体」セル
-          const totalCell = (() => {
-            const {num, denom, rate} = calcForAll(style);
-            return `<td class="text-center fw-semibold">${num} / ${denom} (${rate}%)</td>`;
-          })();
-
-          // 既存：各フィールドセル
-          const fieldCells = FIELD_KEYS.map(field => {
-            const {num, denom, rate} = calcFor(style, field);
-            return `<td class="text-center">${num} / ${denom} (${rate}%)</td>`;
-          }).join('');
-
-          return `<tr>
+        return `<tr>
   <th class="text-start align-middle">
     <img src="${STYLE_ICON[style]}" alt="${style}" class="summary-icon" loading="lazy">
   </th>
   ${totalCell}
   ${fieldCells}
 </tr>`;
-        }).join('')}
-        ${(() => { // 合計行（全タイプ合算）
-          // ★ 合計行の「全体」セル：全タイプ×全件
-          const allTotal = (() => {
-            const {num, denom, rate} = calcForAll(null);
-            return `<td class="text-center fw-bold">${num} / ${denom} (${rate}%)</td>`;
-          })();
+      }).join('')}
+      ${(() => { // 合計行
+        const allTotal = (() => {
+          const d = calcForAll(null);
+          return `<td class="text-center">${fmtCell(d, true)}</td>`; // ★ 合計は太字
+        })();
 
-          // 既存：フィールドごとの合計（全タイプ合算）
-          const tds = FIELD_KEYS.map(field => {
-            const {num, denom, rate} = calcFor(null, field);
-            return `<td class="text-center fw-semibold">${num} / ${denom} (${rate}%)</td>`;
-          }).join('');
+        const tds = FIELD_KEYS.map(field => {
+          const d = calcFor(null, field);
+          return `<td class="text-center">${fmtCell(d, true)}</td>`; // ★ 合計は太字
+        }).join('');
 
-          return `<tr class="table-light">
-            <th class="fw-semibold">合計</th>
-            ${allTotal}
-            ${tds}
-          </tr>`;
-        })()}
-      </tbody>
-    </table>`;
+        return `<tr class="table-light">
+          <th class="fw-semibold">合計</th>
+          ${allTotal}
+          ${tds}
+        </tr>`;
+      })()}
+    </tbody>
+  </table>`;
   root.innerHTML = header;
 }
 
@@ -619,7 +627,29 @@ function setupBackupUI() {
 
 // ===================== 初期化 =====================
 async function main() {
-  injectListLayoutCSS();          // ★ 追加：スタイル注入
+  /* サマリー表のレイアウト調整*/
+  injectListLayoutCSS();
+    let _summaryStyleInjected = false;
+    function injectSummaryTableCSS() {
+    if (_summaryStyleInjected) return;
+    const style = document.createElement('style');
+    style.textContent = `
+  
+  /* サマリー表全体のフォントを 2pt 小さく */
+    .summary-table { font-size: calc(1rem - 2pt); }
+
+  /* セル内のレイアウトを統一（分子／区切り／分母／％） */
+    .summary-cell { text-align: center; line-height: 1.15; }
+    .summary-cell .sum-top { font-weight: 600; }
+    .summary-cell .sum-hr  { height: 1px; background: currentColor; opacity: .3; margin: 2px 12px; }
+    .summary-cell .sum-mid { }
+    .summary-cell .sum-per { opacity: .75; }
+  `;
+  document.head.appendChild(style);
+  _summaryStyleInjected = true;
+}
+  
+  injectSummaryTableCSS();
   
   // 1) 完成SVGの読み込み（すでにHTMLで読み込まれていれば即return）
   await loadPokemonIconsScriptOnce();
