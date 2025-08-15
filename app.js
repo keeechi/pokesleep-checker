@@ -319,7 +319,7 @@ function renderAllFaces(state) {
           <div class="poke-icon mx-auto" style="width:${ICON_SIZE}px;height:${ICON_SIZE}px;line-height:0;">
             ${renderPokemonIconById(getIconKeyFromNo(no), ICON_SIZE)}
           </div>
-          <div class="mt-1" style="font-size:11px; line-height:1.2;">
+          <div class="mt-1" style="font-size:9px; line-height:1.2;">
             <div class="text-muted">${no}</div>
             <div class="fw-semibold text-truncate" style="max-width:${ICON_SIZE + 8}px;">${escapeHtml(name)}</div>
           </div>
