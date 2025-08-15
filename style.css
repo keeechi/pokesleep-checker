@@ -57,3 +57,50 @@ thead.table-light.sticky-header th {
   overflow: hidden;
 }
 
+/* ==================== Summary Table Patch ==================== */
+/* 1) フォントを一律で 2pt 小さく */
+.summary-table {
+  font-size: calc(1rem - 2pt);
+}
+
+/* 2) セル内レイアウト統一（分子／区切り／分母／(％)） */
+.summary-table .summary-cell {
+  text-align: center;
+  line-height: 1.15;
+}
+.summary-table .summary-cell .sum-top { font-weight: 600; }
+.summary-table .summary-cell .sum-mid { /* 必要なら調整 */ }
+.summary-table .summary-cell .sum-per { opacity: 0.75; }
+
+/* 2-β) 区切り線：中央寄せ＋長さを「5桁分」目安に短縮 */
+.summary-table .summary-cell .sum-hr {
+  height: 1px;
+  background: currentColor;
+  opacity: 0.3;
+  margin: 2px auto;   /* 中央寄せ */
+  width: 3.5em;       /* ← フォント依存。3.5em ≒ 5桁分の長さ。調整はここ */
+}
+
+/* 3) カラム幅（px固定）
+   先頭=アイコン列、2列目=「全体」、3列目以降=各フィールド */
+.summary-table thead th:first-child,
+.summary-table tbody th:first-child {
+  min-width: 80px;
+  width: 80px;
+}
+.summary-table thead th:nth-child(2),
+.summary-table tbody td:nth-child(2) {
+  width: 80px;   /* ← 全体列の幅 */
+}
+/* 3列目以降（ワカクサ〜ワカクサEX） */
+.summary-table thead th:nth-child(n+3),
+.summary-table tbody td:nth-child(n+3) {
+  width: 80px;   /* ← まとめて同じ幅。列ごとに変えたい場合は個別指定へ */
+}
+
+/* （任意）数字が詰まりすぎる場合の縦余白微調整 */
+.summary-table td,
+.summary-table th {
+  vertical-align: middle;
+  /* padding: 0.25rem 0.5rem;  ← 必要なら解放して調整 */
+}
