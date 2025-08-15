@@ -27,6 +27,24 @@ const POKEMON_ICONS_JS = './assets/icons/pokemon_icons/pokemon_icons.js';
 // ★ 追加：アイコンの標準サイズ（ご要望に合わせて 45px）
 const ICON_SIZE = 45;
 
+// ★ 行まとめ縦並び＆列幅調整のためのスタイル調整
+let _listLayoutStyleInjected = false;
+function injectListLayoutCSS() {
+  if (_listLayoutStyleInjected) return;
+  const style = document.createElement('style');
+  style.textContent = `
+    /* ポケモン列を少し広めに確保 */
+    td.name-cell { min-width: 180px; }
+
+    /* 行まとめ列を細く／ボタンは縦積み */
+    td.td-bulk { width: 72px; padding-left: 4px; padding-right: 4px; }
+    .bulk-group-vert .btn { display: block; width: 100%; }
+    .bulk-group-vert .btn + .btn { margin-top: 6px; } /* ボタン間に少し隙間 */
+  `;
+  document.head.appendChild(style);
+  _listLayoutStyleInjected = true;
+}
+
 // ランクの内部マッピング（1..35）
 function mapRankToNumber(s) {
   if (!s) return null;
@@ -304,11 +322,11 @@ function renderAllFaces(state) {
         </td>`;
     }).join('');
 
-    const bulkBtn = `
-      <div class="btn-group btn-group-sm" role="group">
-        <button type="button" class="btn btn-outline-primary" data-bulk="on" data-no="${no}">一括ON</button>
-        <button type="button" class="btn btn-outline-secondary" data-bulk="off" data-no="${no}">一括OFF</button>
-      </div>`;
+const bulkBtn = `
+  <div class="btn-group-vertical btn-group-sm bulk-group-vert" role="group" aria-label="行まとめ">
+    <button type="button" class="btn btn-outline-primary" data-bulk="on" data-no="${no}">一括ON</button>
+    <button type="button" class="btn btn-outline-secondary" data-bulk="off" data-no="${no}">一括OFF</button>
+  </div>`;
 
     // ★ ここを変更：アイコンを小さく（ICON_SIZE）＋下に No と名前（小さめ文字）
     return `
@@ -327,7 +345,7 @@ function renderAllFaces(state) {
       </div>
     </td>
     ${cells}
-    <td class="text-center">${bulkBtn}</td>
+    <td class="text-center td-bulk">${bulkBtn}</td>
   </tr>`;
   }).join('');
 
@@ -558,6 +576,8 @@ function setupBackupUI() {
 
 // ===================== 初期化 =====================
 async function main() {
+  injectListLayoutCSS();          // ★ 追加：スタイル注入
+  
   // 1) 完成SVGの読み込み（すでにHTMLで読み込まれていれば即return）
   await loadPokemonIconsScriptOnce();
 
