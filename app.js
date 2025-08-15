@@ -22,7 +22,7 @@ const STYLE_ICON = {
   'すやすや': 'assets/icons/02-suya.png',
   'ぐっすり': 'assets/icons/03-gu.png',
 };
-const POKEMON_ICONS_JS = 'assets/icons/pokemon_icons/pokemon_icons.js';
+const POKEMON_ICONS_JS = './assets/icons/pokemon_icons/pokemon_icons.js';
 
 // ランクの内部マッピング（1..35）
 function mapRankToNumber(s) {
