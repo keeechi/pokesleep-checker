@@ -376,7 +376,7 @@ function setupFieldTabs() {
           <thead class="table-light sticky-header">
             <tr>
               <th>No</th>
-              <th>ポケモン名</th>
+              <th>ポケモン</th>
               <th>睡眠タイプ</th>
               <th>レア度</th>
               <th class="text-center">☆1</th>
