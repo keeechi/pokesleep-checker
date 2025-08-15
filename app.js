@@ -24,6 +24,9 @@ const STYLE_ICON = {
 };
 const POKEMON_ICONS_JS = './assets/icons/pokemon_icons/pokemon_icons.js';
 
+// ★ 追加：アイコンの標準サイズ（ご要望に合わせて 45px）
+const ICON_SIZE = 45;
+
 // ランクの内部マッピング（1..35）
 function mapRankToNumber(s) {
   if (!s) return null;
@@ -172,7 +175,7 @@ function loadPokemonIconsScriptOnce() {
 }
 
 // 旧：矩形データ（window.pokemonRectData）からインラインSVG生成
-function renderFromRects(iconId, sizePx = 64) {
+function renderFromRects(iconId, sizePx = ICON_SIZE) {
   const table = (window.pokemonRectData || {});
   const data = iconId ? table[iconId] : null;
 
@@ -191,7 +194,7 @@ function renderFromRects(iconId, sizePx = 64) {
 }
 
 // 統合アイコンレンダ
-function renderPokemonIconById(iconId, sizePx = 64) {
+function renderPokemonIconById(iconId, sizePx = ICON_SIZE) {
   // 1) 完成SVG（最優先）
   const completed = getCompletedSVGFromGlobals(iconId);
   if (completed) return ensureSvgSize(completed, sizePx);
@@ -307,13 +310,20 @@ function renderAllFaces(state) {
         <button type="button" class="btn btn-outline-secondary" data-bulk="off" data-no="${no}">一括OFF</button>
       </div>`;
 
-    // ★ ポケモン名カラム: アイコン + No/名前
+    // ★ ここを変更：アイコンを小さく（ICON_SIZE）＋下に No と名前（小さめ文字）
     return `
   <tr>
     <td class="name-cell">
-      <div class="d-flex align-items-center gap-2" title="${escapeHtml(name)}">
-        <div class="poke-icon" style="width:64px;height:64px;flex:0 0 auto;">${renderPokemonIconById(getIconKeyFromNo(no), 64)}</div>
-        <div class="small text-muted">${no}<br><span class="fw-semibold">${escapeHtml(name)}</span></div>
+      <div class="d-flex justify-content-start">
+        <div class="text-center" style="width:${ICON_SIZE + 16}px;"> 
+          <div class="poke-icon mx-auto" style="width:${ICON_SIZE}px;height:${ICON_SIZE}px;line-height:0;">
+            ${renderPokemonIconById(getIconKeyFromNo(no), ICON_SIZE)}
+          </div>
+          <div class="mt-1" style="font-size:11px; line-height:1.2;">
+            <div class="text-muted">${no}</div>
+            <div class="fw-semibold text-truncate" style="max-width:${ICON_SIZE + 8}px;">${escapeHtml(name)}</div>
+          </div>
+        </div>
       </div>
     </td>
     ${cells}
