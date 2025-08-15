@@ -122,3 +122,24 @@ thead.table-light.sticky-header th {
   vertical-align: middle;
   /* padding: 0.25rem 0.5rem;  ← 必要なら解放して調整 */
 }
+
+/* 分子の右にアイコンを置くための行レイアウト */
+.summary-table .summary-cell .sum-top-row{
+  display:inline-flex;
+  align-items:baseline;   /* 数字のベースラインに揃える */
+  gap:4px;
+}
+
+/* アイコンは数字サイズに合わせる：1em四方。非表示でも幅は確保 */
+.summary-table .summary-cell .sum-badge{
+  width:1em;
+  height:1em;
+  object-fit:contain;
+  flex:0 0 auto;
+  vertical-align:middle;
+}
+
+/* 非表示時にスペースは保持（visibility:hidden） */
+.summary-table .summary-cell .sum-badge.is-hidden{
+  visibility:hidden;
+}
