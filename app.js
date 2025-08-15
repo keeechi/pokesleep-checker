@@ -27,6 +27,10 @@ const POKEMON_ICONS_JS = './assets/icons/pokemon_icons/pokemon_icons.js';
 // ★ 追加：アイコンの標準サイズ（ご要望に合わせて 45px）
 const ICON_SIZE = 45;
 
+// 冠アイコン
+const BADGE_GOLD   = 'assets/icons/04-GoldBadge.png';
+const BADGE_SILVER = 'assets/icons/05-SilverBadge.png';
+
 // ★ 行まとめ縦並び＆列幅調整のためのスタイル調整
 let _listLayoutStyleInjected = false;
 function injectListLayoutCSS() {
@@ -233,9 +237,23 @@ function renderPokemonIconById(iconId, sizePx = ICON_SIZE) {
 function renderSummary(state) {
   // ★ 追加：セルの統一表示（分子／区切り／分母／(％)）
 const fmtCell = ({num, denom, rate}, strong = false) => {
+  // バッジの判定：95%以上=金、80%以上=銀、それ以外=非表示
+  let badgeSrc = null;
+  if (rate >= 95)      badgeSrc = BADGE_GOLD;
+  else if (rate >= 80) badgeSrc = BADGE_SILVER;
+
+  // 非表示でもレイアウトを崩さないために "is-hidden" を付けて幅を保持
+  const hiddenClass = badgeSrc ? '' : ' is-hidden';
+  const resolvedSrc = badgeSrc || BADGE_SILVER; // 隠すときも幅確保のため何かの幅を基準に
+
   return `
     <div class="summary-cell${strong ? ' fw-semibold' : ''}">
-      <div class="sum-top">${num}</div>
+      <div class="sum-top">
+        <span class="sum-top-row">
+          <span class="sum-num">${num}</span>
+          <img class="sum-badge${hiddenClass}" src="${resolvedSrc}" alt="" loading="lazy" decoding="async">
+        </span>
+      </div>
       <div class="sum-hr"></div>
       <div class="sum-mid">${denom}</div>
       <div class="sum-per">(${rate}%)</div>
