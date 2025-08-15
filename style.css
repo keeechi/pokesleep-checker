@@ -57,7 +57,25 @@ thead.table-light.sticky-header th {
   overflow: hidden;
 }
 
-/* ==================== Summary Table Patch ==================== */
+/* ==================== Summary Table Design ==================== */
+/* うとうと（1行目） */
+.summary-table tbody tr:nth-child(1) > th,
+.summary-table tbody tr:nth-child(1) > td {
+  background-color: #FFF2CC;
+}
+
+/* すやすや（2行目） */
+.summary-table tbody tr:nth-child(2) > th,
+.summary-table tbody tr:nth-child(2) > td {
+  background-color: #DEF4F8;
+}
+
+/* ぐっすり（3行目） */
+.summary-table tbody tr:nth-child(3) > th,
+.summary-table tbody tr:nth-child(3) > td {
+  background-color: #DAE3F3;
+}
+
 /* 1) フォントを一律で 2pt 小さく */
 .summary-table {
   font-size: calc(1rem - 2pt);
