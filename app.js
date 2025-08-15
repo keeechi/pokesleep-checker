@@ -1,12 +1,10 @@
 // ===================== 設定 =====================
 const DATA_URL = './pokemon_data_cleaned.json';
 const STORAGE_KEY = 'psleep-check-v1';
-
 const FIELD_KEYS = [
   'ワカクサ本島', 'シアンの砂浜', 'トープ洞窟', 'ウノハナ雪原',
   'ラピスラズリ湖畔', 'ゴールド旧発電所', 'ワカクサ本島EX'
 ];
-// サマリー表示名（短縮）
 const FIELD_SHORT = {
   'ワカクサ本島': 'ワカクサ',
   'シアンの砂浜': 'シアン',
@@ -16,19 +14,14 @@ const FIELD_SHORT = {
   'ゴールド旧発電所': 'ゴールド',
   'ワカクサ本島EX': 'ワカクサEX'
 };
-
 const SLEEP_TYPES = ['うとうと', 'すやすや', 'ぐっすり'];
 const RARITIES = ['☆1', '☆2', '☆3', '☆4', '☆5']; // 表示用
 const CHECKABLE_STARS = ['☆1','☆2','☆3','☆4'];   // チェック対象
-
-// リポジトリ内相対パス
 const STYLE_ICON = {
   'うとうと': 'assets/icons/01-uto.png',
   'すやすや': 'assets/icons/02-suya.png',
   'ぐっすり': 'assets/icons/03-gu.png',
 };
-
-// 追加: ポケモン完成SVGをまとめたJSのパス
 const POKEMON_ICONS_JS = 'assets/icons/pokemon_icons/pokemon_icons.js';
 
 // ランクの内部マッピング（1..35）
@@ -91,12 +84,14 @@ async function loadData() {
   }));
   buildSpeciesIndex();
 }
+
 function normalizeNo(noRaw) {
   const s = String(noRaw ?? '').trim();
   const num = parseInt(s.replace(/^0+/, '') || '0', 10);
   if (Number.isNaN(num)) return s;
   return (num >= 1000) ? String(num) : String(num).padStart(4, '0');
 }
+
 function buildSpeciesIndex() {
   SPECIES_MAP.clear();
   for (const row of RAW_ROWS) {
@@ -110,12 +105,15 @@ function buildSpeciesIndex() {
     ent.rows.push(row);
   }
 }
+
 function speciesHasStar(entry, star) { return entry.rows.some(r => r.DisplayRarity === star); }
+
 function getFieldRankNum(row, fieldKey) {
   const raw = row.fields[fieldKey] || '';
   return mapRankToNumber(raw);
 }
 
+// ===================== アイコン生成関連 =====================
 // 4桁ゼロ埋め（1000以上はそのまま）
 function toDex4(no) {
   const n = Number(no);
@@ -123,7 +121,7 @@ function toDex4(no) {
   return n >= 1000 ? String(n) : String(n).padStart(4, '0');
 }
 
-// --- アイコンキー生成（Noベース） ---
+// アイコンキー生成（Noベース）
 function getIconKeyFromNo(no) {
   if (no == null) return null;
   if (typeof no === 'string' && /^\d{4,}$/.test(no)) return no.slice(0, 4);
@@ -131,15 +129,9 @@ function getIconKeyFromNo(no) {
   return k || null;
 }
 
-// ===================== ポケモン完成SVGローダ & レンダ =====================
 // 期待されうるグローバル名を総当りで参照（pokemon_icons.js の実装差異に備える）
 function getCompletedSVGFromGlobals(iconId) {
-  const candidates = [
-    window.pokemonIcons,       // { "0001": "<svg>...</svg>", ... }
-    window.POKEMON_ICONS,      // 同上
-    window.pokemon_icons,      // 同上
-    window.POKEMON_SVG_MAP,    // 同上
-  ];
+  const candidates = [window.pokemonRectData];
   for (const obj of candidates) {
     if (obj && typeof obj === 'object' && obj[iconId]) return String(obj[iconId]);
   }
