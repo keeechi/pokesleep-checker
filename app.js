@@ -264,13 +264,18 @@ function renderSummary(state) {
 
   const header = `
     <table class="table table-sm align-middle mb-0">
-      <thead class="table-light">
-        <tr>
-          <th style="min-width:140px;"></th>
-          <th class="text-center">全体</th>  <!-- ★ 先頭に追加 -->
-          ${FIELD_KEYS.map(f => `<th class="text-center">${FIELD_SHORT[f]}</th>`).join('')}
-        </tr>
-      </thead>
+<thead class="table-light">
+  <tr>
+    <!-- 第一列（アイコン列）幅を狭く -->
+    <th style="min-width:80px; width:80px;"></th>
+
+    <!-- 全体列：幅を固定 -->
+    <th class="text-center" style="width:80px;">全体</th>
+
+    <!-- 各フィールド列：幅を固定 -->
+    ${FIELD_KEYS.map(f => `<th class="text-center" style="width:80px;">${FIELD_SHORT[f]}</th>`).join('')}
+  </tr>
+</thead>
       <tbody>
         ${SLEEP_TYPES.map(style => {
           // ★ まず「全体」セル
