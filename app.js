@@ -328,26 +328,28 @@ const bulkBtn = `
     <button type="button" class="btn btn-outline-secondary" data-bulk="off" data-no="${no}">一括OFF</button>
   </div>`;
 
-    // ★ ここを変更：アイコンを小さく（ICON_SIZE）＋下に No と名前（小さめ文字）
-    return `
-  <tr>
-    <td class="name-cell">
-      <div class="d-flex justify-content-start">
-        <div class="text-center" style="width:${ICON_SIZE + 16}px;"> 
-          <div class="poke-icon mx-auto" style="width:${ICON_SIZE}px;height:${ICON_SIZE}px;line-height:0;">
-            ${renderPokemonIconById(getIconKeyFromNo(no), ICON_SIZE)}
-          </div>
-          <div class="mt-1" style="font-size:9px; line-height:1.2;">
-            <div class="text-muted">${no}</div>
-            <div class="fw-semibold text-truncate" style="max-width:${ICON_SIZE + 8}px;">${escapeHtml(name)}</div>
-          </div>
+// ★ ここを変更：アイコンを小さく（ICON_SIZE）＋下に No と名前（小さめ文字）
+return `
+<tr>
+  <td class="name-cell text-center align-middle">
+    <div style="width:${ICON_SIZE + 16}px; margin: 0 auto;">
+      <!-- アイコン -->
+      <div class="poke-icon mx-auto" style="width:${ICON_SIZE}px;height:${ICON_SIZE}px;line-height:0;">
+        ${renderPokemonIconById(getIconKeyFromNo(no), ICON_SIZE)}
+      </div>
+      <!-- Noと名前 -->
+      <div class="mt-1" style="font-size:9px; line-height:1.2; word-break:break-word; white-space:normal;">
+        <div class="text-muted">${no}</div>
+        <div class="fw-semibold" style="max-width:${ICON_SIZE + 8}px; margin:0 auto;">
+          ${escapeHtml(name)}
         </div>
       </div>
-    </td>
-    ${cells}
-    <td class="text-center td-bulk">${bulkBtn}</td>
-  </tr>`;
-  }).join('');
+    </div>
+  </td>
+  ${cells}
+  <td class="text-center td-bulk">${bulkBtn}</td>
+</tr>`;
+}).join('');
 
   // チェックイベント
   tbody.querySelectorAll('input[type="checkbox"]').forEach(chk => {
