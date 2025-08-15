@@ -131,7 +131,12 @@ function getIconKeyFromNo(no) {
 
 // 期待されうるグローバル名を総当りで参照（pokemon_icons.js の実装差異に備える）
 function getCompletedSVGFromGlobals(iconId) {
-  const candidates = [window.pokemonRectData];
+  const candidates = [
+    window.pokemonIcons,       // { "0001": "<svg>...</svg>", ... }
+    window.POKEMON_ICONS,      // 同上
+    window.pokemon_icons,      // 同上
+    window.POKEMON_SVG_MAP,    // 同上
+  ];
   for (const obj of candidates) {
     if (obj && typeof obj === 'object' && obj[iconId]) return String(obj[iconId]);
   }
