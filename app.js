@@ -233,11 +233,11 @@ function renderPokemonIconById(iconId, sizePx = ICON_SIZE) {
 function renderSummary(state) {
   const root = document.getElementById('summaryGrid');
 
-  // 集計関数
+  // フィールド別の集計（既存ロジック）
   const calcFor = (style, field) => {
     let denom = 0, num = 0;
     for (const row of RAW_ROWS) {
-      if (style && row.Style !== style) continue; // styleがnullなら全タイプ集計
+      if (style && row.Style !== style) continue; // styleがnullなら全タイプ合算
       const rankNum = getFieldRankNum(row, field);
       if (rankNum) {
         denom++;
@@ -248,33 +248,69 @@ function renderSummary(state) {
     return { num, denom, rate };
   };
 
+  // ★追加：全体（フィールド無視）の集計
+  //   分母=指定タイプの「すべての寝顔数」
+  //   分子=チェック済み（☆1〜☆4のみ）
+  const calcForAll = (style) => {
+    let denom = 0, num = 0;
+    for (const row of RAW_ROWS) {
+      if (style && row.Style !== style) continue; // nullなら全タイプ合算
+      denom++; // フィールド条件なしで全件カウント
+      if (CHECKABLE_STARS.includes(row.DisplayRarity) && getChecked(state, row.No, row.DisplayRarity)) num++;
+    }
+    const rate = denom ? Math.round((num / denom) * 100) : 0;
+    return { num, denom, rate };
+  };
+
   const header = `
     <table class="table table-sm align-middle mb-0">
       <thead class="table-light">
         <tr>
           <th style="min-width:140px;"></th>
+          <th class="text-center">全体</th>  <!-- ★ 先頭に追加 -->
           ${FIELD_KEYS.map(f => `<th class="text-center">${FIELD_SHORT[f]}</th>`).join('')}
         </tr>
       </thead>
       <tbody>
         ${SLEEP_TYPES.map(style => {
-          const tds = FIELD_KEYS.map(field => {
+          // ★ まず「全体」セル
+          const totalCell = (() => {
+            const {num, denom, rate} = calcForAll(style);
+            return `<td class="text-center fw-semibold">${num} / ${denom} (${rate}%)</td>`;
+          })();
+
+          // 既存：各フィールドセル
+          const fieldCells = FIELD_KEYS.map(field => {
             const {num, denom, rate} = calcFor(style, field);
             return `<td class="text-center">${num} / ${denom} (${rate}%)</td>`;
           }).join('');
+
           return `<tr>
   <th class="text-start align-middle">
     <img src="${STYLE_ICON[style]}" alt="${style}" class="summary-icon" loading="lazy">
   </th>
-  ${tds}
+  ${totalCell}
+  ${fieldCells}
 </tr>`;
         }).join('')}
-        ${(() => { // 合計行
+        ${(() => { // 合計行（全タイプ合算）
+          // ★ 合計行の「全体」セル：全タイプ×全件
+          const allTotal = (() => {
+            const {num, denom, rate} = calcForAll(null);
+            return `<td class="text-center fw-bold">${num} / ${denom} (${rate}%)</td>`;
+          })();
+
+          // 既存：フィールドごとの合計（全タイプ合算）
           const tds = FIELD_KEYS.map(field => {
-            const {num, denom, rate} = calcFor(null, field); // 全タイプ合算
+            const {num, denom, rate} = calcFor(null, field);
             return `<td class="text-center fw-semibold">${num} / ${denom} (${rate}%)</td>`;
           }).join('');
-          return `<tr class="table-light"><th class="fw-semibold">合計</th>${tds}</tr>`;
+
+          return `<tr class="table-light">
+            <th class="fw-semibold">合計</th>
+            ${allTotal}
+            ${tds}
+          </tr>`;
         })()}
       </tbody>
     </table>`;
