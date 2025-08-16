@@ -506,7 +506,7 @@ function renderFieldTables(state) {
         const rankNum = getFieldRankNum(hasRow, field);
         if (!rankNum) {
           // フィールド上「出現しない」= "-"
-          return `<td class="text-center cell-disabled">"ー"</td>`;
+          return `<td class="text-center cell-disabled">ー</td>`;
         }
         const checked = getChecked(state, ent.no, star);
         return `<td class="text-center ${checked ? 'cell-checked' : ''}">
