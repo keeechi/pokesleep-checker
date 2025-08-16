@@ -475,8 +475,8 @@ function setupFieldTabs() {
         <table class="table table-sm align-middle table-hover mb-0">
           <thead class="table-light sticky-header">
             <tr>
-              <th>ポケモン</th>
-              <th>睡眠タイプ</th>
+    <th class="text-center">ポケモン</th>
+    <th class="text-center">タイプ</th>
               <th class="text-center">☆1</th>
               <th class="text-center">☆2</th>
               <th class="text-center">☆3</th>
@@ -505,8 +505,8 @@ function renderFieldTables(state) {
         }
         const rankNum = getFieldRankNum(hasRow, field);
         if (!rankNum) {
-          // フィールド上「出現しない」
-          return `<td class="text-center cell-disabled">出現しない</td>`;
+          // フィールド上「出現しない」= "-"
+          return `<td class="text-center cell-disabled">"ー"</td>`;
         }
         const checked = getChecked(state, ent.no, star);
         return `<td class="text-center ${checked ? 'cell-checked' : ''}">
