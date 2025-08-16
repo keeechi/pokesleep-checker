@@ -154,3 +154,27 @@ thead.table-light.sticky-header th {
   flex:0 0 auto;
   vertical-align:middle;
 }
+
+/* ===== フィールド別寝顔一覧（pane-byfield） ===== */
+
+/* ヘッダ：Noを狭め、ポケモン列を少し広く */
+#pane-byfield table thead th:nth-child(1) { /* No */
+  width: 56px; min-width: 56px;
+}
+#pane-byfield table thead th:nth-child(2) { /* ポケモン */
+  width: 120px; min-width: 110px;
+}
+
+/* アイコン周りの体裁（ボーダーは全寝顔と揃える） */
+#pane-byfield .byfield-icon svg {
+  display: block;
+  border: 1px solid #bbb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* 名前セルの中央寄せ・折返し */
+#pane-byfield .byfield-name-cell {
+  padding-top: 6px; padding-bottom: 6px;
+  vertical-align: middle;
+}
