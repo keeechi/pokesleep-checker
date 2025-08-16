@@ -1111,7 +1111,7 @@ window.pokemonRectData = {
         {x: 0.4, y: -0.08, w: 0.2, h: 0.3, r: 0.2, color: '#f6f6f6'}
     ],
     // Toxtricity (Amped)
-    '21329': [
+    '0849': [
         {x: 0, y: 0, w: 1, h: 1, color: '#8d6eb9'},
         {x: 0, y: 0.3, w: 1, h: 0.4, color: '#fcfc7b'},
         {x: 0, y: 0.7, w: 1, h: 0.15, color: '#b593e5'},
@@ -1124,7 +1124,7 @@ window.pokemonRectData = {
         {x: 0.59, y: 0.52, w: 0.08, h: 0.16, r: 0.1, color: '#b593e5'}
     ],
     // Toxtricity (Low Key)
-    '25425': [
+    '0849': [
         {x: 0, y: 0, w: 1, h: 1, color: '#8566b2'},
         {x: 0, y: 0.3, w: 1, h: 0.4, color: '#ade9fc'},
         {x: 0, y: 0.7, w: 1, h: 0.15, color: '#ad8bde'},
