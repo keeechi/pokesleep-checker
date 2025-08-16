@@ -25,14 +25,14 @@ const STYLE_ICON = {
 const POKEMON_ICONS_JS = './assets/icons/pokemon_icons/pokemon_icons.js';
 
 // ★ 追加：アイコンの標準サイズ（ご要望に合わせて 45px）
-const ICON_SIZE = 36;
+const ICON_SIZE = 45;
 
 // 冠アイコン
 const BADGE_GOLD   = 'assets/icons/04-GoldBadge.png';
 const BADGE_SILVER = 'assets/icons/05-SilverBadge.png';
 
 // ★ フィールド別用の少し小さめアイコン
-const ICON_SIZE_FIELD = 52;
+const ICON_SIZE_FIELD = 42;
 
 // ★ 行まとめ縦並び＆列幅調整のためのスタイル調整
 let _listLayoutStyleInjected = false;
