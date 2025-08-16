@@ -121,13 +121,14 @@ function normalizeNo(noRaw) {
 function buildSpeciesIndex() {
   SPECIES_MAP.clear();
   for (const row of RAW_ROWS) {
-    const key = `${row.No}__${row.Name}`;
+    const key = `${row.No}__${row.Name}`; // ← 形態名まで分けたいならName込みでOK
     if (!SPECIES_MAP.has(key)) {
-      SPECIES_MAP.set(key, { no: row.No, name: row.Name, styles: new Set(), rarities: new Set(), rows: [] });
+      SPECIES_MAP.set(key, { no: row.No, name: row.Name, styles: new Set(), rarities: new Set(), rows: [], iconNo: '' });
     }
     const ent = SPECIES_MAP.get(key);
     if (row.Style) ent.styles.add(row.Style);
     if (row.DisplayRarity) ent.rarities.add(row.DisplayRarity);
+    if (!ent.iconNo && row.IconNo) ent.iconNo = row.IconNo; // ★ 追加：形態のアイコンNoを保存
     ent.rows.push(row);
   }
 }
