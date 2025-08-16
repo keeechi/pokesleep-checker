@@ -32,7 +32,7 @@ const BADGE_GOLD   = 'assets/icons/04-GoldBadge.png';
 const BADGE_SILVER = 'assets/icons/05-SilverBadge.png';
 
 // ★ フィールド別用の少し小さめアイコン
-const ICON_SIZE_FIELD = 36;
+const ICON_SIZE_FIELD = 52;
 
 // ★ 行まとめ縦並び＆列幅調整のためのスタイル調整
 let _listLayoutStyleInjected = false;
