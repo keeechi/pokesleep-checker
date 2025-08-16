@@ -99,14 +99,15 @@ async function loadData() {
   const res = await fetch(DATA_URL);
   const json = await res.json();
   const rows = Array.isArray(json) ? json : (json['すべての寝顔一覧'] || []);
-  RAW_ROWS = rows.map(r => ({
-    ID: r.ID,
-    No: normalizeNo(r.No),
-    Name: r.Name,
-    Style: r.Style,
-    DisplayRarity: r.DisplayRarity,
-    fields: Object.fromEntries(FIELD_KEYS.map(k => [k, (r[k] ?? '').trim()])),
-  }));
+RAW_ROWS = rows.map(r => ({
+  ID: r.ID,
+  No: normalizeNo(r.No),           // ← 表示用No（0849）
+  IconNo: String(r.IconNo || ''),  // ← 追加：アイコン参照用（084901/084902）
+  Name: r.Name,
+  Style: r.Style,
+  DisplayRarity: r.DisplayRarity,
+  fields: Object.fromEntries(FIELD_KEYS.map(k => [k, (r[k] ?? '').trim()])),
+}));
   buildSpeciesIndex();
 }
 
@@ -398,7 +399,7 @@ return `
     <div style="width:${ICON_SIZE + 16}px; margin: 0 auto;">
       <!-- アイコン -->
       <div class="poke-icon mx-auto" style="width:${ICON_SIZE}px;height:${ICON_SIZE}px;line-height:0;">
-        ${renderPokemonIconById(getIconKeyFromNo(no), ICON_SIZE)}
+        ${renderPokemonIconById(ent.iconNo || getIconKeyFromNo(no), ICON_SIZE)}
       </div>
       <!-- Noと名前 -->
       <div class="mt-1" style="font-size:9px; line-height:1.2; word-break:break-word; white-space:normal;">
