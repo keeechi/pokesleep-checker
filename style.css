@@ -139,7 +139,18 @@ thead.table-light.sticky-header th {
   vertical-align:middle;
 }
 
-/* 非表示時にスペースは保持（visibility:hidden） */
-.summary-table .summary-cell .sum-badge.is-hidden{
-  visibility:hidden;
+/* 分子＋バッジを横並び（バッジがある時だけ使われる） */
+.summary-table .summary-cell .sum-top-row{
+  display:inline-flex;
+  align-items:baseline;   /* 数字のベースラインに揃える */
+  gap:4px;
+}
+
+/* バッジは数字のサイズ＝1em に合わせる */
+.summary-table .summary-cell .sum-badge{
+  width:1em;
+  height:1em;
+  object-fit:contain;
+  flex:0 0 auto;
+  vertical-align:middle;
 }
