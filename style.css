@@ -155,23 +155,36 @@ thead.table-light.sticky-header th {
   vertical-align:middle;
 }
 
-/* ===== フィールド別寝顔一覧（pane-byfield） ===== */
-
-/* ヘッダ：ポケモン列を少し広く */
-#pane-byfield table thead th:nth-child(1) { /* ポケモン */
-  width: 120px; min-width: 110px;
+/* ===== フィールド別寝顔一覧（ポケモン列の体裁） ===== */
+#pane-byfield .byfield-name-cell { text-align: center; vertical-align: middle; }
+#pane-byfield .byfield-name-cell .pf-wrap { 
+  width: calc(36px + 14px);   /* アイコン＋余白分。ICON_SIZE_FIELD=36pxを想定 */
+  margin: 0 auto;
 }
-
-/* アイコン周りの体裁 */
+#pane-byfield .byfield-icon {
+  width: 36px; height: 36px; line-height: 0; margin: 0 auto;
+}
 #pane-byfield .byfield-icon svg {
   display: block;
   border: 1px solid #bbb;
   border-radius: 10px;
   overflow: hidden;
 }
+#pane-byfield .byfield-name-cell .pf-text {
+  margin-top: 4px; line-height: 1.2;
+  word-break: break-word; white-space: normal;
+}
+#pane-byfield .byfield-name-cell .pf-no {
+  font-size: 9px; color: #6c757d;
+}
+#pane-byfield .byfield-name-cell .pf-name {
+  font-weight: 600; font-size: 9px;
+  max-width: calc(36px + 6px); /* はみ出し防止（必要に応じて微調整） */
+  margin: 0 auto;
+}
 
-/* 名前セル */
-#pane-byfield .byfield-name-cell {
-  padding-top: 6px; padding-bottom: 6px;
-  vertical-align: middle;
+/* ===== フィールド別寝顔一覧（睡眠タイプ列） ===== */
+#pane-byfield .type-cell { 
+  text-align: center; 
+  font-size: 9pt; 
 }
