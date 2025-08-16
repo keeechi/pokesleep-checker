@@ -516,18 +516,16 @@ function renderFieldTables(state) {
         </td>`;
       }).join('');
 
-      rows.push(`
+rows.push(`
   <tr>
-    <td>${ent.no}</td>
     <td class="byfield-name-cell text-center align-middle">
       <div style="width:${ICON_SIZE_FIELD + 14}px; margin:0 auto;">
         <!-- アイコン -->
         <div class="byfield-icon mx-auto" style="width:${ICON_SIZE_FIELD}px;height:${ICON_SIZE_FIELD}px;line-height:0;">
           ${renderPokemonIconById(ent.iconNo || getIconKeyFromNo(ent.no), ICON_SIZE_FIELD)}
         </div>
-        <!-- No と 名前（中央／折返し） -->
+        <!-- 名前（中央／折返し） -->
         <div class="mt-1" style="font-size:9px; line-height:1.2; word-break:break-word; white-space:normal;">
-          <div class="text-muted">${ent.no}</div>
           <div class="fw-semibold" style="max-width:${ICON_SIZE_FIELD + 6}px; margin:0 auto;">
             ${escapeHtml(ent.name)}
           </div>
@@ -535,12 +533,6 @@ function renderFieldTables(state) {
       </div>
     </td>
     <td>${firstStyleKey(ent) || '-'}</td>
-    <td>${(() => {
-      const rs = ent.rows.map(r=>r.DisplayRarity).filter(Boolean);
-      const order = r => RARITIES.indexOf(r);
-      rs.sort((a,b)=>order(a)-order(b));
-      return rs[0] || '-';
-    })()}</td>
     ${cells}
   </tr>
 `);
