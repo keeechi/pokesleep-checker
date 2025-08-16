@@ -467,16 +467,16 @@ function setupFieldTabs() {
     <li class="nav-item" role="presentation">
       <button class="nav-link ${i===0?'active':''}" data-bs-toggle="tab" data-bs-target="#pane-field-${i}" type="button" role="tab">${FIELD_SHORT[f]}</button>
     </li>`).join('');
+
+  // ★ ここを差し替え（No／レア度を削除）
   content.innerHTML = FIELD_KEYS.map((f,i)=>`
     <div class="tab-pane fade ${i===0?'show active':''}" id="pane-field-${i}" role="tabpanel">
       <div class="table-responsive">
         <table class="table table-sm align-middle table-hover mb-0">
           <thead class="table-light sticky-header">
             <tr>
-              <th>No</th>
               <th>ポケモン</th>
               <th>睡眠タイプ</th>
-              <th>レア度</th>
               <th class="text-center">☆1</th>
               <th class="text-center">☆2</th>
               <th class="text-center">☆3</th>
