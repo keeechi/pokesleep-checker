@@ -518,24 +518,26 @@ function renderFieldTables(state) {
 
 rows.push(`
   <tr>
+    <!-- ★ ポケモン列：アイコン + No + 名前（中央／折返し） -->
     <td class="byfield-name-cell text-center align-middle">
-      <div style="width:${ICON_SIZE_FIELD + 14}px; margin:0 auto;">
-        <!-- アイコン -->
-        <div class="byfield-icon mx-auto" style="width:${ICON_SIZE_FIELD}px;height:${ICON_SIZE_FIELD}px;line-height:0;">
+      <div class="pf-wrap">
+        <div class="byfield-icon">
           ${renderPokemonIconById(ent.iconNo || getIconKeyFromNo(ent.no), ICON_SIZE_FIELD)}
         </div>
-        <!-- 名前（中央／折返し） -->
-        <div class="mt-1" style="font-size:9px; line-height:1.2; word-break:break-word; white-space:normal;">
-          <div class="fw-semibold" style="max-width:${ICON_SIZE_FIELD + 6}px; margin:0 auto;">
-            ${escapeHtml(ent.name)}
-          </div>
+        <div class="pf-text">
+          <div class="pf-no text-muted">${ent.no}</div>
+          <div class="pf-name">${escapeHtml(ent.name)}</div>
         </div>
       </div>
     </td>
-    <td>${firstStyleKey(ent) || '-'}</td>
+
+    <!-- ★ 睡眠タイプ列：中央揃え＆9pt -->
+    <td class="type-cell text-center">${firstStyleKey(ent) || '-'}</td>
+
     ${cells}
   </tr>
 `);
+
     }
     tbody.innerHTML = rows.join('');
 
