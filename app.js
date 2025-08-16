@@ -25,7 +25,7 @@ const STYLE_ICON = {
 const POKEMON_ICONS_JS = './assets/icons/pokemon_icons/pokemon_icons.js';
 
 // ★ 追加：アイコンの標準サイズ（ご要望に合わせて 45px）
-const ICON_SIZE = 45;
+const ICON_SIZE = 36;
 
 // 冠アイコン
 const BADGE_GOLD   = 'assets/icons/04-GoldBadge.png';
