@@ -586,11 +586,40 @@ tbody.querySelectorAll('td.toggle-cell').forEach(td=>{
 }
 
 // ===================== ランク検索（未入手のみ） =====================
+// ★ ランク番号(1..35) → 段(色)と段内インデックス(1..)
+function splitStage(rankNum) {
+  if (rankNum >= 1 && rankNum <= 5)  return { stage: 'ノーマル', idx: rankNum,      color: '#ff0000' };
+  if (rankNum <= 10)                 return { stage: 'スーパー', idx: rankNum - 5,  color: '#0000ff' };
+  if (rankNum <= 15)                 return { stage: 'ハイパー', idx: rankNum - 10, color: '#ffff00' };
+  return                                { stage: 'マスター', idx: rankNum - 15, color: '#9400d3' }; // 16..35
+}
+function labelForRank(n) {
+  const { stage, idx } = splitStage(n);
+  return `${stage}${idx}`;
+}
+
+// 省スペース表示：◓ + 数字（色は段ごと）
+// 既に byfield 用に定義済みなら再利用してOK
+function renderRankChip(rankNum) {
+  if (!rankNum) return 'ー';
+  const { color, idx } = splitStage(rankNum);
+  return `<span class="rank-chip"><span class="rank-ball" style="color:${color}">◓</span><span class="rank-num">${idx}</span></span>`;
+}
+
 function setupRankSearchControls() {
   const sel = document.getElementById('searchField');
   sel.innerHTML = FIELD_KEYS.map(f=>`<option value="${f}">${FIELD_SHORT[f]}</option>`).join('');
-  document.getElementById('searchField').addEventListener('change', ()=>renderRankSearch(loadState()));
-  document.getElementById('searchRank').addEventListener('input', ()=>renderRankSearch(loadState()));
+    document.getElementById('searchField').addEventListener('change', ()=>renderRankSearch(loadState()));
+
+// ★ ランクセレクトを 1..35（ラベルは ノーマル1..マスター20）で生成
+    const rankSel = document.getElementById('searchRank');
+    const opts = [];
+    for (let n = 1; n <= 35; n++) {
+      opts.push(`<option value="${n}">${labelForRank(n)}</option>`);
+    }
+    rankSel.innerHTML = opts.join('');
+    rankSel.value = '1';
+    rankSel.addEventListener('change', ()=>renderRankSearch(loadState()));
 }
 function renderRankSearch(state) {
   const field = document.getElementById('searchField').value || FIELD_KEYS[0];
@@ -611,15 +640,38 @@ function renderRankSearch(state) {
     return a.Style.localeCompare(b.Style,'ja');
   });
 
-  tbody.innerHTML = items.map(r=>`
-    <tr>
-      <td>${r.No}</td>
-      <td>${escapeHtml(r.Name)}</td>
-      <td>${r.Style || '-'}</td>
-      <td>${r.DisplayRarity || '-'}</td>
-      <td>${getFieldRankNum(r, field) ?? '-'}</td>
-    </tr>
-  `).join('');
+ // ★ 該当が0件なら「COMPLETED」行を表示（可愛いバッジ風）
+  if (items.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="text-center">
+          <div class="completed-msg">COMPLETED</div>
+          <div class="text-muted small mt-1">この条件で出現する寝顔はすべて入手済みです</div>
+        </td>
+      </tr>`;
+    return;
+  }
+
+  // ★ 「No」列を廃止し、ポケモン列に アイコン＋No＋名前（中央）
+  tbody.innerHTML = items.map(r=>{
+    const needRank = getFieldRankNum(r, field);
+    const iconSvg = renderPokemonIconById(r.IconNo || getIconKeyFromNo(r.No), ICON_SIZE_FIELD);
+    return `
+      <tr>
+        <td class="byfield-name-cell text-center align-middle">
+          <div class="pf-wrap">
+            <div class="byfield-icon">${iconSvg}</div>
+            <div class="pf-text">
+              <div class="pf-no text-muted">${r.No}</div>
+              <div class="pf-name">${escapeHtml(r.Name)}</div>
+            </div>
+          </div>
+        </td>
+        <td class="text-center">${r.Style || '-'}</td>
+        <td class="text-center">${r.DisplayRarity || '-'}</td>
+        <td class="text-center">${renderRankChip(needRank)}</td>
+      </tr>`;
+  }).join('');
 }
 
 // ===================== バックアップ/復旧 =====================
