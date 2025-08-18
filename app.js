@@ -70,7 +70,7 @@ function mapRankToNumber(s) {
 function splitStage(rankNum) {
   if (rankNum >= 1 && rankNum <= 5)  return { color: '#ff0000', idx: rankNum       }; // ノーマル
   if (rankNum <= 10)                 return { color: '#0000ff', idx: rankNum - 5   }; // スーパー
-  if (rankNum <= 15)                 return { color: '#d2691e', idx: rankNum - 10  }; // ハイパー
+  if (rankNum <= 15)                 return { color: '#ff8c00', idx: rankNum - 10  }; // ハイパー
   /* 16..35 */                       return { color: '#9400d3', idx: rankNum - 15  }; // マスター
 }
 
@@ -625,7 +625,7 @@ tbody.querySelectorAll('td.toggle-cell').forEach(td=>{
 function splitStage(rankNum) {
   if (rankNum >= 1 && rankNum <= 5)  return { stage: 'ノーマル', idx: rankNum,      color: '#ff0000' };
   if (rankNum <= 10)                 return { stage: 'スーパー', idx: rankNum - 5,  color: '#0000ff' };
-  if (rankNum <= 15)                 return { stage: 'ハイパー', idx: rankNum - 10, color: '#d2691e' };
+  if (rankNum <= 15)                 return { stage: 'ハイパー', idx: rankNum - 10, color: '#ff8c00' };
   return                                { stage: 'マスター', idx: rankNum - 15, color: '#9400d3' }; // 16..35
 }
 function labelForRank(n) {
