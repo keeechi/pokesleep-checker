@@ -182,6 +182,11 @@ thead.table-light.sticky-header th {
   max-width: calc(36px + 6px); /* はみ出し防止（必要に応じて微調整） */
   margin: 0 auto;
 }
+.pokemon-cell .pokemon-name {
+  font-size: 9pt;
+  text-align: center;
+  display: block;
+}
 
 /* ===== フィールド別寝顔一覧（睡眠タイプ列） ===== */
 #pane-byfield .type-cell { 
