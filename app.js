@@ -70,7 +70,7 @@ function mapRankToNumber(s) {
 function splitStage(rankNum) {
   if (rankNum >= 1 && rankNum <= 5)  return { color: '#ff0000', idx: rankNum       }; // ノーマル
   if (rankNum <= 10)                 return { color: '#0000ff', idx: rankNum - 5   }; // スーパー
-  if (rankNum <= 15)                 return { color: '#ffa500', idx: rankNum - 10  }; // ハイパー
+  if (rankNum <= 15)                 return { color: '#d2691e', idx: rankNum - 10  }; // ハイパー
   /* 16..35 */                       return { color: '#9400d3', idx: rankNum - 15  }; // マスター
 }
 
