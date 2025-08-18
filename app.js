@@ -515,6 +515,33 @@ function setupFieldTabs() {
 }
 
 function renderFieldTables(state) {
+    // ★ 追加：フィルター入力を取得（存在しない場合は空扱い）
+  const qEl = document.getElementById('byfieldSearchName');
+  const sEl = document.getElementById('byfieldFilterStyle');
+  const oEl = document.getElementById('byfieldSortBy');
+
+  const searchName = (qEl?.value || '').trim();
+  const filterStyle = sEl?.value || '';
+  const sortBy = oEl?.value || 'no-asc';
+
+  const normQuery = normalizeJP(searchName);
+
+  // ベースとなるエントリ一覧（全種）
+  let baseEntries = Array.from(SPECIES_MAP.values());
+
+  // 名前フィルター
+  if (normQuery) baseEntries = baseEntries.filter(ent => normalizeJP(ent.name).includes(normQuery));
+
+  // 睡眠タイプフィルター（少なくとも1つの寝顔が該当タイプ）
+  if (filterStyle) baseEntries = baseEntries.filter(ent => ent.rows.some(r => r.Style === filterStyle));
+
+  // 並び替え
+  baseEntries.sort((a,b)=>{
+    if (sortBy === 'name-asc')  return a.name.localeCompare(b.name, 'ja');
+    if (sortBy === 'name-desc') return b.name.localeCompare(a.name, 'ja');
+    if (sortBy === 'no-desc')   return b.no.localeCompare(a.no, 'ja');
+    return a.no.localeCompare(b.no, 'ja'); // no-asc
+  });
   FIELD_KEYS.forEach(field=>{
     const tbody = document.querySelector(`#fieldTabsContent tbody[data-field="${field}"]`);
     const rows = [];
