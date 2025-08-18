@@ -208,3 +208,35 @@ td.toggle-cell {
 td.toggle-cell:hover {
   filter: brightness(0.98);
 }
+
+/* 検索結果が空のときの「COMPLETED」表示（かわいいバッジ風） */
+.completed-msg {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  background: #fff7d6;
+  border: 1px solid #f4e2a1;
+  font-weight: 800;
+  letter-spacing: .5px;
+}
+.completed-msg::before { content: "✨"; }
+
+/* ◓ + 数字（rank-chip）。未定義なら有効化（既にあれば重複不要） */
+.rank-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+.rank-chip .rank-ball { font-weight: 700; }
+.rank-chip .rank-num  { font-weight: 600; }
+
+/* ポケモンセル共通（既存 byfield と共有） */
+.byfield-name-cell .pf-wrap { display:flex; flex-direction:column; align-items:center; }
+.byfield-name-cell .byfield-icon svg { display:block; border:1px solid #bbb; border-radius:10px; overflow:hidden; }
+.byfield-name-cell .pf-no { font-size:9pt; line-height:1.1; }
+.byfield-name-cell .pf-name { font-size:9pt; line-height:1.2; word-break:break-word; white-space:normal; max-width:calc(36px + 8px); }
+
