@@ -99,6 +99,14 @@ function isExcludedFromSummary(row) {
   return /ダークライ/i.test(row.Name || '');
 }
 
+  // フィールド別フィルターのイベント
+  const _q = document.getElementById('byfieldSearchName');
+  const _s = document.getElementById('byfieldFilterStyle');
+  const _o = document.getElementById('byfieldSortBy');
+  _q && _q.addEventListener('input', ()=>renderFieldTables(loadState()));
+  _s && _s.addEventListener('change', ()=>renderFieldTables(loadState()));
+  _o && _o.addEventListener('change', ()=>renderFieldTables(loadState()));
+
 // ===================== 状態保存 =====================
 function loadState() {
   try {
@@ -545,7 +553,7 @@ function renderFieldTables(state) {
   FIELD_KEYS.forEach(field=>{
     const tbody = document.querySelector(`#fieldTabsContent tbody[data-field="${field}"]`);
     const rows = [];
-    for (const ent of SPECIES_MAP.values()) {
+    for (const ent of baseEntries) {
       const appearAny = ent.rows.some(r => getFieldRankNum(r, field));
       if (!appearAny) continue;
 
