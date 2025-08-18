@@ -66,6 +66,21 @@ function mapRankToNumber(s) {
   return null;
 }
 
+// ★ ランク番号(1..35) → 段(色)と段内インデックス(1..)
+function splitStage(rankNum) {
+  if (rankNum >= 1 && rankNum <= 5)  return { color: '#ff0000', idx: rankNum       }; // ノーマル
+  if (rankNum <= 10)                 return { color: '#0000ff', idx: rankNum - 5   }; // スーパー
+  if (rankNum <= 15)                 return { color: '#ffff00', idx: rankNum - 10  }; // ハイパー
+  /* 16..35 */                       return { color: '#9400d3', idx: rankNum - 15  }; // マスター
+}
+
+// ★ 表示用の小さな「◓ + 数字」(色は段ごと)
+function renderRankChip(rankNum) {
+  if (!rankNum) return 'ー';
+  const { color, idx } = splitStage(rankNum);
+  return `<span class="rank-chip"><span class="rank-ball" style="color:${color}">◓</span><span class="rank-num">${idx}</span></span>`;
+}
+
 // 検索用正規化（ひら→カナ同一視・長音/空白除去）
 function normalizeJP(s) {
   if (!s) return '';
@@ -507,24 +522,26 @@ function renderFieldTables(state) {
       const appearAny = ent.rows.some(r => getFieldRankNum(r, field));
       if (!appearAny) continue;
 
-      const cells = CHECKABLE_STARS.map(star=>{
-        const hasRow = ent.rows.find(r => r.DisplayRarity === star);
-        if (!hasRow) {
-          // そもそも存在しない寝顔
-          return `<td class="text-center cell-absent">—</td>`;
-        }
-        const rankNum = getFieldRankNum(hasRow, field);
-        if (!rankNum) {
-          // フィールド上「出現しない」= "-"
-          return `<td class="text-center cell-disabled">ー</td>`;
-        }
-        const checked = getChecked(state, ent.no, star);
-        return `<td class="text-center ${checked ? 'cell-checked' : ''}">
-          <input type="checkbox" class="form-check-input"
-            data-no="${ent.no}" data-star="${star}"
-            ${checked ? 'checked' : ''}>
-        </td>`;
-      }).join('');
+  const cells = CHECKABLE_STARS.map(star=>{
+  const hasRow = ent.rows.find(r => r.DisplayRarity === star);
+  if (!hasRow) {
+    // そもそも存在しない寝顔
+    return `<td class="text-center cell-absent">—</td>`;
+  }
+  const rankNum = getFieldRankNum(hasRow, field);
+  if (!rankNum) {
+    // フィールド上「出現しない」= "ー"
+    return `<td class="text-center cell-disabled">ー</td>`;
+  }
+
+  // ★ 出現する寝顔 → ランク表示 + セル全体がトグル
+  const checked = getChecked(state, ent.no, star);
+  return `
+    <td class="text-center toggle-cell ${checked ? 'cell-checked' : ''}"
+        data-no="${ent.no}" data-star="${star}">
+      ${renderRankChip(rankNum)}
+    </td>`;
+}).join('');
 
 rows.push(`
   <tr>
@@ -551,17 +568,20 @@ rows.push(`
     }
     tbody.innerHTML = rows.join('');
 
-    tbody.querySelectorAll('input[type="checkbox"]').forEach(chk=>{
-      chk.addEventListener('change', (e)=>{
-        const no = e.target.dataset.no;
-        const star = e.target.dataset.star;
-        setChecked(state, no, star, e.target.checked);
-        e.target.closest('td').classList.toggle('cell-checked', e.target.checked);
-        renderAllFaces(state);
-        renderSummary(state);
-        renderRankSearch(state);
-      });
-    });
+// ★ セル全体クリックでON/OFF
+tbody.querySelectorAll('td.toggle-cell').forEach(td=>{
+  td.addEventListener('click', (e)=>{
+    const no   = td.dataset.no;
+    const star = td.dataset.star;
+    const now  = getChecked(state, no, star);
+    setChecked(state, no, star, !now);
+    td.classList.toggle('cell-checked', !now);
+
+    // サマリー・ランク検索は常に更新
+    renderSummary(state);
+    renderRankSearch(state);
+  });
+});
   });
 }
 
