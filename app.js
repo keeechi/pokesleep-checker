@@ -625,7 +625,7 @@ tbody.querySelectorAll('td.toggle-cell').forEach(td=>{
 function splitStage(rankNum) {
   if (rankNum >= 1 && rankNum <= 5)  return { stage: 'ノーマル', idx: rankNum,      color: '#ff0000' };
   if (rankNum <= 10)                 return { stage: 'スーパー', idx: rankNum - 5,  color: '#0000ff' };
-  if (rankNum <= 15)                 return { stage: 'ハイパー', idx: rankNum - 10, color: '#ffff00' };
+  if (rankNum <= 15)                 return { stage: 'ハイパー', idx: rankNum - 10, color: '#d2691e' };
   return                                { stage: 'マスター', idx: rankNum - 15, color: '#9400d3' }; // 16..35
 }
 function labelForRank(n) {
