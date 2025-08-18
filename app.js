@@ -75,6 +75,15 @@ function normalizeJP(s) {
   return out;
 }
 
+// ★ サマリー集計から除外するポケモン（ダークライ）
+const EXCLUDED_SPECIES_FOR_SUMMARY = new Set(['0491']); // 4桁ゼロ埋めNoで管理
+
+function isExcludedFromSummary(row) {
+  // Noで除外（最も確実）。念のため名前マッチも保険で入れておく
+  if (EXCLUDED_SPECIES_FOR_SUMMARY.has(row.No)) return true;
+  return /ダークライ/i.test(row.Name || '');
+}
+
 // ===================== 状態保存 =====================
 function loadState() {
   try {
@@ -268,6 +277,7 @@ const fmtCell = ({num, denom, rate}, strong = false) => {
   const calcFor = (style, field) => {
     let denom = 0, num = 0;
     for (const row of RAW_ROWS) {
+      if (isExcludedFromSummary(row)) continue; // ★ サマリーからは除外
       if (style && row.Style !== style) continue; // styleがnullなら全タイプ合算
       const rankNum = getFieldRankNum(row, field);
       if (rankNum) {
