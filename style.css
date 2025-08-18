@@ -188,3 +188,23 @@ thead.table-light.sticky-header th {
   text-align: center; 
   font-size: 9pt; 
 }
+
+/* ◓ + 数字 の小型バッジ */
+.rank-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 0.9rem; /* 必要なら調整 */
+  line-height: 1;
+}
+.rank-chip .rank-ball { font-weight: 700; }
+.rank-chip .rank-num  { font-weight: 600; }
+
+/* クリックできるセルの見た目 */
+td.toggle-cell {
+  cursor: pointer;
+  user-select: none;
+}
+td.toggle-cell:hover {
+  filter: brightness(0.98);
+}
