@@ -100,22 +100,22 @@ window.pokemonRectData = {
         {x: 0, y: 0.1, w: 1, h: 0.9, color: '#f7d7d6'},
     ],
     // Vulpix
-    '0037': [
+    '003701': [
         {x: 0, y: 0, w: 1, h: 1, color: '#f5a478'},
         {x: 0, y: 0, w: 1, h: 0.3, color: '#ffa76c'},
         {x: 0, y: 0.8, w: 1, h: 0.2, color: '#e48860'},
     ],
     // Vulpix (Alola)
-    '12325': [
+    '003702': [
         {x: 0, y: 0, w: 1, h: 1, color: '#ffffff'},
         {x: 0, y: 0.8, w: 1, h: 0.2, color: '#f1fdff'},
     ],
     // Ninetales
-    '0038': [
+    '003801': [
         {x: 0, y: 0, w: 1, h: 1, color: '#ffffce'},
     ],
     // Ninetales (Alola)
-    '12326': [
+    '003802': [
         {x: 0, y: 0, w: 1, h: 1, color: '#fbffff'},
         {x: 0, y: 0, w: 1, h: 0.2, color: '#dcfefe'},
     ],
@@ -471,7 +471,7 @@ window.pokemonRectData = {
         {x: 0, y: 0, w: 1, h: 0.2, color: '#8fc261'},
     ],
     // Wooper
-    '0194': [
+    '019401': [
         {x: 0.1, y: 0.15, w: 0.8, h: 0.6, r: 0.35, color: '#6cecff'},
         {x: 0.3, y: 0.65, w: 0.4, h: 0.4, r: 0.2, color: '#6cecff'},
         {x: 0.46, y: 0.78, w: 0.08, h: 0.04, r: 0.025, color: '#0c5a8f'},
@@ -479,7 +479,7 @@ window.pokemonRectData = {
         {x: 0.4, y: 0.92, w: 0.2, h: 0.04, r: 0.025, color: '#0c5a8f'},
     ],
     // Quagsire (Paldea)
-    '16578': [
+    '019402': [
         {x: 0.1, y: 0.15, w: 0.8, h: 0.6, r: 0.35, color: '#897771'},
         {x: 0.3, y: 0.65, w: 0.4, h: 0.4, r: 0.2, color: '#897771'},
         {x: 0.45, y: 0.78, w: 0.1, h: 0.04, r: 0.025, color: '#493d3a'},
