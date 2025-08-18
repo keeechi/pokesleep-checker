@@ -121,6 +121,30 @@
       <div class="tab-pane fade pt-3" id="pane-byfield" role="tabpanel" aria-labelledby="tab-byfield">
         <div class="card">
           <div class="card-body">
+            <div class="row g-2 align-items-end mb-3">
+  <div class="col-12 col-md-6">
+    <label class="form-label">名前検索</label>
+    <input id="byfieldSearchName" class="form-control" placeholder="例）きも → キモリ / ヤルキモノ がヒット">
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label">睡眠タイプ</label>
+    <select id="byfieldFilterStyle" class="form-select">
+      <option value="">すべて</option>
+      <option value="うとうと">うとうと</option>
+      <option value="すやすや">すやすや</option>
+      <option value="ぐっすり">ぐっすり</option>
+    </select>
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label">並び替え</label>
+    <select id="byfieldSortBy" class="form-select">
+      <option value="no-asc">No昇順</option>
+      <option value="no-desc">No降順</option>
+      <option value="name-asc">名前昇順</option>
+      <option value="name-desc">名前降順</option>
+    </select>
+  </div>
+</div>
             <ul class="nav nav-pills mb-3" id="fieldTabs" role="tablist"><!-- JS --></ul>
             <div class="tab-content" id="fieldTabsContent"><!-- JS --></div>
           </div>
