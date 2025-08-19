@@ -113,6 +113,10 @@ function entKey(ent){ return String(ent.iconNo || ent.no); }
   _o && _o.addEventListener('change', ()=>renderFieldTables(loadState()));
 
 // ===================== 状態保存 =====================
+// === IconNo優先の保存キー ===
+function rowKey(row) { return String(row.IconNo || row.No); }
+function entKey(ent) { return String(ent.iconNo || ent.no); }
+
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -432,15 +436,15 @@ function renderAllFaces(state) {
       return `
         <td class="text-center ${checked ? 'cell-checked' : ''}">
           <input type="checkbox" class="form-check-input"
-            data-no="${key}" data-star="${star}"
+            data-key="${key}" data-star="${star}"
             ${checked ? 'checked' : ''}>
         </td>`;
     }).join('');
 
 const bulkBtn = `
   <div class="btn-group-vertical btn-group-sm bulk-group-vert" role="group" aria-label="行まとめ">
-    <button type="button" class="btn btn-outline-primary" data-bulk="on" data-no="${key}">一括ON</button>
-    <button type="button" class="btn btn-outline-secondary" data-bulk="off" data-no="${key}">一括OFF</button>
+    <button type="button" class="btn btn-outline-primary" data-bulk="on" data-key="${key}">一括ON</button>
+    <button type="button" class="btn btn-outline-secondary" data-bulk="off" data-key="${key}">一括OFF</button>
   </div>`;
 
 // ★ ここを変更：アイコンを小さく（ICON_SIZE）＋下に No と名前（小さめ文字）
@@ -485,7 +489,7 @@ return `
       const mode = e.currentTarget.dataset.bulk; // on/off
       setRowAll(state, key, mode === 'on');
       CHECKABLE_STARS.forEach(star=>{
-        const input = tbody.querySelector(`input[data-no="${key}"][data-star="${star}"]`);
+        const input = tbody.querySelector(`input[data-key="${key}"][data-star="${star}"]`);
         if (input) {
           input.checked = (mode === 'on');
           input.closest('td').classList.toggle('cell-checked', input.checked);
@@ -587,7 +591,7 @@ function renderFieldTables(state) {
   const checked = getChecked(state, entKey(ent), star);
   return `
     <td class="text-center toggle-cell ${checked ? 'cell-checked' : ''}"
-        data-no="${entKey(ent)}" data-star="${star}">
+        data-key="${entKey(ent)}" data-star="${star}">
       ${renderRankChip(rankNum)}
     </td>`;
 }).join('');
@@ -813,6 +817,21 @@ async function main() {
 
   // 2) データとUI構築
   await loadData();
+
+  // 旧データ（Noキー保存）をIconNoキーへ複製（なければ）して互換維持
+(function migrateLegacyToIconKey(){
+  const state = loadState();
+  let touched = false;
+  for (const row of RAW_ROWS) {
+    const ikey = rowKey(row); // IconNo||No
+    const nkey = String(row.No);
+    if (!state.checked[ikey] && state.checked[nkey]) {
+      state.checked[ikey] = { ...state.checked[nkey] };
+      touched = true;
+    }
+  }
+  if (touched) saveState(state);
+})();
 
   setupFieldTabs();
   setupRankSearchControls();
