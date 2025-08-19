@@ -99,11 +99,6 @@ function isExcludedFromSummary(row) {
   return /ダークライ/i.test(row.Name || '');
 }
 
-// * 保存用キー（レコード→IconNo優先、なければNo）
-function rowKey(row){ return String(row.IconNo || row.No); }
-// ★ 保存用キー（エントリ→iconNo優先、なければno）
-function entKey(ent){ return String(ent.iconNo || ent.no); }
-
   // フィールド別フィルターのイベント
   const _q = document.getElementById('byfieldSearchName');
   const _s = document.getElementById('byfieldFilterStyle');
@@ -122,22 +117,13 @@ function loadState() {
   }
 }
 function saveState(state) { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-function setChecked(state, key, star, val) {
-  if (!state.checked[key]) state.checked[key] = {};
-  state.checked[key][star] = !!val;
+function setChecked(state, no, star, val) {
+  if (!state.checked[no]) state.checked[no] = {};
+  state.checked[no][star] = !!val;
   saveState(state);
 }
- // レガシーデータ互換：以前はNo(4桁)で保存していたので、IconNo(6桁等)の場合は No にもフォールバック
-  function getChecked(state, key, star) {
-    const hit = !!(state.checked?.[key]?.[star]);
-    if (hit) return true;
-    // 例：key=084901 → 0849 へ後方互換参照
-    const legacy = (/^\d{5,}$/.test(key)) ? key.slice(0,4) : null;
-    return legacy ? !!(state.checked?.[legacy]?.[star]) : false;
-  }
-  function setRowAll(state, key, val) {
-    CHECKABLE_STARS.forEach(star => setChecked(state, key, star, val));
-  }
+function getChecked(state, no, star) { return !!(state.checked?.[no]?.[star]); }
+function setRowAll(state, no, val) { CHECKABLE_STARS.forEach(star => setChecked(state, no, star, val)); }
 
 // ===================== データロード & 整形 =====================
 let RAW_ROWS = [];
@@ -319,7 +305,7 @@ const fmtCell = ({num, denom, rate}, strong = false) => {
       const rankNum = getFieldRankNum(row, field);
       if (rankNum) {
         denom++;
-        if (CHECKABLE_STARS.includes(row.DisplayRarity) && getChecked(state, rowKey(row), row.DisplayRarity)) num++;
+        if (CHECKABLE_STARS.includes(row.DisplayRarity) && getChecked(state, row.No, row.DisplayRarity)) num++;
       }
     }
     const rate = denom ? Math.round((num / denom) * 100) : 0;
@@ -334,7 +320,7 @@ const fmtCell = ({num, denom, rate}, strong = false) => {
     for (const row of RAW_ROWS) {
       if (style && row.Style !== style) continue; // nullなら全タイプ合算
       denom++; // フィールド条件なしで全件カウント
-      if (CHECKABLE_STARS.includes(row.DisplayRarity) && getChecked(state, rowKey(row), row.DisplayRarity)) num++;
+      if (CHECKABLE_STARS.includes(row.DisplayRarity) && getChecked(state, row.No, row.DisplayRarity)) num++;
     }
     const rate = denom ? Math.round((num / denom) * 100) : 0;
     return { num, denom, rate };
@@ -420,7 +406,7 @@ function renderAllFaces(state) {
   LAST_RENDER_ENTRIES = entries;
 
   tbody.innerHTML = entries.map(ent => {
-    const no = ent.no, name = ent.name, key = entKey(ent);
+    const no = ent.no, name = ent.name;
 
     const cells = CHECKABLE_STARS.map(star => {
       const exists = speciesHasStar(ent, star);
@@ -428,19 +414,19 @@ function renderAllFaces(state) {
         // ★ 存在しない寝顔：チェックボックスを出さない（ダッシュ表示）
         return `<td class="text-center cell-absent">—</td>`;
       }
-      const checked = getChecked(state, key, star);
+      const checked = getChecked(state, no, star);
       return `
         <td class="text-center ${checked ? 'cell-checked' : ''}">
           <input type="checkbox" class="form-check-input"
-            data-no="${key}" data-star="${star}"
+            data-no="${no}" data-star="${star}"
             ${checked ? 'checked' : ''}>
         </td>`;
     }).join('');
 
 const bulkBtn = `
   <div class="btn-group-vertical btn-group-sm bulk-group-vert" role="group" aria-label="行まとめ">
-    <button type="button" class="btn btn-outline-primary" data-bulk="on" data-no="${key}">一括ON</button>
-    <button type="button" class="btn btn-outline-secondary" data-bulk="off" data-no="${key}">一括OFF</button>
+    <button type="button" class="btn btn-outline-primary" data-bulk="on" data-no="${no}">一括ON</button>
+    <button type="button" class="btn btn-outline-secondary" data-bulk="off" data-no="${no}">一括OFF</button>
   </div>`;
 
 // ★ ここを変更：アイコンを小さく（ICON_SIZE）＋下に No と名前（小さめ文字）
@@ -469,9 +455,9 @@ return `
   // チェックイベント
   tbody.querySelectorAll('input[type="checkbox"]').forEach(chk => {
     chk.addEventListener('change', (e)=>{
-      const no = e.target.dataset.key;
+      const no = e.target.dataset.no;
       const star = e.target.dataset.star;
-      setChecked(state, key, star, e.target.checked);
+      setChecked(state, no, star, e.target.checked);
       e.target.closest('td').classList.toggle('cell-checked', e.target.checked);
       renderSummary(state);
       renderRankSearch(state);
@@ -481,11 +467,11 @@ return `
   // 行まとめ（一括ON/OFF）※ 確認ダイアログは出さない
   tbody.querySelectorAll('button[data-bulk]').forEach(btn=>{
     btn.addEventListener('click', (e)=>{
-      const no = e.currentTarget.dataset.key;
+      const no = e.currentTarget.dataset.no;
       const mode = e.currentTarget.dataset.bulk; // on/off
-      setRowAll(state, key, mode === 'on');
+      setRowAll(state, no, mode === 'on');
       CHECKABLE_STARS.forEach(star=>{
-        const input = tbody.querySelector(`input[data-no="${key}"][data-star="${star}"]`);
+        const input = tbody.querySelector(`input[data-no="${no}"][data-star="${star}"]`);
         if (input) {
           input.checked = (mode === 'on');
           input.closest('td').classList.toggle('cell-checked', input.checked);
@@ -584,10 +570,10 @@ function renderFieldTables(state) {
   }
 
   // ★ 出現する寝顔 → ランク表示 + セル全体がトグル
-  const checked = getChecked(state, entKey(ent), star);
+  const checked = getChecked(state, ent.no, star);
   return `
     <td class="text-center toggle-cell ${checked ? 'cell-checked' : ''}"
-        data-no="${entKey(ent)}" data-star="${star}">
+        data-no="${ent.no}" data-star="${star}">
       ${renderRankChip(rankNum)}
     </td>`;
 }).join('');
@@ -620,7 +606,7 @@ rows.push(`
 // ★ セル全体クリックでON/OFF
 tbody.querySelectorAll('td.toggle-cell').forEach(td=>{
   td.addEventListener('click', (e)=>{
-    const no   = td.dataset.key;
+    const no   = td.dataset.no;
     const star = td.dataset.star;
     const now  = getChecked(state, no, star);
     setChecked(state, no, star, !now);
@@ -679,7 +665,7 @@ function renderRankSearch(state) {
   for (const row of RAW_ROWS) {
     const rNum = getFieldRankNum(row, field);
     if (!rNum || rNum > rank) continue;
-    if (CHECKABLE_STARS.includes(row.DisplayRarity) && getChecked(state, rowKey(row), row.DisplayRarity)) continue;
+    if (CHECKABLE_STARS.includes(row.DisplayRarity) && getChecked(state, row.No, row.DisplayRarity)) continue;
     items.push(row);
   }
   items.sort((a,b)=>{
@@ -833,8 +819,7 @@ async function main() {
     if (!confirm('すべての寝顔をチェックします。よろしいですか？')) return;
     const state = loadState();
     for (const ent of LAST_RENDER_ENTRIES) {
-    const key = entKey(ent);
-    CHECKABLE_STARS.forEach(star=>{ if (speciesHasStar(ent, star)) setChecked(state, key, star, true); });
+      CHECKABLE_STARS.forEach(star=>{ if (speciesHasStar(ent, star)) setChecked(state, ent.no, star, true); });
     }
     renderAllFaces(state); renderFieldTables(state); renderSummary(state); renderRankSearch(state);
   });
@@ -842,8 +827,7 @@ async function main() {
     if (!confirm('すべての寝顔のチェックを解除します。よろしいですか？')) return;
     const state = loadState();
     for (const ent of LAST_RENDER_ENTRIES) {
-    const key = entKey(ent);
-    CHECKABLE_STARS.forEach(star=>{ if (speciesHasStar(ent, star)) setChecked(state, key, star, true); });
+      CHECKABLE_STARS.forEach(star=>{ if (speciesHasStar(ent, star)) setChecked(state, ent.no, star, false); });
     }
     renderAllFaces(state); renderFieldTables(state); renderSummary(state); renderRankSearch(state);
   });
