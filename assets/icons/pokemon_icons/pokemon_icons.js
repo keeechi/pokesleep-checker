@@ -80,7 +80,22 @@ window.pokemonRectData = {
         {x: 0, y: 0.5, w: 1, h: 0.15, color: '#272833'},
     ],
     // Pikachu
-    '0025': [
+    '002501': [
+        {x: 0, y: 0, w: 1, h: 0.15, color: '#3d3532'},
+        {x: 0, y: 0.15, w: 1, h: 0.85, color: '#ffe14f'},
+    ],
+    // Pikachu
+    '002502': [
+        {x: 0, y: 0, w: 1, h: 0.15, color: '#3d3532'},
+        {x: 0, y: 0.15, w: 1, h: 0.85, color: '#ffe14f'},
+    ],
+    // Pikachu
+    '002503': [
+        {x: 0, y: 0, w: 1, h: 0.15, color: '#3d3532'},
+        {x: 0, y: 0.15, w: 1, h: 0.85, color: '#ffe14f'},
+    ],
+    // Pikachu
+    '002504': [
         {x: 0, y: 0, w: 1, h: 0.15, color: '#3d3532'},
         {x: 0, y: 0.15, w: 1, h: 0.85, color: '#ffe14f'},
     ],
@@ -331,7 +346,12 @@ window.pokemonRectData = {
         {x: 0.18, y: 0.45, w: 0.6, h: 0.03, r: 0.03, color: '#494447'},
     ],
     // Eevee
-    '0133': [
+    '013301': [
+        {x: 0, y: 0, w: 1, h: 1, color: '#e9b860'},
+        {x: 0, y: 0.6, w: 1, h: 0.4, color: '#f8eabf'},
+    ],
+    // Eevee
+    '013302': [
         {x: 0, y: 0, w: 1, h: 1, color: '#e9b860'},
         {x: 0, y: 0.6, w: 1, h: 0.4, color: '#f8eabf'},
     ],
