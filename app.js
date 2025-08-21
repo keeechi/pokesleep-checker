@@ -130,9 +130,7 @@ function buildRankMiniSummaryHTML(field, rank, state) {
   // タイプ別のボディ行
   const bodyRows = SLEEP_TYPES.map(t => `
     <tr>
-      <th class="text-start">
-        <img src="${STYLE_ICON[t]}" alt="${t}" style="height:18px;vertical-align:middle;"> ${t}
-      </th>
+      <th class="text-start">${t}</th>
       ${STAGES.map(s => `<td class="text-center">${counts[t][s]}</td>`).join('')}
     </tr>
   `).join('');
