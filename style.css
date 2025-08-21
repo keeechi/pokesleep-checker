@@ -117,7 +117,7 @@ thead.table-light.sticky-header th {
 .summary-table tbody th.summary-lefthead .summary-icon {
   display: block;    /* ブロック化して */
   margin: 0 auto;    /* 左右中央へ */
-  height: 24px;      /* お好みで 20〜28px */
+  height: 32px;      /* お好みで 20〜28px */
   width: auto;
 }
 
