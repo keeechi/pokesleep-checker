@@ -26,13 +26,13 @@ const POKEMON_ICONS_JS = './assets/icons/pokemon_icons/pokemon_icons.js';
 
 const headers = [
   { key: "total", label: "全体" },
-  { key: "wakakusa", icon: "pokesleep-checker/assets/icons/001-wakakusa.png" },
-  { key: "cyan", icon: "pokesleep-checker/assets/icons/002-cyan.png" },
-  { key: "taupe", icon: "pokesleep-checker/assets/icons/003-taupe.png" },
-  { key: "unohana", icon: "pokesleep-checker/assets/icons/004-unohana.png" },
-  { key: "rapis", icon: "pokesleep-checker/assets/icons/005-rapis.png" },
-  { key: "gold", icon: "pokesleep-checker/assets/icons/006-gold.png" },
-  { key: "wakakusaex", icon: "pokesleep-checker/assets/icons/007-wakakusaex.png" },
+  { key: "wakakusa", icon: "assets/icons/001-wakakusa.png" },
+  { key: "cyan", icon: "assets/icons/002-cyan.png" },
+  { key: "taupe", icon: "assets/icons/003-taupe.png" },
+  { key: "unohana", icon: "assets/icons/004-unohana.png" },
+  { key: "rapis", icon: "assets/icons/005-rapis.png" },
+  { key: "gold", icon: "assets/icons/006-gold.png" },
+  { key: "wakakusaex", icon: "assets/icons/007-wakakusaex.png" },
 ];
 
 // ヘッダー描画関数
