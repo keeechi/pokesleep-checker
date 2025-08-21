@@ -187,17 +187,18 @@
       <div class="tab-pane fade pt-3" id="pane-backup" role="tabpanel" aria-labelledby="tab-backup">
         <div class="card">
           <div class="card-body">
-            <div class="d-flex flex-wrap gap-2 mb-3">
-              <button id="btnExport" class="btn btn-primary">エクスポート（JSON保存）</button>
-              <label class="btn btn-outline-secondary mb-0">
-                インポート（置換）
-                <input id="fileImportReplace" type="file" accept="application/json" hidden>
-              </label>
-              <label class="btn btn-outline-secondary mb-0">
-                インポート（マージ）
-                <input id="fileImportMerge" type="file" accept="application/json" hidden>
-              </label>
-              <button id="btnReset" class="btn btn-danger ms-auto">すべて初期化</button>
+            <div class="mb-3 d-flex flex-wrap gap-2">
+  <button id="btnExportText" class="btn btn-primary">バックアップ用テキストを作成</button>
+  <button id="btnImportText" class="btn btn-outline-primary">テキストから復旧</button>
+</div>
+
+<div class="mb-2">
+  <textarea id="backupText" class="form-control" rows="4"
+    placeholder="ここにバックアップ用テキストが表示されます。復旧する場合は、ここに貼り付けて『テキストから復旧』を押してください。"></textarea>
+  <div class="form-text">
+    ※ このテキストをメモアプリ等に保存しておけば、あとで貼り付けて復旧できます。
+  </div>
+</div>
             </div>
           </div>
         </div>
