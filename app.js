@@ -315,7 +315,7 @@ ${FIELD_KEYS.map(f => {
             return `<td class="text-center">${fmtCell(d, true)}</td>`;
           }).join('');
           return `<tr class="table-light">
-            <th class="fw-semibold">合計</th>
+            <th class="text-center fw-semibold">合計</th>
             ${allTotal}
             ${tds}
           </tr>`;
