@@ -606,6 +606,28 @@ function renderRankSearch(state) {
   }).join('');
 }
 
+// バックアップ用の簡単なエンコード/デコード（UTF-8対応）
+function encodeStateToText(state) {
+  const json = JSON.stringify(state);
+  const b64  = btoa(unescape(encodeURIComponent(json)));
+  // 将来互換用にプレフィックスを付けておく
+  return `PSC1:${b64}`;
+}
+function decodeTextToState(text) {
+  const raw = (text || '').trim();
+  if (!raw) throw new Error('空のテキストです');
+  // プレフィックス付き or 素のBase64 or 素のJSON のどれでも受け付ける
+  let payload = raw.startsWith('PSC1:') ? raw.slice(5) : raw;
+  try {
+    // Base64 っぽければデコードを試みる
+    const json = decodeURIComponent(escape(atob(payload)));
+    return JSON.parse(json);
+  } catch {
+    // だめなら素のJSONとしてパースを試す
+    return JSON.parse(raw);
+  }
+}
+
 // ===================== バックアップ/復旧 =====================
 function downloadText(filename, text) {
   const blob = new Blob([text], {type:'application/json;charset=utf-8'});
@@ -615,28 +637,47 @@ function downloadText(filename, text) {
   URL.revokeObjectURL(url);
 }
 function setupBackupUI() {
-  const btnExport = document.getElementById('btnExport');
-  const fileImportReplace = document.getElementById('fileImportReplace');
-  const fileImportMerge = document.getElementById('fileImportMerge');
-  const btnReset = document.getElementById('btnReset');
+  const btnExportText = document.getElementById('btnExportText');
+  const btnImportText = document.getElementById('btnImportText');
+  const ta            = document.getElementById('backupText');
 
-  btnExport.addEventListener('click', ()=>{
+  // バックアップ用テキストを作成（= 現在の状態をテキスト化してテキストエリアに表示）
+  btnExportText?.addEventListener('click', () => {
     const state = loadState();
-    downloadText('psleep-check-export.json', JSON.stringify(state, null, 2));
+    const text  = encodeStateToText(state);
+    ta.value = text;
+
+    // UX: 自動選択してコピーしやすく
+    ta.focus();
+    ta.select();
+
+    // 軽い案内
+    // （alertだと操作が中断するので、必要なければ省略可）
+    // alert('バックアップ用テキストを作成しました。テキストをコピーして保存してください。');
   });
 
-  fileImportReplace.addEventListener('change', async (e)=>{
-    const file = e.target.files?.[0]; if (!file) return;
-    const text = await file.text();
+  // テキストから復旧（= テキストエリアの内容を解析して置き換え）
+  btnImportText?.addEventListener('click', () => {
     try {
-      const obj = JSON.parse(text);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
-      alert('インポート（置換）しました。');
+      const incoming = decodeTextToState(ta.value);
+      if (!incoming || typeof incoming !== 'object') throw new Error('データ形式が正しくありません。');
+
+      // 置き換えのみ（マージは廃止）
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(incoming));
+
+      // 画面を再描画
       const state = loadState();
-      renderAllFaces(state); renderFieldTables(state); renderSummary(state); renderRankSearch(state);
-    } catch { alert('JSONの読み込みに失敗しました。'); }
-    finally { e.target.value = ''; }
+      renderAllFaces(state);
+      renderFieldTables(state);
+      renderSummary(state);
+      renderRankSearch(state);
+
+      alert('復旧しました。');
+    } catch (e) {
+      alert('復旧に失敗しました。テキストが正しいかご確認ください。');
+    }
   });
+}
 
   fileImportMerge.addEventListener('change', async (e)=>{
     const file = e.target.files?.[0]; if (!file) return;
