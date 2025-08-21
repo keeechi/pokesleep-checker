@@ -104,21 +104,26 @@ thead.table-light.sticky-header th {
   width: 3.5em;       /* ← フォント依存。3.5em ≒ 5桁分の長さ。調整はここ */
 }
 
-/* 3) カラム幅（px固定）
-   先頭=アイコン列、2列目=「全体」、3列目以降=各フィールド */
-.summary-table thead th:first-child,
-.summary-table tbody th:first-child {
-  min-width: 80px;
-  width: 80px;
+/* ① 左端（ヘッダー列）の幅を“だけ”狭める */
+.summary-table .summary-lefthead-col,            /* thead 1列目(空セル) */
+.summary-table tbody th.summary-lefthead {       /* tbody 1列目(アイコン/合計) */
+  width: 56px;
+  min-width: 56px;
+  padding-left: 6px;
+  padding-right: 6px;
 }
-.summary-table thead th:nth-child(2),
-.summary-table tbody td:nth-child(2) {
-  width: 80px;   /* ← 全体列の幅 */
+
+/* ② 左端セル内のアイコンを中央揃え＆サイズ調整 */
+.summary-table tbody th.summary-lefthead .summary-icon {
+  display: block;    /* ブロック化して */
+  margin: 0 auto;    /* 左右中央へ */
+  height: 24px;      /* お好みで 20〜28px */
+  width: auto;
 }
-/* 3列目以降（ワカクサ〜ワカクサEX） */
-.summary-table thead th:nth-child(n+3),
-.summary-table tbody td:nth-child(n+3) {
-  width: 80px;   /* ← まとめて同じ幅。列ごとに変えたい場合は個別指定へ */
+
+/* ③ “合計”テキストの見栄え（お好み） */
+.summary-table tbody th.summary-lefthead.fw-semibold {
+  line-height: 1.1;
 }
 
 /* （任意）数字が詰まりすぎる場合の縦余白微調整 */
