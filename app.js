@@ -24,36 +24,15 @@ const STYLE_ICON = {
 };
 const POKEMON_ICONS_JS = './assets/icons/pokemon_icons/pokemon_icons.js';
 
-const headers = [
-  { key: "total", label: "全体" },
-  { key: "wakakusa", icon: "assets/icons/001-wakakusa.png" },
-  { key: "cyan", icon: "assets/icons/002-cyan.png" },
-  { key: "taupe", icon: "assets/icons/003-taupe.png" },
-  { key: "unohana", icon: "assets/icons/004-unohana.png" },
-  { key: "rapis", icon: "assets/icons/005-rapis.png" },
-  { key: "gold", icon: "assets/icons/006-gold.png" },
-  { key: "wakakusaex", icon: "assets/icons/007-wakakusaex.png" },
-];
-
-// ヘッダー描画関数
-function renderSummaryHeader(table) {
-  const thead = table.createTHead();
-  const row = thead.insertRow();
-
-  headers.forEach(h => {
-    const th = document.createElement("th");
-    if (h.icon) {
-      const img = document.createElement("img");
-      img.src = h.icon;
-      img.alt = h.key;
-      img.classList.add("field-icon");  // CSSで大きさを統一
-      th.appendChild(img);
-    } else {
-      th.textContent = h.label; // 「全体」用
-    }
-    row.appendChild(th);
-  });
-}
+const FIELD_HEAD_ICON = {
+  'ワカクサ本島':   'assets/icons/001-wakakusa.png',
+  'シアンの砂浜':   'assets/icons/002-cyan.png',
+  'トープ洞窟':     'assets/icons/003-taupe.png',
+  'ウノハナ雪原':   'assets/icons/004-unohana.png',
+  'ラピスラズリ湖畔': 'assets/icons/005-rapis.png',
+  'ゴールド旧発電所': 'assets/icons/006-gold.png',
+  'ワカクサ本島EX': 'assets/icons/007-wakakusaex.png',
+};
 
 // アイコンサイズ
 const ICON_SIZE = 45;         // 全寝顔
@@ -297,8 +276,15 @@ function renderSummary(state) {
       <thead class="table-light">
         <tr>
           <th style="min-width:80px; width:80px;"></th>
-          <th class="text-center" style="width:80px;">全体</th>
-          ${FIELD_KEYS.map(f => `<th class="text-center" style="width:80px;">${FIELD_SHORT[f]}</th>`).join('')}
+<th class="text-center" style="width:80px;">全体</th>
+${FIELD_KEYS.map(f => {
+  const src = FIELD_HEAD_ICON[f];              // 画像パス取得
+  const alt = FIELD_SHORT[f] || f;             // 代替テキスト
+  return `
+    <th class="text-center" style="width:80px;">
+      <img src="${src}" alt="${alt}" class="field-head-icon" loading="lazy" decoding="async">
+    </th>`;
+}).join('')}
         </tr>
       </thead>
       <tbody>
