@@ -742,6 +742,7 @@ async function main() {
     display: inline-block;
     vertical-align: middle;
     image-rendering: -webkit-optimize-contrast; /* 透明PNGの輪郭が綺麗に見えることが多い */
+    }
     `;
     document.head.appendChild(style);
     _summaryStyleInjected = true;
