@@ -679,33 +679,6 @@ function setupBackupUI() {
   });
 }
 
-  fileImportMerge.addEventListener('change', async (e)=>{
-    const file = e.target.files?.[0]; if (!file) return;
-    const text = await file.text();
-    try {
-      const incoming = JSON.parse(text);
-      const state = loadState();
-      if (incoming?.checked && typeof incoming.checked === 'object') {
-        for (const key of Object.keys(incoming.checked)) {
-          for (const star of Object.keys(incoming.checked[key])) {
-            setChecked(state, key, star, !!incoming.checked[key][star]);
-          }
-        }
-      }
-      alert('インポート（マージ）しました。');
-      renderAllFaces(state); renderFieldTables(state); renderSummary(state); renderRankSearch(state);
-    } catch { alert('JSONの読み込みに失敗しました。'); }
-    finally { e.target.value = ''; }
-  });
-
-  btnReset.addEventListener('click', ()=>{
-    if (!confirm('保存データをすべて消去します。よろしいですか？')) return;
-    localStorage.removeItem(STORAGE_KEY);
-    const state = loadState();
-    renderAllFaces(state); renderFieldTables(state); renderSummary(state); renderRankSearch(state);
-  });
-}
-
 // ===================== レイアウト用の軽い注入CSS =====================
 let _listLayoutStyleInjected = false;
 function injectListLayoutCSS() {
