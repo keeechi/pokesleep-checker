@@ -275,7 +275,7 @@ function renderSummary(state) {
     <table class="table table-sm align-middle mb-0 summary-table">
       <thead class="table-light">
         <tr>
-          <th style="min-width:80px; width:80px;"></th>
+          <th class="summary-lefthead-col"></th>
 <th class="text-center" style="width:80px;">全体</th>
 ${FIELD_KEYS.map(f => {
   const src = FIELD_HEAD_ICON[f];              // 画像パス取得
@@ -298,7 +298,7 @@ ${FIELD_KEYS.map(f => {
             return `<td class="text-center">${fmtCell(d)}</td>`;
           }).join('');
           return `<tr>
-            <th class="text-start align-middle">
+            <th class="summary-lefthead text-center align-middle">
               <img src="${STYLE_ICON[style]}" alt="${style}" class="summary-icon" loading="lazy">
             </th>
             ${totalCell}
