@@ -695,6 +695,12 @@ async function main() {
       .summary-cell .sum-top { font-weight: 600; }
       .summary-cell .sum-hr  { height: 1px; background: currentColor; opacity: .3; margin: 2px 12px; }
       .summary-cell .sum-per { opacity: .75; }
+      .summary-table .field-head-icon{
+    height: 22px;         /* お好みで 20〜28px 程度 */
+    width: auto;
+    display: inline-block;
+    vertical-align: middle;
+    image-rendering: -webkit-optimize-contrast; /* 透明PNGの輪郭が綺麗に見えることが多い */
     `;
     document.head.appendChild(style);
     _summaryStyleInjected = true;
