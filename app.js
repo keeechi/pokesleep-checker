@@ -45,6 +45,16 @@ const BADGE_SILVER = 'assets/icons/05-SilverBadge.png';
 // サマリーから除外（ダークライ）
 const EXCLUDED_SPECIES_FOR_SUMMARY = new Set(['0491']); // 4桁ゼロ埋め No
 
+// ヘッダー行（睡眠タイプ）
+const th = document.createElement("th");
+th.classList.add("sleep-type-col");  // ←専用クラスを追加
+row.appendChild(th);
+
+// 各データ行
+const td = document.createElement("td");
+td.classList.add("sleep-type-col");  // ←専用クラスを追加
+tr.appendChild(td);
+
 // ===================== 小ユーティリティ =====================
 // 4桁ゼロ埋め（1000以上はそのまま）
 function normalizeNo(noRaw) {
