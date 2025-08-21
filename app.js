@@ -24,6 +24,37 @@ const STYLE_ICON = {
 };
 const POKEMON_ICONS_JS = './assets/icons/pokemon_icons/pokemon_icons.js';
 
+const headers = [
+  { key: "total", label: "全体" },
+  { key: "wakakusa", icon: "pokesleep-checker/assets/icons/001-wakakusa.png" },
+  { key: "cyan", icon: "pokesleep-checker/assets/icons/002-cyan.png" },
+  { key: "taupe", icon: "pokesleep-checker/assets/icons/003-taupe.png" },
+  { key: "unohana", icon: "pokesleep-checker/assets/icons/004-unohana.png" },
+  { key: "rapis", icon: "pokesleep-checker/assets/icons/005-rapis.png" },
+  { key: "gold", icon: "pokesleep-checker/assets/icons/006-gold.png" },
+  { key: "wakakusaex", icon: "pokesleep-checker/assets/icons/007-wakakusaex.png" },
+];
+
+// ヘッダー描画関数
+function renderSummaryHeader(table) {
+  const thead = table.createTHead();
+  const row = thead.insertRow();
+
+  headers.forEach(h => {
+    const th = document.createElement("th");
+    if (h.icon) {
+      const img = document.createElement("img");
+      img.src = h.icon;
+      img.alt = h.key;
+      img.classList.add("field-icon");  // CSSで大きさを統一
+      th.appendChild(img);
+    } else {
+      th.textContent = h.label; // 「全体」用
+    }
+    row.appendChild(th);
+  });
+}
+
 // アイコンサイズ
 const ICON_SIZE = 45;         // 全寝顔
 const ICON_SIZE_FIELD = 36;   // フィールド別
