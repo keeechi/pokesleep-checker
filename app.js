@@ -45,16 +45,6 @@ const BADGE_SILVER = 'assets/icons/05-SilverBadge.png';
 // サマリーから除外（ダークライ）
 const EXCLUDED_SPECIES_FOR_SUMMARY = new Set(['0491']); // 4桁ゼロ埋め No
 
-// ヘッダー行（睡眠タイプ）
-const th = document.createElement("th");
-th.classList.add("sleep-type-col");  // ←専用クラスを追加
-row.appendChild(th);
-
-// 各データ行
-const td = document.createElement("td");
-td.classList.add("sleep-type-col");  // ←専用クラスを追加
-tr.appendChild(td);
-
 // ===================== 小ユーティリティ =====================
 // 4桁ゼロ埋め（1000以上はそのまま）
 function normalizeNo(noRaw) {
@@ -285,7 +275,7 @@ function renderSummary(state) {
     <table class="table table-sm align-middle mb-0 summary-table">
       <thead class="table-light">
         <tr>
-          <th style="min-width:48px; width:48px;"></th>
+          <th style="min-width:80px; width:80px;"></th>
 <th class="text-center" style="width:80px;">全体</th>
 ${FIELD_KEYS.map(f => {
   const src = FIELD_HEAD_ICON[f];              // 画像パス取得
@@ -696,47 +686,33 @@ async function main() {
 
   // サマリー用の軽いスタイル
   let _summaryStyleInjected = false;
-(function injectSummaryTableCSS(){
-  if (_summaryStyleInjected) return;
-  const style = document.createElement('style');
-  style.textContent = `
-    /* サマリー表の基本 */
-    .summary-table { 
-      font-size: calc(1rem - 2pt);
-      table-layout: fixed;   /* 列幅を尊重させるために固定レイアウト */
-    }
-    .summary-cell { text-align: center; line-height: 1.15; }
-    .summary-cell .sum-top { font-weight: 600; }
-    .summary-cell .sum-hr  { height: 1px; background: currentColor; opacity: .3; margin: 2px 12px; }
-    .summary-cell .sum-per { opacity: .75; }
-
-    /* フィールド見出しアイコン */
-    .summary-table .field-head-icon{
-      height: 24px;      /* お好みで 18〜28px */
-      width: auto;
-      display: inline-block;
-      vertical-align: middle;
-      image-rendering: -webkit-optimize-contrast;
-    }
-
-    /* 睡眠タイプのアイコン（行頭アイコン） */
-    .summary-table .summary-icon{
-      height: 24px;      /* お好みで */
-      width: auto;
-      display: block;
-      margin: 0 auto;
-    }
-
-    /* 先頭列（睡眠タイプアイコン列）の幅を確実に細くする */
-    .summary-table th:first-child,
-    .summary-table td:first-child {
-      width: 56px;       /* ← ここで列幅を調整 */
-      min-width: 56px;
-    }
-  `;
-  document.head.appendChild(style);
-  _summaryStyleInjected = true;
-})();
+  (function injectSummaryTableCSS(){
+    if (_summaryStyleInjected) return;
+    const style = document.createElement('style');
+    style.textContent = `
+      .summary-table { font-size: calc(1rem - 2pt); }
+      .summary-cell { text-align: center; line-height: 1.15; }
+      .summary-cell .sum-top { font-weight: 600; }
+      .summary-cell .sum-hr  { height: 1px; background: currentColor; opacity: .3; margin: 2px 12px; }
+      .summary-cell .sum-per { opacity: .75; }
+      .summary-table .field-head-icon{
+    height: 60px;         /* お好みで 20〜28px 程度 */
+    width: auto;
+    display: inline-block;
+    vertical-align: middle;
+    image-rendering: -webkit-optimize-contrast; /* 透明PNGの輪郭が綺麗に見えることが多い */
+      .summary-table th:nth-child(3),
+  .summary-table td:nth-child(3),
+  .summary-table th:nth-child(4),
+  .summary-table td:nth-child(4),
+  .summary-table th:nth-child(5),
+  .summary-table td:nth-child(5) {
+    width: 45px;
+    text-align: center;
+    `;
+    document.head.appendChild(style);
+    _summaryStyleInjected = true;
+  })();
 
   await loadPokemonIconsScriptOnce();
   await loadData();
