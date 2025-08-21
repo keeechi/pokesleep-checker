@@ -84,6 +84,80 @@ function labelForRank(n) {
   return `${stage}${idx}`;
 }
 
+// ミニ集計表の入れ物を（なければ）作る
+function ensureRankMiniSummaryContainer() {
+  const table = document.getElementById('rankSearchTable');
+  if (!table) return null;
+  // すでに作っていればそれを返す
+  let wrap = document.getElementById('rankMiniSummary');
+  if (wrap) return wrap;
+
+  // テーブルの直前に差し込む
+  wrap = document.createElement('div');
+  wrap.id = 'rankMiniSummary';
+  wrap.className = 'mb-2';           // ちょっと下に余白
+  table.parentElement.insertBefore(wrap, table);
+  return wrap;
+}
+
+// 集計してHTMLを返す（全ゼロなら null）
+function buildRankMiniSummaryHTML(field, rank, state) {
+  // 列（段）名
+  const STAGES = ['ノーマル','スーパー','ハイパー','マスター'];
+
+  // 初期化：sleepType × stage の0埋め表
+  const counts = {};
+  SLEEP_TYPES.forEach(t => {
+    counts[t] = { ノーマル:0, スーパー:0, ハイパー:0, マスター:0 };
+  });
+
+  // 条件：選択フィールドで rNum<=rank かつ 未取得（☆1〜☆4のみ集計）
+  for (const row of RAW_ROWS) {
+    const rNum = getFieldRankNum(row, field);
+    if (!rNum || rNum > rank) continue;
+    if (!CHECKABLE_STARS.includes(row.DisplayRarity)) continue;
+    if (getChecked(state, rowKey(row), row.DisplayRarity)) continue; // 入手済みは除外
+
+    const st = splitStage(rNum).stage;     // 'ノーマル'など
+    const type = row.Style || '';          // 'うとうと' 等
+    if (counts[type] && st in counts[type]) {
+      counts[type][st] += 1;
+    }
+  }
+
+  // ぜんぶ0なら表示しない
+  const total = SLEEP_TYPES.reduce((sum, t) =>
+    sum + STAGES.reduce((s, st) => s + counts[t][st], 0), 0);
+  if (total === 0) return null;
+
+  // 小さめのテーブルで作成
+  const headerRow = `
+    <tr>
+      <th style="width:72px;"></th>
+      ${STAGES.map(s => `<th class="text-center">${s}</th>`).join('')}
+    </tr>
+  `;
+  const bodyRows = SLEEP_TYPES.map(t => `
+    <tr>
+      <th class="text-start">
+        <img src="${STYLE_ICON[t]}" alt="${t}" style="height:18px;vertical-align:middle;"> ${t}
+      </th>
+      ${STAGES.map(s => `<td class="text-center">${counts[t][s]}</td>`).join('')}
+    </tr>
+  `).join('');
+
+  return `
+    <div class="card border-0">
+      <div class="table-responsive">
+        <table class="table table-sm mb-2 align-middle" style="font-size:0.9rem;">
+          <thead class="table-light">${headerRow}</thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
 // ダークライ除外判定
 function isExcludedFromSummary(row) {
   if (EXCLUDED_SPECIES_FOR_SUMMARY.has(row.No)) return true;
@@ -559,6 +633,12 @@ function renderRankSearch(state) {
   const field = document.getElementById('searchField').value || FIELD_KEYS[0];
   const rank = Math.max(1, Math.min(35, parseInt(document.getElementById('searchRank').value||'1',10)));
   const tbody = document.querySelector('#rankSearchTable tbody');
+
+  const miniWrap = ensureRankMiniSummaryContainer(); // 入れ物を確保
+    if (miniWrap) {
+  const miniHTML = buildRankMiniSummaryHTML(field, rank, state);
+    miniWrap.innerHTML = miniHTML || ''; // 全ゼロなら空にして非表示と同等に
+  }
 
   const items = [];
   for (const row of RAW_ROWS) {
