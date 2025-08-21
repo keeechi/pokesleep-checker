@@ -84,23 +84,6 @@ function labelForRank(n) {
   return `${stage}${idx}`;
 }
 
-// ミニ集計表の入れ物を（なければ）作る
-function ensureRankMiniSummaryContainer() {
-  const table = document.getElementById('rankSearchTable');
-  if (!table) return null;
-  // すでに作っていればそれを返す
-  let wrap = document.getElementById('rankMiniSummary');
-  if (wrap) return wrap;
-
-  // テーブルの直前に差し込む
-  wrap = document.createElement('div');
-  wrap.id = 'rankMiniSummary';
-  wrap.className = 'mb-2';           // ちょっと下に余白
-  table.parentElement.insertBefore(wrap, table);
-  return wrap;
-}
-
-// 集計してHTMLを返す（全ゼロなら null）
 function buildRankMiniSummaryHTML(field, rank, state) {
   // 列（段）名
   const STAGES = ['ノーマル','スーパー','ハイパー','マスター'];
@@ -130,13 +113,21 @@ function buildRankMiniSummaryHTML(field, rank, state) {
     sum + STAGES.reduce((s, st) => s + counts[t][st], 0), 0);
   if (total === 0) return null;
 
-  // 小さめのテーブルで作成
+  // 段（列）ごとの合計
+  const colTotals = {};
+  STAGES.forEach(st => {
+    colTotals[st] = SLEEP_TYPES.reduce((sum, t) => sum + counts[t][st], 0);
+  });
+
+  // ヘッダー行
   const headerRow = `
     <tr>
       <th style="width:72px;"></th>
       ${STAGES.map(s => `<th class="text-center">${s}</th>`).join('')}
     </tr>
   `;
+
+  // タイプ別のボディ行
   const bodyRows = SLEEP_TYPES.map(t => `
     <tr>
       <th class="text-start">
@@ -146,12 +137,21 @@ function buildRankMiniSummaryHTML(field, rank, state) {
     </tr>
   `).join('');
 
+  // 合計行（最後に追加）
+  const footerRow = `
+    <tr class="table-light fw-semibold">
+      <th class="text-start">合計</th>
+      ${STAGES.map(s => `<td class="text-center">${colTotals[s]}</td>`).join('')}
+    </tr>
+  `;
+
+  // 出力
   return `
     <div class="card border-0">
       <div class="table-responsive">
         <table class="table table-sm mb-2 align-middle" style="font-size:0.9rem;">
           <thead class="table-light">${headerRow}</thead>
-          <tbody>${bodyRows}</tbody>
+          <tbody>${bodyRows}${footerRow}</tbody>
         </table>
       </div>
     </div>
