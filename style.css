@@ -76,6 +76,11 @@ thead.table-light.sticky-header th {
   background-color: #DAE3F3;
 }
 
+.field-icon {
+  height: 24px;   /* アイコンの高さを統一 */
+  vertical-align: middle;
+}
+
 /* 1) フォントを一律で 2pt 小さく */
 .summary-table {
   font-size: calc(1rem - 2pt);
