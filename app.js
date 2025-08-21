@@ -707,7 +707,7 @@ async function main() {
   .summary-table td:nth-child(4),
   .summary-table th:nth-child(5),
   .summary-table td:nth-child(5) {
-    width: 45px;
+    width: 30px;
     text-align: center;
     `;
     document.head.appendChild(style);
