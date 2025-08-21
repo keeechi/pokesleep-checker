@@ -701,6 +701,14 @@ async function main() {
     display: inline-block;
     vertical-align: middle;
     image-rendering: -webkit-optimize-contrast; /* 透明PNGの輪郭が綺麗に見えることが多い */
+      .summary-table th:nth-child(3),
+  .summary-table td:nth-child(3),
+  .summary-table th:nth-child(4),
+  .summary-table td:nth-child(4),
+  .summary-table th:nth-child(5),
+  .summary-table td:nth-child(5) {
+    width: 45px;
+    text-align: center;
     `;
     document.head.appendChild(style);
     _summaryStyleInjected = true;
