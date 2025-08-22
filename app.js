@@ -785,6 +785,16 @@ function injectListLayoutCSS() {
     .bulk-group-vert .btn { display: block; width: 100%; }
     .bulk-group-vert .btn + .btn { margin-top: 6px; }
     .rank-mini-summary:empty { display: none; }
+    
+    /* ポケモン名を小さめに（9pt相当） */
+    .pf-name-small { font-size: 9pt; }
+
+    /* 逆引きシートの表カラムを中央寄せ */
+    #rankSearchTable th,
+    #rankSearchTable td {
+      text-align: center;
+      vertical-align: middle;
+    }
   `;
   document.head.appendChild(style);
   _listLayoutStyleInjected = true;
