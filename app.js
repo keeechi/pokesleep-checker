@@ -130,9 +130,7 @@ function buildRankMiniSummaryHTML(field, rank, state) {
   // タイプ別のボディ行
   const bodyRows = SLEEP_TYPES.map(t => `
     <tr>
-      <th class="text-start">
-        <img src="${STYLE_ICON[t]}" alt="${t}" style="height:18px;vertical-align:middle;"> ${t}
-      </th>
+      <th class="text-start">${t}</th>
       ${STAGES.map(s => `<td class="text-center">${counts[t][s]}</td>`).join('')}
     </tr>
   `).join('');
@@ -786,6 +784,7 @@ function injectListLayoutCSS() {
     td.td-bulk { width: 72px; padding-left: 4px; padding-right: 4px; }
     .bulk-group-vert .btn { display: block; width: 100%; }
     .bulk-group-vert .btn + .btn { margin-top: 6px; }
+    .rank-mini-summary:empty { display: none; }
   `;
   document.head.appendChild(style);
   _listLayoutStyleInjected = true;
