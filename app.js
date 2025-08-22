@@ -615,6 +615,23 @@ function renderFieldTables(state) {
   });
 }
 
+// ミニ要約の入れ物を用意（なければ作成して #rankSearchTable の直前に挿入）
+function ensureRankMiniSummaryContainer() {
+  // 既存があればそれを返す
+  let el = document.getElementById('rankMiniSummary');
+  if (el) return el;
+
+  // ランク検索の表(#rankSearchTable)の直前に置く
+  const table = document.getElementById('rankSearchTable');
+  if (!table || !table.parentNode) return null;
+
+  el = document.createElement('div');
+  el.id = 'rankMiniSummary';
+  el.className = 'rank-mini-summary mb-2'; // Bootstrap余白（必要に応じて調整）
+  table.parentNode.insertBefore(el, table);
+  return el;
+}
+
 // ===================== ランク検索（未入手のみ） =====================
 function setupRankSearchControls() {
   const sel = document.getElementById('searchField');
