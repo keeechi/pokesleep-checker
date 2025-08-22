@@ -87,6 +87,7 @@ function labelForRank(n) {
 function buildRankMiniSummaryHTML(field, rank, state) {
   // 列（段）名
   const STAGES = ['ノーマル','スーパー','ハイパー','マスター'];
+  const ROW_CLASS = { 'うとうと':'row-uto', 'すやすや':'row-suya', 'ぐっすり':'row-gu' };
 
   // 初期化：sleepType × stage の0埋め表
   const counts = {};
@@ -99,13 +100,11 @@ function buildRankMiniSummaryHTML(field, rank, state) {
     const rNum = getFieldRankNum(row, field);
     if (!rNum || rNum > rank) continue;
     if (!CHECKABLE_STARS.includes(row.DisplayRarity)) continue;
-    if (getChecked(state, rowKey(row), row.DisplayRarity)) continue; // 入手済みは除外
+    if (getChecked(state, rowKey(row), row.DisplayRarity)) continue;
 
-    const st = splitStage(rNum).stage;     // 'ノーマル'など
-    const type = row.Style || '';          // 'うとうと' 等
-    if (counts[type] && st in counts[type]) {
-      counts[type][st] += 1;
-    }
+    const st   = splitStage(rNum).stage;    // 'ノーマル' など
+    const type = row.Style || '';           // 'うとうと' 等
+    if (counts[type] && st in counts[type]) counts[type][st] += 1;
   }
 
   // ぜんぶ0なら表示しない
@@ -113,33 +112,43 @@ function buildRankMiniSummaryHTML(field, rank, state) {
     sum + STAGES.reduce((s, st) => s + counts[t][st], 0), 0);
   if (total === 0) return null;
 
-  // 段（列）ごとの合計
+  // 段（列）ごとの合計（縦方向）
   const colTotals = {};
   STAGES.forEach(st => {
     colTotals[st] = SLEEP_TYPES.reduce((sum, t) => sum + counts[t][st], 0);
   });
 
-  // ヘッダー行
+  // 行ごとの合計（横方向）
+  const rowTotals = {};
+  SLEEP_TYPES.forEach(t => {
+    rowTotals[t] = STAGES.reduce((s, st) => s + counts[t][st], 0);
+  });
+  const grandTotal = SLEEP_TYPES.reduce((s, t) => s + rowTotals[t], 0);
+
+  // ヘッダー行（合計 列を追加）
   const headerRow = `
     <tr>
       <th style="width:72px;"></th>
       ${STAGES.map(s => `<th class="text-center">${s}</th>`).join('')}
+      <th class="text-center">合計</th>
     </tr>
   `;
 
-  // タイプ別のボディ行
+  // タイプ別のボディ行（アイコンなし・行色クラス付与・行合計付き）
   const bodyRows = SLEEP_TYPES.map(t => `
-    <tr>
+    <tr class="${ROW_CLASS[t] || ''}">
       <th class="text-start">${t}</th>
       ${STAGES.map(s => `<td class="text-center">${counts[t][s]}</td>`).join('')}
+      <td class="text-center fw-semibold">${rowTotals[t]}</td>
     </tr>
   `).join('');
 
-  // 合計行（最後に追加）
+  // フッター（列合計＋総合計）
   const footerRow = `
     <tr class="table-light fw-semibold">
       <th class="text-start">合計</th>
       ${STAGES.map(s => `<td class="text-center">${colTotals[s]}</td>`).join('')}
+      <td class="text-center">${grandTotal}</td>
     </tr>
   `;
 
@@ -795,6 +804,15 @@ function injectListLayoutCSS() {
       text-align: center;
       vertical-align: middle;
     }
+
+    /* ミニ表の行配色（サマリー表と近い淡色） */
+    .rank-mini-summary .row-uto  { background: #fff5db; }  /* うとうと：淡い黄 */
+    .rank-mini-summary .row-suya { background: #e9f4ff; }  /* すやすや：淡い青 */
+    .rank-mini-summary .row-gu   { background: #ecebff; }  /* ぐっすり：淡い紫 */
+
+    /* ヘッダ固定の見栄えを揃える用（必要なら） */
+    .rank-mini-summary table thead th { vertical-align: middle; }
+    
   `;
   document.head.appendChild(style);
   _listLayoutStyleInjected = true;
