@@ -795,8 +795,8 @@ function injectListLayoutCSS() {
     .bulk-group-vert .btn + .btn { margin-top: 6px; }
     .rank-mini-summary:empty { display: none; }
     
-    /* ポケモン名を小さめに（9pt相当） */
-    .pf-name-small { font-size: 9pt; }
+    /* ポケモン名を小さめに（7pt相当） */
+    .pf-name-small { font-size: 7pt; }
 
     /* 逆引きシートの表カラムを中央寄せ */
     #rankSearchTable th,
