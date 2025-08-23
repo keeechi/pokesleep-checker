@@ -649,24 +649,19 @@ function createSleepTypeSelect() {
   return sel;
 }
 
-// 逆引きフィルターのDOMを「フィールド／ランク／睡眠タイプ」の3ブロックで再構成
+// 逆引きフィルターのDOMを「フィールド／ランク／睡眠タイプ」で再構成（行全体を置き換え）
 function buildReverseFilterBar() {
   const fieldSel = document.getElementById('searchField');
   const rankSel  = document.getElementById('searchRank');
-
   if (!fieldSel || !rankSel) return;
 
-  // 親要素をフィルターバーに指定（既存親を使う）
-  const container = rankSel.parentNode;
-  container.classList.add('filter-bar');
+  // ← ここがポイント：2つのselectを含む .row を特定し、中身を入れ替える
+  const row = fieldSel.closest('.row') || rankSel.closest('.row');
+  if (!row) return;
 
-  // 既存の子を一旦クリア（不要な改行や古いラベルを排除）
-  while (container.firstChild) container.removeChild(container.firstChild);
-
-  // セレクトを準備（睡眠タイプは作成 or 既存を再利用）
   const typeSel = createSleepTypeSelect();
 
-  // ラベル＋セレクトを1行にまとめる小コンポーネント
+  // ラベル＋セレクト1組の小コンポーネント
   const makeGroup = (labelText, selectEl) => {
     const wrap = document.createElement('div');
     wrap.className = 'filter-item';
@@ -675,7 +670,6 @@ function buildReverseFilterBar() {
     lab.textContent = labelText;
     lab.htmlFor = selectEl.id;
 
-    // セレクトの体裁を統一
     selectEl.classList.add('form-select','form-select-sm');
 
     wrap.appendChild(lab);
@@ -683,13 +677,20 @@ function buildReverseFilterBar() {
     return wrap;
   };
 
-  // 並び順：フィールド → ランク → 睡眠タイプ
-  container.appendChild(makeGroup('フィールド', fieldSel));
-  container.appendChild(makeGroup('ランク',     rankSel));
-  container.appendChild(makeGroup('睡眠タイプ', typeSel));
+  // 新しいフィルターバー
+  const bar = document.createElement('div');
+  bar.className = 'filter-bar';
 
-  // リスナー（必要なら再付与：sleepTypeはここでattach）
-  typeSel.removeEventListener('change', _onTypeChange); // 多重付与防止
+  bar.appendChild(makeGroup('フィールド', fieldSel));
+  bar.appendChild(makeGroup('ランク',     rankSel));
+  bar.appendChild(makeGroup('睡眠タイプ', typeSel));
+
+  // 行の中身をまるごと置換（元のラベル等はここで消える）
+  while (row.firstChild) row.removeChild(row.firstChild);
+  row.appendChild(bar);
+
+  // リスナー（多重付与を避けるなら一旦removeしてからadd）
+  typeSel.removeEventListener('change', _onTypeChange);
   typeSel.addEventListener('change', _onTypeChange);
 }
 
