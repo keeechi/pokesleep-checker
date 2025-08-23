@@ -832,22 +832,21 @@ function renderRankSearch(state) {
 // バックアップ用の簡単なエンコード/デコード（UTF-8対応）
 function encodeStateToText(state) {
   const json = JSON.stringify(state);
-  const b64  = btoa(unescape(encodeURIComponent(json)));
-  // 将来互換用にプレフィックスを付けておく
-  return `PSC1:${b64}`;
+  // プレフィックスなしのBase64のみを出力
+  return btoa(unescape(encodeURIComponent(json)));
 }
 function decodeTextToState(text) {
   const raw = (text || '').trim();
   if (!raw) throw new Error('空のテキストです');
-  // プレフィックス付き or 素のBase64 or 素のJSON のどれでも受け付ける
-  let payload = raw.startsWith('PSC1:') ? raw.slice(5) : raw;
+  // 「PSC1:」が付いていたら除去（後方互換）
+  let payload = raw.replace(/^PSC1:/, '');
   try {
     // Base64 っぽければデコードを試みる
     const json = decodeURIComponent(escape(atob(payload)));
     return JSON.parse(json);
   } catch {
     // だめなら素のJSONとしてパースを試す
-    return JSON.parse(raw);
+    return JSON.parse(payload);
   }
 }
 
