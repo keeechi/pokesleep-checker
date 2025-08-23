@@ -423,6 +423,84 @@ ${FIELD_KEYS.map(f => {
 }
 
 // ===================== 全寝顔チェックシート =====================
+// 1) モーダルを1度だけ作る
+let _fieldRankModalEl = null, _fieldRankModal = null;
+function ensureFieldRankModal() {
+  if (_fieldRankModalEl) return { modal:_fieldRankModal, el:_fieldRankModalEl };
+
+  const el = document.createElement('div');
+  el.id = 'fieldRankModalRoot';
+  el.className = 'modal fade';
+  el.tabIndex = -1;
+  el.innerHTML = `
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header py-2">
+          <h5 class="modal-title">出現フィールド・ランク</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
+        </div>
+        <div class="modal-body modal-field-rank">
+          <!-- JSで表を差し込む -->
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(el);
+  _fieldRankModalEl = el;
+  _fieldRankModal = new bootstrap.Modal(el, { backdrop:true, keyboard:true });
+  return { modal:_fieldRankModal, el:_fieldRankModalEl };
+}
+
+// 2) エントリ（species）→ フィールド×☆1..☆4 の最小必要ランク表HTML
+function buildFieldRankMatrixHTML(ent) {
+  const header = `
+    <thead class="table-light">
+      <tr>
+        <th class="text-start">フィールド</th>
+        ${CHECKABLE_STARS.map(s=>`<th class="text-center">${s}</th>`).join('')}
+      </tr>
+    </thead>`;
+
+  const rows = [];
+  for (const f of FIELD_KEYS) {
+    // そのフィールドに1つでも出現があるか判定
+    let appears = false;
+    const cells = CHECKABLE_STARS.map(star=>{
+      let min = Infinity;
+      for (const r of ent.rows) {
+        if (r.DisplayRarity !== star) continue;
+        const rn = getFieldRankNum(r, f);
+        if (rn) { min = Math.min(min, rn); }
+      }
+      if (min !== Infinity) { appears = true; return `<td class="text-center">${renderRankChip(min)}</td>`; }
+      return `<td class="text-center text-muted">—</td>`;
+    }).join('');
+    if (appears) {
+      const icon = FIELD_HEAD_ICON[f] ? `<img src="${FIELD_HEAD_ICON[f]}" class="field-icon" alt="">` : '';
+      const short = FIELD_SHORT[f] || f;
+      rows.push(`<tr><th class="text-start">${icon}${short}</th>${cells}</tr>`);
+    }
+  }
+  if (rows.length === 0) return `<div class="text-muted">このポケモンの出現情報が見つかりません。</div>`;
+
+  return `
+    <div class="mb-2 small text-body-secondary">最低必要ランクを表示（◓=段、数字=段内）</div>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">${header}<tbody>${rows.join('')}</tbody></table>
+    </div>`;
+}
+
+// 3) エントリ検索 & モーダルオープン
+function findEntryByEntKey(key) {
+  for (const ent of SPECIES_MAP.values()) { if (entKey(ent) === key) return ent; }
+  return null;
+}
+function openFieldRankModal(ent) {
+  const { modal, el } = ensureFieldRankModal();
+  el.querySelector('.modal-title').textContent = `${ent.no} ${ent.name} の出現フィールド・ランク`;
+  el.querySelector('.modal-body').innerHTML = buildFieldRankMatrixHTML(ent);
+  modal.show();
+}
+
 let LAST_RENDER_ENTRIES = [];
 function renderAllFaces(state) {
   const tbody = document.querySelector('#allFacesTable tbody');
@@ -471,8 +549,10 @@ function renderAllFaces(state) {
       <tr>
         <td class="name-cell text-center align-middle">
           <div style="width:${ICON_SIZE + 16}px; margin: 0 auto;">
-            <div class="poke-icon mx-auto" style="width:${ICON_SIZE}px;height:${ICON_SIZE}px;line-height:0;">
+            <div class="poke-icon mx-auto position-relative" style="width:${ICON_SIZE}px;height:${ICON_SIZE}px;line-height:0;">
               ${renderPokemonIconById(ent.iconNo || getIconKeyFromNo(no), ICON_SIZE)}
+              <button type="button" class="btn btn-light btn-xxs icon-more"
+                  data-entkey="${key}" aria-label="出現フィールド">▼</button>
             </div>
             <div class="mt-1" style="font-size:9px; line-height:1.2; word-break:break-word; white-space:normal;">
               <div class="text-muted">${no}</div>
@@ -515,6 +595,14 @@ function renderAllFaces(state) {
       renderRankSearch(state);
     });
   });
+    // ▼ボタン：出現フィールド・ランクのミニ表（モーダル）
+    tbody.querySelectorAll('button.icon-more').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        const k = e.currentTarget.dataset.entkey;
+        const ent = findEntryByEntKey(k);
+        if (ent) openFieldRankModal(ent);
+      });
+    });
 }
 
 // ===================== フィールド別 =====================
@@ -960,6 +1048,18 @@ function injectListLayoutCSS() {
     @media (min-width: 768px) {
       .filter-bar { flex-direction:row; flex-wrap:nowrap; align-items:center; gap:12px 16px; }
     }
+
+  /* アイコン右上のミニボタン */
+  .icon-more.btn-xxs{ padding:0 .3rem; font-size:.70rem; line-height:1.1 }
+  .poke-icon.position-relative .icon-more{
+    position:absolute; top:-6px; right:-6px; z-index:2;
+  }
+
+  /* モーダル内のミニ表 */
+  .modal-field-rank table { font-size:0.9rem; }
+  .modal-field-rank th, .modal-field-rank td { vertical-align:middle; }
+  .modal-field-rank .field-icon{ height:18px; width:auto; margin-right:.25rem; }
+
   `;
   document.head.appendChild(style);
   _listLayoutStyleInjected = true;
