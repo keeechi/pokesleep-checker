@@ -809,9 +809,14 @@ function injectListLayoutCSS() {
 .rank-mini-summary:empty { display: none; }
 
 /* ミニ表の行配色（サマリー表と近い淡色） */
-.rank-mini-summary .row-uto  { background: #fff5db; }  /* うとうと */
-.rank-mini-summary .row-suya { background: #e9f4ff; }  /* すやすや */
-.rank-mini-summary .row-gu   { background: #ecebff; }  /* ぐっすり */
+.rank-mini-summary tr.row-uto  > th,
+.rank-mini-summary tr.row-uto  > td { background-color: #fff5db !important; } /* うとうと：淡黄 */
+
+.rank-mini-summary tr.row-suya > th,
+.rank-mini-summary tr.row-suya > td { background-color: #e9f4ff !important; } /* すやすや：淡青 */
+
+.rank-mini-summary tr.row-gu   > th,
+.rank-mini-summary tr.row-gu   > td { background-color: #ecebff !important; } /* ぐっすり：淡紫 */
 
 /* 見栄え微調整（任意） */
 .rank-mini-summary table thead th { vertical-align: middle; }
