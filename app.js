@@ -703,10 +703,7 @@ function setupRankSearchControls() {
   // フィールド
   const sel = document.getElementById('searchField');
   sel.innerHTML = FIELD_KEYS.map(f=>`<option value="${f}">${FIELD_SHORT[f]}</option>`).join('');
-  document.getElementById('searchField').addEventListener('change', ()=>renderRankSearch(loadState()));
-
-  // 親をフィルターバーとしてマーク（PC横並び/スマホ縦並びのCSSを当てる）
-  document.getElementById('searchRank')?.parentNode?.classList.add('filter-bar');
+  sel.addEventListener('change', ()=>renderRankSearch(loadState()));
 
   // ランク
   const rankSel = document.getElementById('searchRank');
@@ -716,7 +713,7 @@ function setupRankSearchControls() {
   rankSel.value = '1';
   rankSel.addEventListener('change', ()=>renderRankSearch(loadState()));
 
-  // ★★ 新：3ブロック構成に並べ直し（PC=横一列 / SP=縦並び）
+  // 3ブロック（フィールド/ランク/睡眠タイプ）に再構成
   buildReverseFilterBar();
 }
 
@@ -854,6 +851,7 @@ function setupBackupUI() {
 
 // ===================== レイアウト用の軽い注入CSS =====================
 let _listLayoutStyleInjected = false;
+let _listLayoutStyleInjected = false;
 function injectListLayoutCSS() {
   if (_listLayoutStyleInjected) return;
   const style = document.createElement('style');
@@ -862,118 +860,28 @@ function injectListLayoutCSS() {
     td.td-bulk { width: 72px; padding-left: 4px; padding-right: 4px; }
     .bulk-group-vert .btn { display: block; width: 100%; }
     .bulk-group-vert .btn + .btn { margin-top: 6px; }
-    .rank-mini-summary:empty { display: none; }
-    
-    /* ポケモン名を小さめに（7pt相当） */
     .pf-name-small { font-size: 7pt; }
 
-/* 逆引きシートの表カラムを中央寄せ */
-#rankSearchTable th,
-#rankSearchTable td {
-  text-align: center;
-  vertical-align: middle;
-}
+    /* 逆引きシートの表 */
+    #rankSearchTable th, #rankSearchTable td { text-align: center; vertical-align: middle; }
 
-/* ミニ表：空なら非表示（既存のままでOK） */
-.rank-mini-summary:empty { display: none; }
+    /* ミニ表 */
+    .rank-mini-summary:empty { display: none; }
+    .rank-mini-summary tr.row-uto  > th, .rank-mini-summary tr.row-uto  > td  { background-color: #fff5db !important; }
+    .rank-mini-summary tr.row-suya > th, .rank-mini-summary tr.row-suya > td { background-color: #e9f4ff !important; }
+    .rank-mini-summary tr.row-gu   > th, .rank-mini-summary tr.row-gu   > td { background-color: #ecebff !important; }
+    .rank-mini-summary table thead th { vertical-align: middle; }
 
-/* ミニ表の行配色（サマリー表と近い淡色） */
-.rank-mini-summary tr.row-uto  > th,
-.rank-mini-summary tr.row-uto  > td { background-color: #fff5db !important; } /* うとうと：淡黄 */
+    /* ---- 逆引きフィルター（最小構成） ---- */
+    .filter-bar { display:flex; flex-direction:column; align-items:flex-start; gap:10px; }
+    .filter-item { display:flex; flex-direction:row; align-items:center; gap:8px; white-space:nowrap; }
+    .filter-item label { margin:0 !important; font-weight:500; }
+    .filter-item .form-select { width:auto; display:inline-block; }
 
-.rank-mini-summary tr.row-suya > th,
-.rank-mini-summary tr.row-suya > td { background-color: #e9f4ff !important; } /* すやすや：淡青 */
-
-.rank-mini-summary tr.row-gu   > th,
-.rank-mini-summary tr.row-gu   > td { background-color: #ecebff !important; } /* ぐっすり：淡紫 */
-
-/* 見栄え微調整（任意） */
-.rank-mini-summary table thead th { vertical-align: middle; }
-
-#searchField, #searchRank, #searchType { width: auto; display: inline-block; }
-
-/* 逆引きフィルターの余白をコンパクトに */
-label[for="searchField"],
-label[for="searchRank"],
-label[for="searchType"] {
-  margin: 0 .5rem 0 0 !important;  /* ラベル右だけ少し空ける */
-  display: inline-block;
-  vertical-align: middle;
-}
-
-#searchField, #searchRank, #searchType {
-  display: inline-block;  /* 横並び固定 */
-  width: auto;            /* 内容に合わせる */
-  margin-right: 12px;     /* 各セレクトの間隔 */
-  vertical-align: middle;
-}
-
-/* === 逆引きフィルターのレイアウト（指定どおりの並び） === */
-/* 3つのブロックを“縦に”並べる（各ブロック = 1行） */
-.filter-bar {
-  display: flex;
-  flex-direction: column;   /* ← 行ごとに改行 */
-  align-items: flex-start;
-  gap: 10px;                /* 行間の距離（お好みで 8〜12px） */
-}
-
-/* 各行は「ラベル ＋ セレクト」を横一列で表示（間に改行しない） */
-.filter-item {
-  display: flex;
-  flex-direction: row;      /* ← ラベルとプルダウンは同じ行 */
-  align-items: center;
-  gap: 8px;                 /* ラベルとセレクトの間の距離 */
-  white-space: nowrap;      /* 行内で折り返さない（指示どおり） */
-}
-
-.filter-item label {
-  margin: 0 !important;
-  font-weight: 500;
-}
-
-/* セレクトは内容に合わせた幅（100%にしない） */
-.filter-item .form-select {
-  width: auto;
-  display: inline-block;
-}
-
-/* デフォルト（モバイル想定）：各要素（フィールド／ランク／睡眠タイプ）を縦に並べる */
-.filter-bar {
-  display: flex;
-  flex-direction: column;   /* 縦積み＝要素ごとに改行 */
-  align-items: flex-start;
-  gap: 10px;
-}
-
-/* 行（ラベル＋セレクトのセット）は同一行に固定 */
-.filter-item {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;      /* セット内は改行しない */
-}
-
-.filter-item label {
-  margin: 0 !important;
-  font-weight: 500;
-}
-
-.filter-item .form-select {
-  width: auto;
-  display: inline-block;
-}
-
-/* PC（768px〜）：3要素を同一行に横並びにする */
-@media (min-width: 768px) {
-  .filter-bar {
-    flex-direction: row;    /* 横並び */
-    flex-wrap: nowrap;      /* 折り返さない＝同じ行に収める */
-    align-items: center;
-    gap: 12px 16px;         /* 横・縦の余白 */
-  }
-}
-
+    /* PC（768px〜）は1行横並び */
+    @media (min-width: 768px) {
+      .filter-bar { flex-direction:row; flex-wrap:nowrap; align-items:center; gap:12px 16px; }
+    }
   `;
   document.head.appendChild(style);
   _listLayoutStyleInjected = true;
