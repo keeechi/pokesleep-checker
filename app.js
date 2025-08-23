@@ -84,58 +84,54 @@ function labelForRank(n) {
   return `${stage}${idx}`;
 }
 
-function buildRankMiniSummaryHTML(field, rank, state) {
-  // 列（段）名
+function buildRankMiniSummaryHTML(field, rank, state, sleepTypeFilter = '') {
   const STAGES = ['ノーマル','スーパー','ハイパー','マスター'];
   const ROW_CLASS = { 'うとうと':'row-uto', 'すやすや':'row-suya', 'ぐっすり':'row-gu' };
+  const TYPES = sleepTypeFilter ? [sleepTypeFilter] : SLEEP_TYPES; // ← ここで対象タイプを決める
 
-  // 初期化：sleepType × stage の0埋め表
+  // 初期化
   const counts = {};
-  SLEEP_TYPES.forEach(t => {
-    counts[t] = { ノーマル:0, スーパー:0, ハイパー:0, マスター:0 };
-  });
+  SLEEP_TYPES.forEach(t => { counts[t] = { ノーマル:0, スーパー:0, ハイパー:0, マスター:0 }; });
 
-  // 条件：選択フィールドで rNum<=rank かつ 未取得（☆1〜☆4のみ集計）
+  // 集計（タイプで絞る）
   for (const row of RAW_ROWS) {
     const rNum = getFieldRankNum(row, field);
     if (!rNum || rNum > rank) continue;
     if (!CHECKABLE_STARS.includes(row.DisplayRarity)) continue;
     if (getChecked(state, rowKey(row), row.DisplayRarity)) continue;
+    if (sleepTypeFilter && row.Style !== sleepTypeFilter) continue; // ← 追加
 
-    const st   = splitStage(rNum).stage;    // 'ノーマル' など
-    const type = row.Style || '';           // 'うとうと' 等
+    const st = splitStage(rNum).stage;
+    const type = row.Style || '';
     if (counts[type] && st in counts[type]) counts[type][st] += 1;
   }
 
-  // ぜんぶ0なら表示しない
-  const total = SLEEP_TYPES.reduce((sum, t) =>
+  // 合計0なら非表示
+  const total = TYPES.reduce((sum, t) =>
     sum + STAGES.reduce((s, st) => s + counts[t][st], 0), 0);
   if (total === 0) return null;
 
-  // 段（列）ごとの合計（縦方向）
+  // 列合計（対象タイプのみ）
   const colTotals = {};
   STAGES.forEach(st => {
-    colTotals[st] = SLEEP_TYPES.reduce((sum, t) => sum + counts[t][st], 0);
+    colTotals[st] = TYPES.reduce((sum, t) => sum + counts[t][st], 0);
   });
 
-  // 行ごとの合計（横方向）
+  // 行合計（対象タイプのみ）
   const rowTotals = {};
-  SLEEP_TYPES.forEach(t => {
-    rowTotals[t] = STAGES.reduce((s, st) => s + counts[t][st], 0);
-  });
-  const grandTotal = SLEEP_TYPES.reduce((s, t) => s + rowTotals[t], 0);
+  TYPES.forEach(t => { rowTotals[t] = STAGES.reduce((s, st) => s + counts[t][st], 0); });
+  const grandTotal = TYPES.reduce((s, t) => s + rowTotals[t], 0);
 
-  // ヘッダー行（合計 列を追加）
+  // ヘッダー
   const headerRow = `
     <tr>
       <th style="width:72px;"></th>
       ${STAGES.map(s => `<th class="text-center">${s}</th>`).join('')}
       <th class="text-center">合計</th>
-    </tr>
-  `;
+    </tr>`;
 
-  // タイプ別のボディ行（アイコンなし・行色クラス付与・行合計付き）
-  const bodyRows = SLEEP_TYPES.map(t => `
+  // ボディ（対象タイプのみ出す）
+  const bodyRows = TYPES.map(t => `
     <tr class="${ROW_CLASS[t] || ''}">
       <th class="text-start">${t}</th>
       ${STAGES.map(s => `<td class="text-center">${counts[t][s]}</td>`).join('')}
@@ -143,16 +139,14 @@ function buildRankMiniSummaryHTML(field, rank, state) {
     </tr>
   `).join('');
 
-  // フッター（列合計＋総合計）
+  // フッター
   const footerRow = `
     <tr class="table-light fw-semibold">
       <th class="text-start">合計</th>
       ${STAGES.map(s => `<td class="text-center">${colTotals[s]}</td>`).join('')}
       <td class="text-center">${grandTotal}</td>
-    </tr>
-  `;
+    </tr>`;
 
-  // 出力
   return `
     <div class="card border-0">
       <div class="table-responsive">
@@ -161,8 +155,7 @@ function buildRankMiniSummaryHTML(field, rank, state) {
           <tbody>${bodyRows}${footerRow}</tbody>
         </table>
       </div>
-    </div>
-  `;
+    </div>`;
 }
 
 // ダークライ除外判定
@@ -639,18 +632,65 @@ function ensureRankMiniSummaryContainer() {
   return el;
 }
 
+// ランクの右に「睡眠タイプ」セレクトを差し込む（なければ生成）
+function ensureSleepTypeSelect() {
+  let sel = document.getElementById('searchType');
+  if (sel) return sel;
+
+  const rankEl = document.getElementById('searchRank');
+  if (!rankEl || !rankEl.parentNode) return null;
+
+  // ラベル
+  const label = document.createElement('label');
+  label.htmlFor = 'searchType';
+  label.textContent = '睡眠タイプ';
+  label.className = 'ms-2 me-1 mb-0 d-inline-block';
+
+  // セレクト
+  sel = document.createElement('select');
+  sel.id = 'searchType';
+  sel.className = 'form-select form-select-sm d-inline-block';
+  sel.style.width = 'auto';
+
+  // ランクの直後に [ラベル][セレクト] を挿入
+  const parent = rankEl.parentNode;
+  if (rankEl.nextSibling) {
+    parent.insertBefore(label, rankEl.nextSibling);
+    parent.insertBefore(sel, label.nextSibling);
+  } else {
+    parent.appendChild(label);
+    parent.appendChild(sel);
+  }
+  return sel;
+}
+
 // ===================== ランク検索（未入手のみ） =====================
 function setupRankSearchControls() {
+  // フィールド
   const sel = document.getElementById('searchField');
   sel.innerHTML = FIELD_KEYS.map(f=>`<option value="${f}">${FIELD_SHORT[f]}</option>`).join('');
   document.getElementById('searchField').addEventListener('change', ()=>renderRankSearch(loadState()));
 
+  // ランク
   const rankSel = document.getElementById('searchRank');
   const opts = [];
   for (let n = 1; n <= 35; n++) opts.push(`<option value="${n}">${labelForRank(n)}</option>`);
   rankSel.innerHTML = opts.join('');
   rankSel.value = '1';
   rankSel.addEventListener('change', ()=>renderRankSearch(loadState()));
+
+  // 睡眠タイプ（新規）
+  const typeSel = ensureSleepTypeSelect();
+  if (typeSel) {
+    typeSel.innerHTML = [
+      {v:'',        t:'全て'},
+      {v:'うとうと', t:'うとうと'},
+      {v:'すやすや', t:'すやすや'},
+      {v:'ぐっすり', t:'ぐっすり'},
+    ].map(o=>`<option value="${o.v}">${o.t}</option>`).join('');
+    typeSel.value = '';
+    typeSel.addEventListener('change', ()=>renderRankSearch(loadState()));
+  }
 }
 
 function renderRankSearch(state) {
