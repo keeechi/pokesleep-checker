@@ -639,20 +639,19 @@ function ensureSleepTypeSelect() {
   const rankEl = document.getElementById('searchRank');
   if (!rankEl || !rankEl.parentNode) return null;
 
-  // ラベル
+  // ラベル（余計な ms-2 / me-1 は付けない）
   const label = document.createElement('label');
   label.htmlFor = 'searchType';
   label.textContent = '睡眠タイプ';
-  label.className = 'ms-2 me-1 mb-0 d-inline-block';
+  label.className = 'mb-0';
 
   // セレクト
   sel = document.createElement('select');
   sel.id = 'searchType';
-  sel.className = 'form-select form-select-sm d-inline-block';
-  sel.style.width = 'auto';
+  sel.className = 'form-select form-select-sm';
 
-  // ランクの直後に [ラベル][セレクト] を挿入
   const parent = rankEl.parentNode;
+  // ランクの直後に挿入
   if (rankEl.nextSibling) {
     parent.insertBefore(label, rankEl.nextSibling);
     parent.insertBefore(sel, label.nextSibling);
@@ -669,6 +668,8 @@ function setupRankSearchControls() {
   const sel = document.getElementById('searchField');
   sel.innerHTML = FIELD_KEYS.map(f=>`<option value="${f}">${FIELD_SHORT[f]}</option>`).join('');
   document.getElementById('searchField').addEventListener('change', ()=>renderRankSearch(loadState()));
+  // 親をフィルターバーとしてマーク（PC横並び/スマホ縦並びのCSSを当てる）
+  document.getElementById('searchRank')?.parentNode?.classList.add('filter-bar');
 
   // ランク
   const rankSel = document.getElementById('searchRank');
@@ -880,9 +881,33 @@ label[for="searchType"] {
   vertical-align: middle;
 }
 
-/* スマホでは少し詰める */
+/* === 逆引きフィルターのレイアウト === */
+/* PC/タブレット：横並び・適度な隙間 */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;                 /* ラベルとプルダウン、要素間の距離を統一 */
+}
+.filter-bar label {
+  margin: 0 !important;      /* 余計な左右マージンを無効化 */
+}
+.filter-bar .form-select {
+  width: auto;               /* 中身に合わせる（100%幅を解除） */
+  display: inline-block;
+}
+
+/* スマホ：1要素ずつ改行（ラベル→プルダウン） */
 @media (max-width: 576px) {
-  #searchField, #searchRank, #searchType { margin-right: 8px; }
+  .filter-bar { display: block; }
+  .filter-bar label {
+    display: block;
+    margin: 8px 0 4px !important;   /* ラベル下に少し余白 */
+  }
+  .filter-bar .form-select {
+    width: 100%;                    /* 全幅にして操作しやすく */
+    margin: 0 0 8px 0;              /* 各プルダウン下に余白 */
+  }
 }
     
   `;
