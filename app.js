@@ -862,6 +862,8 @@ function injectListLayoutCSS() {
 
 /* 見栄え微調整（任意） */
 .rank-mini-summary table thead th { vertical-align: middle; }
+
+#searchField, #searchRank, #searchType { width: auto; display: inline-block; }
     
   `;
   document.head.appendChild(style);
