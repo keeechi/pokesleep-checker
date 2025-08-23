@@ -881,33 +881,33 @@ label[for="searchType"] {
   vertical-align: middle;
 }
 
-/* === 逆引きフィルターのレイアウト === */
-/* PC/タブレット：横並び・適度な隙間 */
+/* === 逆引きフィルターのレイアウト（指定どおりの並び） === */
+/* 3つのブロックを“縦に”並べる（各ブロック = 1行） */
 .filter-bar {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;                 /* ラベルとプルダウン、要素間の距離を統一 */
-}
-.filter-bar label {
-  margin: 0 !important;      /* 余計な左右マージンを無効化 */
-}
-.filter-bar .form-select {
-  width: auto;               /* 中身に合わせる（100%幅を解除） */
-  display: inline-block;
+  flex-direction: column;   /* ← 行ごとに改行 */
+  align-items: flex-start;
+  gap: 10px;                /* 行間の距離（お好みで 8〜12px） */
 }
 
-/* スマホ：1要素ずつ改行（ラベル→プルダウン） */
-@media (max-width: 576px) {
-  .filter-bar { display: block; }
-  .filter-bar label {
-    display: block;
-    margin: 8px 0 4px !important;   /* ラベル下に少し余白 */
-  }
-  .filter-bar .form-select {
-    width: 100%;                    /* 全幅にして操作しやすく */
-    margin: 0 0 8px 0;              /* 各プルダウン下に余白 */
-  }
+/* 各行は「ラベル ＋ セレクト」を横一列で表示（間に改行しない） */
+.filter-item {
+  display: flex;
+  flex-direction: row;      /* ← ラベルとプルダウンは同じ行 */
+  align-items: center;
+  gap: 8px;                 /* ラベルとセレクトの間の距離 */
+  white-space: nowrap;      /* 行内で折り返さない（指示どおり） */
+}
+
+.filter-item label {
+  margin: 0 !important;
+  font-weight: 500;
+}
+
+/* セレクトは内容に合わせた幅（100%にしない） */
+.filter-item .form-select {
+  width: auto;
+  display: inline-block;
 }
 
   `;
