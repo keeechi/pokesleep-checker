@@ -852,7 +852,6 @@ function setupBackupUI() {
 
 // ===================== レイアウト用の軽い注入CSS =====================
 let _listLayoutStyleInjected = false;
-let _listLayoutStyleInjected = false;
 function injectListLayoutCSS() {
   if (_listLayoutStyleInjected) return;
   const style = document.createElement('style');
