@@ -864,6 +864,27 @@ function injectListLayoutCSS() {
 .rank-mini-summary table thead th { vertical-align: middle; }
 
 #searchField, #searchRank, #searchType { width: auto; display: inline-block; }
+
+/* 逆引きフィルターの余白をコンパクトに */
+label[for="searchField"],
+label[for="searchRank"],
+label[for="searchType"] {
+  margin: 0 .5rem 0 0 !important;  /* ラベル右だけ少し空ける */
+  display: inline-block;
+  vertical-align: middle;
+}
+
+#searchField, #searchRank, #searchType {
+  display: inline-block;  /* 横並び固定 */
+  width: auto;            /* 内容に合わせる */
+  margin-right: 12px;     /* 各セレクトの間隔 */
+  vertical-align: middle;
+}
+
+/* スマホでは少し詰める */
+@media (max-width: 576px) {
+  #searchField, #searchRank, #searchType { margin-right: 8px; }
+}
     
   `;
   document.head.appendChild(style);
