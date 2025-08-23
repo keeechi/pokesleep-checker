@@ -631,35 +631,71 @@ function ensureRankMiniSummaryContainer() {
   return el;
 }
 
-// ランクの右に「睡眠タイプ」セレクトを差し込む（なければ生成）
-function ensureSleepTypeSelect() {
+// 睡眠タイプセレクト要素を生成（DOMには挿入しない）
+function createSleepTypeSelect() {
   let sel = document.getElementById('searchType');
-  if (sel) return sel;
+  if (sel) return sel; // 既存があればそれを再利用
 
-  const rankEl = document.getElementById('searchRank');
-  if (!rankEl || !rankEl.parentNode) return null;
-
-  // ラベル（余計な ms-2 / me-1 は付けない）
-  const label = document.createElement('label');
-  label.htmlFor = 'searchType';
-  label.textContent = '睡眠タイプ';
-  label.className = 'mb-0';
-
-  // セレクト
   sel = document.createElement('select');
   sel.id = 'searchType';
   sel.className = 'form-select form-select-sm';
-
-  const parent = rankEl.parentNode;
-  // ランクの直後に挿入
-  if (rankEl.nextSibling) {
-    parent.insertBefore(label, rankEl.nextSibling);
-    parent.insertBefore(sel, label.nextSibling);
-  } else {
-    parent.appendChild(label);
-    parent.appendChild(sel);
-  }
+  sel.innerHTML = [
+    {v:'',        t:'全て'},
+    {v:'うとうと', t:'うとうと'},
+    {v:'すやすや', t:'すやすや'},
+    {v:'ぐっすり', t:'ぐっすり'},
+  ].map(o => `<option value="${o.v}">${o.t}</option>`).join('');
+  sel.value = '';
   return sel;
+}
+
+// 逆引きフィルターのDOMを「フィールド／ランク／睡眠タイプ」の3ブロックで再構成
+function buildReverseFilterBar() {
+  const fieldSel = document.getElementById('searchField');
+  const rankSel  = document.getElementById('searchRank');
+
+  if (!fieldSel || !rankSel) return;
+
+  // 親要素をフィルターバーに指定（既存親を使う）
+  const container = rankSel.parentNode;
+  container.classList.add('filter-bar');
+
+  // 既存の子を一旦クリア（不要な改行や古いラベルを排除）
+  while (container.firstChild) container.removeChild(container.firstChild);
+
+  // セレクトを準備（睡眠タイプは作成 or 既存を再利用）
+  const typeSel = createSleepTypeSelect();
+
+  // ラベル＋セレクトを1行にまとめる小コンポーネント
+  const makeGroup = (labelText, selectEl) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'filter-item';
+
+    const lab = document.createElement('label');
+    lab.textContent = labelText;
+    lab.htmlFor = selectEl.id;
+
+    // セレクトの体裁を統一
+    selectEl.classList.add('form-select','form-select-sm');
+
+    wrap.appendChild(lab);
+    wrap.appendChild(selectEl);
+    return wrap;
+  };
+
+  // 並び順：フィールド → ランク → 睡眠タイプ
+  container.appendChild(makeGroup('フィールド', fieldSel));
+  container.appendChild(makeGroup('ランク',     rankSel));
+  container.appendChild(makeGroup('睡眠タイプ', typeSel));
+
+  // リスナー（必要なら再付与：sleepTypeはここでattach）
+  typeSel.removeEventListener('change', _onTypeChange); // 多重付与防止
+  typeSel.addEventListener('change', _onTypeChange);
+}
+
+// 睡眠タイプ変更時のハンドラ
+function _onTypeChange() {
+  renderRankSearch(loadState());
 }
 
 // ===================== ランク検索（未入手のみ） =====================
@@ -668,6 +704,7 @@ function setupRankSearchControls() {
   const sel = document.getElementById('searchField');
   sel.innerHTML = FIELD_KEYS.map(f=>`<option value="${f}">${FIELD_SHORT[f]}</option>`).join('');
   document.getElementById('searchField').addEventListener('change', ()=>renderRankSearch(loadState()));
+
   // 親をフィルターバーとしてマーク（PC横並び/スマホ縦並びのCSSを当てる）
   document.getElementById('searchRank')?.parentNode?.classList.add('filter-bar');
 
@@ -679,18 +716,8 @@ function setupRankSearchControls() {
   rankSel.value = '1';
   rankSel.addEventListener('change', ()=>renderRankSearch(loadState()));
 
-  // 睡眠タイプ（新規）
-  const typeSel = ensureSleepTypeSelect();
-  if (typeSel) {
-    typeSel.innerHTML = [
-      {v:'',        t:'全て'},
-      {v:'うとうと', t:'うとうと'},
-      {v:'すやすや', t:'すやすや'},
-      {v:'ぐっすり', t:'ぐっすり'},
-    ].map(o=>`<option value="${o.v}">${o.t}</option>`).join('');
-    typeSel.value = '';
-    typeSel.addEventListener('change', ()=>renderRankSearch(loadState()));
-  }
+  // ★★ 新：3ブロック構成に並べ直し（PC=横一列 / SP=縦並び）
+  buildReverseFilterBar();
 }
 
 function renderRankSearch(state) {
@@ -908,6 +935,43 @@ label[for="searchType"] {
 .filter-item .form-select {
   width: auto;
   display: inline-block;
+}
+
+/* デフォルト（モバイル想定）：各要素（フィールド／ランク／睡眠タイプ）を縦に並べる */
+.filter-bar {
+  display: flex;
+  flex-direction: column;   /* 縦積み＝要素ごとに改行 */
+  align-items: flex-start;
+  gap: 10px;
+}
+
+/* 行（ラベル＋セレクトのセット）は同一行に固定 */
+.filter-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;      /* セット内は改行しない */
+}
+
+.filter-item label {
+  margin: 0 !important;
+  font-weight: 500;
+}
+
+.filter-item .form-select {
+  width: auto;
+  display: inline-block;
+}
+
+/* PC（768px〜）：3要素を同一行に横並びにする */
+@media (min-width: 768px) {
+  .filter-bar {
+    flex-direction: row;    /* 横並び */
+    flex-wrap: nowrap;      /* 折り返さない＝同じ行に収める */
+    align-items: center;
+    gap: 12px 16px;         /* 横・縦の余白 */
+  }
 }
 
   `;
