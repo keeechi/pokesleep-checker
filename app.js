@@ -176,6 +176,30 @@ function loadState() {
   }
 }
 function saveState(state) { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+// 変更があったチェック（key, star, on）を他シートにだけ反映（差分更新）
+function syncOtherViews(key, star, on) {
+  // 1) 全寝顔チェックシート（チェックボックスのON/OFF＋セル色）
+  document.querySelectorAll(
+    `#allFacesTable input[type="checkbox"][data-key="${key}"][data-star="${star}"]`
+  ).forEach(el => {
+    if (el.checked !== on) {
+      el.checked = on;
+      el.closest('td')?.classList.toggle('cell-checked', on);
+    }
+  });
+
+  // 2) フィールド別寝顔一覧（セル全体に色だけ）
+  document.querySelectorAll(
+    `#fieldTabsContent td.toggle-cell[data-key="${key}"][data-star="${star}"]`
+  ).forEach(td => {
+    td.classList.toggle('cell-checked', on);
+  });
+
+  // 3) 逆引き（未入手のみ表示）は仕様どおり「その場では行を消さない」ので何もしない
+  //    （サマリー＆ミニ要約は既存コードで更新済み）
+}
+
 function setChecked(state, key, star, val) {
   if (!state.checked[key]) state.checked[key] = {};
   state.checked[key][star] = !!val;
@@ -468,6 +492,7 @@ function renderAllFaces(state) {
       const star = e.target.dataset.star;
       setChecked(state, key, star, e.target.checked);
       e.target.closest('td').classList.toggle('cell-checked', e.target.checked);
+      syncOtherViews(key, star, e.target.checked);  // ← 他シートへ差分同期
       renderSummary(state);
       renderRankSearch(state);
     });
@@ -607,6 +632,7 @@ function renderFieldTables(state) {
         const now  = getChecked(state, key, star);
         setChecked(state, key, star, !now);
         td.classList.toggle('cell-checked', !now);
+        syncOtherViews(key, star, !now);             // ← 他シートへ差分同期
         renderSummary(state);
         renderRankSearch(state);
       });
@@ -815,6 +841,7 @@ function renderRankSearch(state) {
       const on   = e.target.checked;
       const s = loadState();
       setChecked(s, key, star, on);
+      syncOtherViews(key, star, on);               // ← 他シートへ差分同期
       renderSummary(s);
 
       // ミニ要約だけは更新する（行は消さない＝仕様どおり）
