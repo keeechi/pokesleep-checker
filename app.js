@@ -695,20 +695,22 @@ function setupRankSearchControls() {
 
 function renderRankSearch(state) {
   const field = document.getElementById('searchField').value || FIELD_KEYS[0];
-  const rank = Math.max(1, Math.min(35, parseInt(document.getElementById('searchRank').value||'1',10)));
+  const rank  = Math.max(1, Math.min(35, parseInt(document.getElementById('searchRank').value||'1',10)));
+  const typeFilter = (document.getElementById('searchType')?.value || '');   // ★ 追加
   const tbody = document.querySelector('#rankSearchTable tbody');
 
-  const miniWrap = ensureRankMiniSummaryContainer(); // 入れ物を確保
-    if (miniWrap) {
-  const miniHTML = buildRankMiniSummaryHTML(field, rank, state);
-    miniWrap.innerHTML = miniHTML || ''; // 全ゼロなら空にして非表示と同等に
+  const miniWrap = ensureRankMiniSummaryContainer();
+  if (miniWrap) {
+    const miniHTML = buildRankMiniSummaryHTML(field, rank, state, typeFilter); // ★ 追加
+    miniWrap.innerHTML = miniHTML || '';
   }
 
   const items = [];
   for (const row of RAW_ROWS) {
     const rNum = getFieldRankNum(row, field);
     if (!rNum || rNum > rank) continue;
-    if (CHECKABLE_STARS.includes(row.DisplayRarity) && getChecked(state, rowKey(row), row.DisplayRarity)) continue; // ★ rowKey
+    if (typeFilter && row.Style !== typeFilter) continue; // ★ 追加
+    if (CHECKABLE_STARS.includes(row.DisplayRarity) && getChecked(state, rowKey(row), row.DisplayRarity)) continue;
     items.push(row);
   }
   items.sort((a,b)=>{
