@@ -798,20 +798,23 @@ function injectListLayoutCSS() {
     /* ポケモン名を小さめに（7pt相当） */
     .pf-name-small { font-size: 7pt; }
 
-    /* 逆引きシートの表カラムを中央寄せ */
-    #rankSearchTable th,
-    #rankSearchTable td {
-      text-align: center;
-      vertical-align: middle;
-    }
+/* 逆引きシートの表カラムを中央寄せ */
+#rankSearchTable th,
+#rankSearchTable td {
+  text-align: center;
+  vertical-align: middle;
+}
 
-    /* ミニ表の行配色（サマリー表と近い淡色） */
-    .rank-mini-summary .row-uto  { background: #fff5db; }  /* うとうと：淡い黄 */
-    .rank-mini-summary .row-suya { background: #e9f4ff; }  /* すやすや：淡い青 */
-    .rank-mini-summary .row-gu   { background: #ecebff; }  /* ぐっすり：淡い紫 */
+/* ミニ表：空なら非表示（既存のままでOK） */
+.rank-mini-summary:empty { display: none; }
 
-    /* ヘッダ固定の見栄えを揃える用（必要なら） */
-    .rank-mini-summary table thead th { vertical-align: middle; }
+/* ミニ表の行配色（サマリー表と近い淡色） */
+.rank-mini-summary .row-uto  { background: #fff5db; }  /* うとうと */
+.rank-mini-summary .row-suya { background: #e9f4ff; }  /* すやすや */
+.rank-mini-summary .row-gu   { background: #ecebff; }  /* ぐっすり */
+
+/* 見栄え微調整（任意） */
+.rank-mini-summary table thead th { vertical-align: middle; }
     
   `;
   document.head.appendChild(style);
