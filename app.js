@@ -87,7 +87,6 @@ function labelForRank(n) {
 function buildRankMiniSummaryHTML(field, rank, state, sleepTypeFilter = '') {
   const STAGES = ['ノーマル','スーパー','ハイパー','マスター'];
   const ROW_CLASS = { 'うとうと':'row-uto', 'すやすや':'row-suya', 'ぐっすり':'row-gu' };
-  const TYPES = sleepTypeFilter ? [sleepTypeFilter] : SLEEP_TYPES; // ← ここで対象タイプを決める
 
   // 初期化
   const counts = {};
@@ -99,7 +98,6 @@ function buildRankMiniSummaryHTML(field, rank, state, sleepTypeFilter = '') {
     if (!rNum || rNum > rank) continue;
     if (!CHECKABLE_STARS.includes(row.DisplayRarity)) continue;
     if (getChecked(state, rowKey(row), row.DisplayRarity)) continue;
-    if (sleepTypeFilter && row.Style !== sleepTypeFilter) continue; // ← 追加
 
     const st = splitStage(rNum).stage;
     const type = row.Style || '';
