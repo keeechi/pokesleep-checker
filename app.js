@@ -84,15 +84,16 @@ function labelForRank(n) {
   return `${stage}${idx}`;
 }
 
-function buildRankMiniSummaryHTML(field, rank, state, sleepTypeFilter = '') {
+function buildRankMiniSummaryHTML(field, rank, state /*, sleepTypeFilter = '' */) {
   const STAGES = ['ノーマル','スーパー','ハイパー','マスター'];
   const ROW_CLASS = { 'うとうと':'row-uto', 'すやすや':'row-suya', 'ぐっすり':'row-gu' };
+  const TYPES = SLEEP_TYPES; // ← ここがポイント（常に全タイプ）
 
   // 初期化
   const counts = {};
   SLEEP_TYPES.forEach(t => { counts[t] = { ノーマル:0, スーパー:0, ハイパー:0, マスター:0 }; });
 
-  // 集計（タイプで絞る）
+  // 集計（タイプでは絞らない）
   for (const row of RAW_ROWS) {
     const rNum = getFieldRankNum(row, field);
     if (!rNum || rNum > rank) continue;
@@ -104,18 +105,18 @@ function buildRankMiniSummaryHTML(field, rank, state, sleepTypeFilter = '') {
     if (counts[type] && st in counts[type]) counts[type][st] += 1;
   }
 
-  // 合計0なら非表示
+  // 合計0なら表示しない
   const total = TYPES.reduce((sum, t) =>
     sum + STAGES.reduce((s, st) => s + counts[t][st], 0), 0);
   if (total === 0) return null;
 
-  // 列合計（対象タイプのみ）
+  // 列合計（縦）
   const colTotals = {};
   STAGES.forEach(st => {
     colTotals[st] = TYPES.reduce((sum, t) => sum + counts[t][st], 0);
   });
 
-  // 行合計（対象タイプのみ）
+  // 行合計（横）
   const rowTotals = {};
   TYPES.forEach(t => { rowTotals[t] = STAGES.reduce((s, st) => s + counts[t][st], 0); });
   const grandTotal = TYPES.reduce((s, t) => s + rowTotals[t], 0);
@@ -128,7 +129,7 @@ function buildRankMiniSummaryHTML(field, rank, state, sleepTypeFilter = '') {
       <th class="text-center">合計</th>
     </tr>`;
 
-  // ボディ（対象タイプのみ出す）
+  // ボディ
   const bodyRows = TYPES.map(t => `
     <tr class="${ROW_CLASS[t] || ''}">
       <th class="text-start">${t}</th>
