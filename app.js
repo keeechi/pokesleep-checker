@@ -718,11 +718,27 @@ function setupRankSearchControls() {
   buildReverseFilterBar();
 }
 
+// 「入手済？」ヘッダーを足す（重複追加しない）
+function ensureRankSearchHeaderHasObtainedColumn() {
+  const tr = document.querySelector('#rankSearchTable thead tr');
+  if (!tr) return;
+  const has = Array.from(tr.children).some(th => th.textContent.trim() === '入手済？');
+  if (!has) {
+    const th = document.createElement('th');
+    th.textContent = '入手済？';
+    th.className = 'text-center';
+    tr.appendChild(th);
+  }
+}
+
 function renderRankSearch(state) {
   const field = document.getElementById('searchField').value || FIELD_KEYS[0];
   const rank  = Math.max(1, Math.min(35, parseInt(document.getElementById('searchRank').value||'1',10)));
   const typeFilter = (document.getElementById('searchType')?.value || '');   // ★ 追加
   const tbody = document.querySelector('#rankSearchTable tbody');
+
+  // ヘッダーに「入手済？」列を用意（HTMLそのままでも動くように）
+  ensureRankSearchHeaderHasObtainedColumn();
 
   const miniWrap = ensureRankMiniSummaryContainer();
   if (miniWrap) {
@@ -748,7 +764,7 @@ function renderRankSearch(state) {
   if (items.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="4" class="text-center">
+        <td colspan="5" class="text-center">
           <div class="completed-msg">COMPLETED</div>
           <div class="text-muted small mt-1">この条件で出現する寝顔はすべて入手済みです</div>
         </td>
@@ -759,6 +775,13 @@ function renderRankSearch(state) {
   tbody.innerHTML = items.map(r=>{
     const needRank = getFieldRankNum(r, field);
     const iconSvg = renderPokemonIconById(r.IconNo || getIconKeyFromNo(r.No), ICON_SIZE_FIELD);
+
+    const k = rowKey(r);
+    const star = r.DisplayRarity;
+    const checkable = CHECKABLE_STARS.includes(star);
+    // 未入手一覧なので通常は false のはずだが、念のため同期
+    const isChecked = checkable ? getChecked(state, k, star) : false;
+    
     return `
       <tr>
         <td class="byfield-name-cell text-center align-middle">
@@ -773,8 +796,37 @@ function renderRankSearch(state) {
         <td class="text-center">${r.Style || '-'}</td>
         <td class="text-center">${r.DisplayRarity || '-'}</td>
         <td class="text-center">${renderRankChip(needRank)}</td>
+        <td class="text-center">
+          ${
+            checkable
+              ? `<input type="checkbox" class="form-check-input mark-obtained"
+                     data-key="${k}" data-star="${escapeHtml(star)}"
+                     ${isChecked ? 'checked' : ''}>`
+              : `<span class="text-muted">—</span>`
+          }
+        </td>
       </tr>`;
   }).join('');
+  // ここでは再描画しない（＝行は残す）。ただしサマリーは更新。
+  tbody.querySelectorAll('input.mark-obtained').forEach(chk=>{
+    chk.addEventListener('change', (e) => {
+      const key  = e.target.dataset.key;
+      const star = e.target.dataset.star;
+      const on   = e.target.checked;
+      const s = loadState();
+      setChecked(s, key, star, on);
+      renderSummary(s);
+
+      // ミニ要約だけは更新する（行は消さない＝仕様どおり）
+      const fieldNow = document.getElementById('searchField').value || FIELD_KEYS[0];
+      const rankNow  = Math.max(1, Math.min(35, parseInt(document.getElementById('searchRank').value||'1',10)));
+      const typeNow  = (document.getElementById('searchType')?.value || '');
+      const wrap = ensureRankMiniSummaryContainer();
+      if (wrap) {
+        wrap.innerHTML = buildRankMiniSummaryHTML(fieldNow, rankNow, s, typeNow) || '';
+      }
+    });
+  });
 }
 
 // バックアップ用の簡単なエンコード/デコード（UTF-8対応）
@@ -919,6 +971,7 @@ async function main() {
 
   setupFieldTabs();
   setupRankSearchControls();
+  ensureRankSearchHeaderHasObtainedColumn();
   setupBackupUI();
 
   const state = loadState();
