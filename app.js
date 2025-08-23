@@ -483,7 +483,7 @@ function buildFieldRankMatrixHTML(ent) {
   if (rows.length === 0) return `<div class="text-muted">このポケモンの出現情報が見つかりません。</div>`;
 
   return `
-    <div class="mb-2 small text-body-secondary">最低必要ランクを表示（◓=段、数字=段内）</div>
+    <div class="mb-2 small text-body-secondary">＊＊＊出現フィールドとランク＊＊＊</div>
     <div class="table-responsive">
       <table class="table table-sm align-middle">${header}<tbody>${rows.join('')}</tbody></table>
     </div>`;
