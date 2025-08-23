@@ -909,7 +909,7 @@ label[for="searchType"] {
     margin: 0 0 8px 0;              /* 各プルダウン下に余白 */
   }
 }
-    
+
   `;
   document.head.appendChild(style);
   _listLayoutStyleInjected = true;
