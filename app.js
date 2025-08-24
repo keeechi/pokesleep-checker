@@ -163,37 +163,26 @@ function isExcludedFromSummary(row) {
   return /ダークライ/i.test(row.Name || '');
 }
 
-// navタブの高さを実測して --sticky-top を更新
-function updateStickyTop(){
-  const tabs = document.getElementById('mainTabs');
-  const h = tabs ? tabs.offsetHeight : 0;
-  document.documentElement.style.setProperty('--sticky-top', `${h}px`);
-}
-
-// 「全寝顔」「フィールド別」のフィルター行を固定化
-function setupStickyFilters(){
-  const all = document.querySelector('#pane-allfaces .card-body > .row.g-2');
-  if (all) all.classList.add('sticky-block');
-
-  const by = document.querySelector('#pane-byfield .card-body > .row.g-2');
-  if (by) by.classList.add('sticky-block');
-}
-
-// 逆引きシート用：フィルター＆ミニ表を載せる固定ラッパを作成
-function ensureRankStickyWrap(){
-  let wrap = document.getElementById('rankStickyWrap');
-  if (wrap) return wrap;
-  const body = document.querySelector('#pane-search .card-body');
-  if (!body) return null;
-
-  // テーブルの .table-responsive の直前に差し込む
-  const tableWrap = body.querySelector('#rankSearchTable')?.closest('.table-responsive') || body.firstElementChild;
-  wrap = document.createElement('div');
-  wrap.id = 'rankStickyWrap';
-  wrap.className = 'sticky-block';
-  body.insertBefore(wrap, tableWrap);
-  return wrap;
-}
++  /* ===== 固定バー（フィルター/ミニ表） ===== */
++  :root { --sticky-top: 48px; }  /* navタブの高さ。JSで実測して更新 */
++  .sticky-block{
++    position: sticky;
++    top: var(--sticky-top);
++    z-index: 1020;            /* テーブルヘッダーより前面 */
++    background:#fff;
++    padding: .5rem 0;
++    border-bottom: 1px solid rgba(0,0,0,.075);
++  }
++
++  /* 各シート内の thead を“フィルターの直下”に固定 */
++  #pane-allfaces .sticky-header th,
++  #pane-byfield .sticky-header th,
++  #pane-search   .sticky-header th{
++    position: sticky;
++    top: var(--thead-top, 0px) !important;  /* JSで per-pane に設定 */
++    z-index: 2;
++    background:#fff;
++  }
 
 // ===================== 状態保存（★キーは IconNo 優先） =====================
 function rowKey(row){ return String(row.IconNo || row.No); }                 // 行用キー
@@ -635,6 +624,7 @@ function renderAllFaces(state) {
         if (ent) openFieldRankModal(ent);
       });
     });
+  refreshStickyOffsetsSoon();
 }
 
 // ===================== フィールド別 =====================
@@ -758,6 +748,7 @@ function renderFieldTables(state) {
       });
     });
   });
+  refreshStickyOffsetsSoon();
 }
 
 // ミニ要約の入れ物を用意（なければ作成して #rankSearchTable の直前に挿入）
@@ -839,7 +830,8 @@ function buildReverseFilterBar() {
   // 固定ラッパへ移設して、元の行は削除
   const wrap = ensureRankStickyWrap();
   if (wrap) wrap.appendChild(bar);
-  row.remove(); // 重複DOMを撤去
+  row.remove();
+  refreshStickyOffsetsSoon();
 
   // リスナー（多重付与を避けるなら一旦removeしてからadd）
   typeSel.removeEventListener('change', _onTypeChange);
@@ -980,6 +972,7 @@ function renderRankSearch(state) {
       }
     });
   });
+  refreshStickyOffsetsSoon();
 }
 
 // バックアップ用の簡単なエンコード/デコード（UTF-8対応）
@@ -1099,14 +1092,24 @@ function injectListLayoutCSS() {
   .modal-field-rank .field-icon{ height:18px; width:auto; margin-right:.25rem; }
 
   /* ===== 固定バー（フィルター/ミニ表） ===== */
-  :root { --sticky-top: 48px; }  /* navタブの高さで調整。JSで自動上書きします */
+  :root { --sticky-top: 48px; }  /* navタブの高さ。JSで実測して更新 */
   .sticky-block{
     position: sticky;
     top: var(--sticky-top);
-    z-index: 1020;            /* テーブル見出しより前面 */
+    z-index: 1020;            /* テーブルヘッダーより前面 */
     background:#fff;
     padding: .5rem 0;
     border-bottom: 1px solid rgba(0,0,0,.075);
+  }
+
+  /* 各シート内の thead を“フィルターの直下”に固定 */
+  #pane-allfaces .sticky-header th,
+  #pane-byfield .sticky-header th,
+  #pane-search   .sticky-header th{
+    position: sticky;
+    top: var(--thead-top, 0px) !important;  /* JSで per-pane に設定 */
+    z-index: 2;
+    background:#fff;
   }
 
   `;
@@ -1149,10 +1152,11 @@ async function main() {
   ensureRankSearchHeaderHasObtainedColumn();
   setupBackupUI();
 
-  // 固定バーの初期化＆追従
+  // ==== 固定バー＆ヘッダーの位置を初期化 ====
   setupStickyFilters();         // 全寝顔/フィールド別のフィルターを固定化
-  updateStickyTop();            // navタブの高さを反映
-  window.addEventListener('resize', updateStickyTop);
+  updateStickyTop();            // navタブ高さを反映
+  updateTableHeaderOffsets();   // thead の固定位置を反映
+  window.addEventListener('resize', ()=>{ updateStickyTop(); updateTableHeaderOffsets(); });
 
   const state = loadState();
   renderSummary(state);
