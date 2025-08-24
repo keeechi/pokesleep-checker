@@ -1068,33 +1068,33 @@ let _listLayoutStyleInjected = false;
 function injectListLayoutCSS() {
   if (_listLayoutStyleInjected) return;
   const style = document.createElement('style');
-  style.textContent = `
-    td.name-cell { min-width: 180px; }
-    td.td-bulk { width: 72px; padding-left: 4px; padding-right: 4px; }
-    .bulk-group-vert .btn { display: block; width: 100%; }
-    .bulk-group-vert .btn + .btn { margin-top: 6px; }
-    .pf-name-small { font-size: 7pt; }
+style.textContent = `
+  td.name-cell { min-width: 180px; }
+  td.td-bulk { width: 72px; padding-left: 4px; padding-right: 4px; }
+  .bulk-group-vert .btn { display: block; width: 100%; }
+  .bulk-group-vert .btn + .btn { margin-top: 6px; }
+  .pf-name-small { font-size: 7pt; }
 
-    /* 逆引きシートの表 */
-    #rankSearchTable th, #rankSearchTable td { text-align: center; vertical-align: middle; }
+  /* 逆引きシートの表 */
+  #rankSearchTable th, #rankSearchTable td { text-align: center; vertical-align: middle; }
 
-    /* ミニ表 */
-    .rank-mini-summary:empty { display: none; }
-    .rank-mini-summary tr.row-uto  > th, .rank-mini-summary tr.row-uto  > td  { background-color: #fff5db !important; }
-    .rank-mini-summary tr.row-suya > th, .rank-mini-summary tr.row-suya > td { background-color: #e9f4ff !important; }
-    .rank-mini-summary tr.row-gu   > th, .rank-mini-summary tr.row-gu   > td { background-color: #ecebff !important; }
-    .rank-mini-summary table thead th { vertical-align: middle; }
+  /* ミニ表 */
+  .rank-mini-summary:empty { display: none; }
+  .rank-mini-summary tr.row-uto  > th, .rank-mini-summary tr.row-uto  > td  { background-color: #fff5db !important; }
+  .rank-mini-summary tr.row-suya > th, .rank-mini-summary tr.row-suya > td { background-color: #e9f4ff !important; }
+  .rank-mini-summary tr.row-gu   > th, .rank-mini-summary tr.row-gu   > td { background-color: #ecebff !important; }
+  .rank-mini-summary table thead th { vertical-align: middle; }
 
-    /* ---- 逆引きフィルター（最小構成） ---- */
-    .filter-bar { display:flex; flex-direction:column; align-items:flex-start; gap:10px; }
-    .filter-item { display:flex; flex-direction:row; align-items:center; gap:8px; white-space:nowrap; }
-    .filter-item label { margin:0 !important; font-weight:500; }
-    .filter-item .form-select { width:auto; display:inline-block; }
+  /* ---- 逆引きフィルター（最小構成） ---- */
+  .filter-bar { display:flex; flex-direction:column; align-items:flex-start; gap:10px; }
+  .filter-item { display:flex; flex-direction:row; align-items:center; gap:8px; white-space:nowrap; }
+  .filter-item label { margin:0 !important; font-weight:500; }
+  .filter-item .form-select { width:auto; display:inline-block; }
 
-    /* PC（768px〜）は1行横並び */
-    @media (min-width: 768px) {
-      .filter-bar { flex-direction:row; flex-wrap:nowrap; align-items:center; gap:12px 16px; }
-    }
+  /* PC（768px〜）は1行横並び */
+  @media (min-width: 768px) {
+    .filter-bar { flex-direction:row; flex-wrap:nowrap; align-items:center; gap:12px 16px; }
+  }
 
   /* アイコン右上のミニボタン */
   .icon-more.btn-xxs{ padding:0 .3rem; font-size:.70rem; line-height:1.1 }
@@ -1108,8 +1108,10 @@ function injectListLayoutCSS() {
   .modal-field-rank .field-icon{ height:18px; width:auto; margin-right:.25rem; }
 
   /* ===== 固定バー（フィルター/ミニ表） ===== */
-  :root { --sticky-top: 48px; }  /* navタブの高さ。JSで実測して更新 */
-  .sticky-block{
+  :root { --sticky-top: 48px; }  /* navタブの高さ。JS（measureTabsHeight）で実測して更新 */
+
+  /* ★ JSが作る固定ラッパ */
+  .pane-sticky-wrap{
     position: sticky;
     top: var(--sticky-top);
     z-index: 1020;            /* テーブルヘッダーより前面 */
@@ -1118,17 +1120,17 @@ function injectListLayoutCSS() {
     border-bottom: 1px solid rgba(0,0,0,.075);
   }
 
-  /* 各シート内の thead を“フィルターの直下”に固定 */
+  /* ★ 各シート内 thead を“固定ブロックの直下”に固定 */
   #pane-allfaces .sticky-header th,
-  #pane-byfield .sticky-header th,
+  #pane-byfield  .sticky-header th,
   #pane-search   .sticky-header th{
     position: sticky;
-    top: var(--thead-top, 0px) !important;  /* JSで per-pane に設定 */
-    z-index: 2;
+    top: calc(var(--sticky-top) + var(--pane-sticky-extra, 0px));
+    z-index: 1010;
     background:#fff;
+    background-clip: padding-box;
   }
-
-  `;
+`;
   document.head.appendChild(style);
   _listLayoutStyleInjected = true;
 }
