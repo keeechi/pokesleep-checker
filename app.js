@@ -624,7 +624,7 @@ function setupFieldTabs() {
     <div class="tab-pane fade ${i===0?'show active':''}" id="pane-field-${i}" role="tabpanel">
       <div class="table-responsive">
         <table class="table table-sm align-middle table-hover mb-0">
-          <thead class="table-light sticky-header">
+          <thead class="table-light">
             <tr>
               <th class="text-center">ポケモン</th>
               <th class="text-center">タイプ</th>
