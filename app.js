@@ -163,27 +163,6 @@ function isExcludedFromSummary(row) {
   return /ダークライ/i.test(row.Name || '');
 }
 
-+  /* ===== 固定バー（フィルター/ミニ表） ===== */
-+  :root { --sticky-top: 48px; }  /* navタブの高さ。JSで実測して更新 */
-+  .sticky-block{
-+    position: sticky;
-+    top: var(--sticky-top);
-+    z-index: 1020;            /* テーブルヘッダーより前面 */
-+    background:#fff;
-+    padding: .5rem 0;
-+    border-bottom: 1px solid rgba(0,0,0,.075);
-+  }
-+
-+  /* 各シート内の thead を“フィルターの直下”に固定 */
-+  #pane-allfaces .sticky-header th,
-+  #pane-byfield .sticky-header th,
-+  #pane-search   .sticky-header th{
-+    position: sticky;
-+    top: var(--thead-top, 0px) !important;  /* JSで per-pane に設定 */
-+    z-index: 2;
-+    background:#fff;
-+  }
-
 // ===================== 状態保存（★キーは IconNo 優先） =====================
 function rowKey(row){ return String(row.IconNo || row.No); }                 // 行用キー
 function entKey(ent){ return String(ent.iconNo || ent.no); }                 // まとめ用キー（形態ごと）
