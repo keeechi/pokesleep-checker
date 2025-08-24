@@ -266,3 +266,26 @@ td.toggle-cell:hover {
   z-index: 2;
   background:#fff;
 }
+
+/* タブの高さ（JSが実測で更新します） */
+:root { --sticky-top: 48px; }
+
+/* フィルター塊（各タブの検索UIなど）をタブ直下に固定 */
+.sticky-block{
+  position: sticky;
+  top: var(--sticky-top);
+  z-index: 1020;
+  background:#fff;
+  padding:.5rem 0;
+  border-bottom:1px solid rgba(0,0,0,.075);
+}
+
+/* 各タブの“表ヘッダー1行目”を「フィルターの直下」に固定 */
+#pane-allfaces .sticky-header th,
+#pane-byfield  .sticky-header th,
+#pane-search   .sticky-header th{
+  position: sticky;
+  top: var(--thead-top, 0px);  /* JSが per-pane で計算してくれます */
+  z-index: 2;
+  background:#fff;
+}
