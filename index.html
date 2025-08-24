@@ -23,7 +23,6 @@
   <style>
     :root { --cell-checked-bg: rgba(13,110,253,.1); }
     body { font-family: "M PLUS Rounded 1c", system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", Meiryo, sans-serif; }
-    .sticky-header th { position: sticky; top: 0; z-index: 1; }
     .cell-checked { background: var(--cell-checked-bg); }
     .cell-disabled { color: #6c757d; }
     .cell-absent { color: #adb5bd; } /* 存在しない寝顔（チェックボックス自体を出さない） */
@@ -101,7 +100,7 @@
 
             <div class="table-responsive" id="allFacesTableWrap">
               <table class="table table-sm align-middle table-hover mb-0" id="allFacesTable">
-<thead class="table-light sticky-header">
+<thead class="table-light">
   <tr>
     <th style="min-width:72px;width:60px;">ポケモン</th>
     <th class="text-center" style="min-width:42px;">☆1</th>
@@ -169,7 +168,7 @@
             <p class="text-muted small mb-2">選択ランク以下で出現する「未入手」の寝顔のみ表示します。</p>
             <div class="table-responsive">
               <table class="table table-sm align-middle table-hover mb-0" id="rankSearchTable">
-                <thead class="table-light sticky-header">
+                <thead class="table-light">
                   <tr>
                     <th>ポケモン</th>
                     <th>睡眠タイプ</th>
