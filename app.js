@@ -199,6 +199,18 @@ function refreshAllSticky() {
   });
 }
 
+// ==== thead を sticky 対象にマーキング ====
+function markStickyHeaders() {
+  // 全寝顔
+  document.querySelector('#allFacesTable thead')?.classList.add('sticky-header');
+
+  // フィールド別（動的に複数生成される）
+  document.querySelectorAll('#fieldTabsContent thead').forEach(t => t.classList.add('sticky-header'));
+
+  // 逆引き
+  document.querySelector('#rankSearchTable thead')?.classList.add('sticky-header');
+}
+
 // ダークライ除外判定
 function isExcludedFromSummary(row) {
   if (EXCLUDED_SPECIES_FOR_SUMMARY.has(row.No)) return true;
@@ -645,6 +657,7 @@ function renderAllFaces(state) {
         if (ent) openFieldRankModal(ent);
       });
     });
+  markStickyHeaders();
   refreshAllSticky();
 }
 
@@ -769,6 +782,7 @@ function renderFieldTables(state) {
       });
     });
   });
+  markStickyHeaders();
   refreshAllSticky();
 }
 
@@ -973,6 +987,7 @@ function renderRankSearch(state) {
       }
     });
   });
+  markStickyHeaders();
   refreshAllSticky();
 }
 
@@ -1205,6 +1220,14 @@ async function main() {
 
   refreshAllSticky();
   window.addEventListener('resize', refreshAllSticky);
-}
+  markStickyHeaders();
+  refreshAllSticky();
+  }
+
+  // タブが切り替わるたびにオフセットを再計測
+  document.getElementById('mainTabs')?.addEventListener('shown.bs.tab', () => {
+    markStickyHeaders();
+    refreshAllSticky();
+  });
 
 document.addEventListener('DOMContentLoaded', main);
