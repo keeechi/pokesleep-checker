@@ -1,5 +1,6 @@
+
 /* 文字や表の基本 */
-body { background: #f8fafc; }
+/* body { background: #f8fafc; }
 table { font-size: 0.95rem; }
 thead.table-light.sticky-header th {
   position: sticky;
@@ -14,12 +15,6 @@ thead.table-light.sticky-header th {
 .cell-disabled {
   color: #6c757d;
   background: #f1f3f5;
-}
-
-/* スクロール時の見やすさ */
-#allFacesTableWrap {
-  max-height: 70vh;
-  overflow: auto;
 }
 
 /* 小さめ端末の余白 */
@@ -249,3 +244,25 @@ td.toggle-cell:hover {
 .byfield-name-cell .byfield-icon svg { display:block; border:1px solid #bbb; border-radius:10px; overflow:hidden; }
 .byfield-name-cell .pf-no { font-size:9pt; line-height:1.1; }
 .byfield-name-cell .pf-name { font-size:9pt; line-height:1.2; word-break:break-word; white-space:normal; max-width:calc(36px + 8px); }
+
+/* タブ直下にフィルター、その直下に thead(1行目) が貼り付く */
+:root { --sticky-top: 48px; }  /* タブの高さ。JSで上書きされます */
+
+.sticky-block{
+  position: sticky;
+  top: var(--sticky-top);
+  z-index: 1020;
+  background:#fff;
+  padding:.5rem 0;
+  border-bottom:1px solid rgba(0,0,0,.075);
+}
+
+/* 各タブの thead を“フィルターの直下”に固定 */
+#pane-allfaces .sticky-header th,
+#pane-byfield  .sticky-header th,
+#pane-search   .sticky-header th{
+  position: sticky;
+  top: var(--thead-top, 0px);
+  z-index: 2;
+  background:#fff;
+}
