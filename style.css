@@ -250,3 +250,29 @@ td.toggle-cell:hover {
 @media (min-width: 768px) {
   .filter-bar { flex-direction:row; flex-wrap:nowrap; align-items:center; gap:12px 16px; }
 }
+
+/* ==== 汎用：タブ下に重ねる固定バー＆表ヘッダー ==== */
+:root { --sticky-top: 48px; } /* タブの高さ（JSで上書き） */
+
+/* 各タブ内の「固定ブロック」をまとめるラッパ */
+.pane-sticky-wrap{
+  position: sticky;
+  top: var(--sticky-top);
+  z-index: 1020;
+  background:#fff;
+  padding:.5rem 0;
+  border-bottom:1px solid rgba(0,0,0,.075);
+}
+
+/* 各タブの thead を“固定ブロックの直下”に固定 */
+#pane-allfaces .sticky-header th,
+#pane-byfield  .sticky-header th,
+#pane-search   .sticky-header th{
+  position: sticky;
+  top: calc(var(--sticky-top) + var(--pane-sticky-extra, 0px));
+  z-index: 1010;
+  background:#fff;
+}
+
+/* 逆引きのミニ表（固定しても邪魔にならないよう軽量） */
+.rank-mini-summary:empty { display:none; }
