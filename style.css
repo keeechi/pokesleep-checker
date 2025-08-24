@@ -249,24 +249,3 @@ td.toggle-cell:hover {
 .byfield-name-cell .byfield-icon svg { display:block; border:1px solid #bbb; border-radius:10px; overflow:hidden; }
 .byfield-name-cell .pf-no { font-size:9pt; line-height:1.1; }
 .byfield-name-cell .pf-name { font-size:9pt; line-height:1.2; word-break:break-word; white-space:normal; max-width:calc(36px + 8px); }
-
-/* ===== 固定バー（フィルター/ミニ表） ===== */
-:root { --sticky-top: 48px; }  /* JSで実測して更新 */
-.sticky-block{
-  position: sticky;
-  top: var(--sticky-top);
-  z-index: 1020;            /* テーブルヘッダーより前面 */
-  background:#fff;
-  padding: .5rem 0;
-  border-bottom: 1px solid rgba(0,0,0,.075);
-}
-
-/* 各シート内の thead を“フィルターの直下”に固定 */
-#pane-allfaces .sticky-header th,
-#pane-byfield  .sticky-header th,
-#pane-search   .sticky-header th{
-  position: sticky;
-  top: var(--thead-top, 0px) !important;
-  z-index: 2;
-  background:#fff;
-}
