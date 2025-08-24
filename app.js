@@ -157,6 +157,48 @@ function buildRankMiniSummaryHTML(field, rank, state /*, sleepTypeFilter = '' */
     </div>`;
 }
 
+// ==== 固定（sticky）ユーティリティ ====
+
+// タブ高をCSS変数へ
+function measureTabsHeight() {
+  const tabs = document.getElementById('mainTabs');
+  const h = tabs ? Math.ceil(tabs.getBoundingClientRect().height) : 48;
+  document.documentElement.style.setProperty('--sticky-top', `${h}px`);
+}
+
+// パン内の固定化：先頭に .pane-sticky-wrap を用意し、渡されたノードをそこへ集約
+function setupPaneSticky(paneId, nodes) {
+  const pane = document.getElementById(paneId);
+  if (!pane) return null;
+  const host = pane.querySelector('.card-body') || pane;
+
+  let wrap = host.querySelector(':scope > .pane-sticky-wrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.className = 'pane-sticky-wrap';
+    host.insertBefore(wrap, host.firstChild);
+  }
+  nodes.filter(Boolean).forEach(n => { if (n && n.parentNode !== wrap) wrap.appendChild(n); });
+
+  // 固定ブロックの高さを pane へ渡す（thead の top に使う）
+  const extra = Math.ceil(wrap.getBoundingClientRect().height);
+  pane.style.setProperty('--pane-sticky-extra', `${extra}px`);
+  return wrap;
+}
+
+// 全タブの offset を再計算
+function refreshAllSticky() {
+  measureTabsHeight();
+  ['pane-allfaces','pane-byfield','pane-search'].forEach(id => {
+    const pane = document.getElementById(id);
+    if (!pane) return;
+    const wrap = pane.querySelector('.pane-sticky-wrap');
+    if (!wrap) return;
+    const extra = Math.ceil(wrap.getBoundingClientRect().height);
+    pane.style.setProperty('--pane-sticky-extra', `${extra}px`);
+  });
+}
+
 // ダークライ除外判定
 function isExcludedFromSummary(row) {
   if (EXCLUDED_SPECIES_FOR_SUMMARY.has(row.No)) return true;
@@ -603,6 +645,7 @@ function renderAllFaces(state) {
         if (ent) openFieldRankModal(ent);
       });
     });
+  refreshAllSticky();
 }
 
 // ===================== フィールド別 =====================
@@ -624,7 +667,7 @@ function setupFieldTabs() {
     <div class="tab-pane fade ${i===0?'show active':''}" id="pane-field-${i}" role="tabpanel">
       <div class="table-responsive">
         <table class="table table-sm align-middle table-hover mb-0">
-          <thead class="table-light">
+          <thead class="table-light sticky-header">
             <tr>
               <th class="text-center">ポケモン</th>
               <th class="text-center">タイプ</th>
@@ -726,6 +769,7 @@ function renderFieldTables(state) {
       });
     });
   });
+  refreshAllSticky();
 }
 
 // ミニ要約の入れ物を用意（なければ作成して #rankSearchTable の直前に挿入）
@@ -929,6 +973,7 @@ function renderRankSearch(state) {
       }
     });
   });
+  refreshAllSticky();
 }
 
 // バックアップ用の簡単なエンコード/デコード（UTF-8対応）
@@ -1138,6 +1183,28 @@ async function main() {
     }
     renderAllFaces(state); renderFieldTables(state); renderSummary(state); renderRankSearch(state);
   });
+
+  // ==== ここから固定ブロックを組み立て ====
+  {
+    const host = document.querySelector('#pane-allfaces .card-body');
+    const filterRow = host?.querySelector('#searchName')?.closest('.row');
+    const bulkBar   = host?.querySelector('#btnAllOn')?.closest('.d-flex');
+    setupPaneSticky('pane-allfaces', [filterRow, bulkBar]);
+  }
+
+  {
+    const host = document.querySelector('#pane-byfield .card-body');
+    const filterRow = host?.querySelector('#byfieldSearchName')?.closest('.row');
+    setupPaneSticky('pane-byfield', [filterRow]);
+  }
+
+  {
+    const mini = ensureRankMiniSummaryContainer();
+    setupPaneSticky('pane-search', [mini]);
+  }
+
+  refreshAllSticky();
+  window.addEventListener('resize', refreshAllSticky);
 }
 
 document.addEventListener('DOMContentLoaded', main);
