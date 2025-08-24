@@ -163,120 +163,6 @@ function isExcludedFromSummary(row) {
   return /ダークライ/i.test(row.Name || '');
 }
 
-// ===== 固定UI用ヘルパ =====
-
-// 全寝顔用：検索行＋一括ON/OFFのバーを sticky にまとめる
-function ensureAllFacesStickyWrap() {
-  const pane = document.getElementById('pane-allfaces');
-  const host = pane?.querySelector('.card-body') || pane;
-  if (!host) return null;
-
-  let wrap = document.getElementById('allFacesStickyWrap');
-  if (!wrap) {
-    wrap = document.createElement('div');
-    wrap.id = 'allFacesStickyWrap';
-    wrap.className = 'sticky-block';
-    host.insertBefore(wrap, host.firstChild);
-  }
-
-  // 既存のフィルター行／一括ボタン行を移動
-  const filterRow = host.querySelector('#searchName')?.closest('.row');
-  if (filterRow && filterRow.parentNode !== wrap) wrap.appendChild(filterRow);
-
-  const bulkBar = host.querySelector('#btnAllOn')?.closest('.d-flex');
-  if (bulkBar && bulkBar.parentNode !== wrap) wrap.appendChild(bulkBar);
-
-  return wrap;
-}
-
-// フィールド別用：検索行を sticky にまとめる
-function ensureByfieldStickyWrap() {
-  const pane = document.getElementById('pane-byfield');
-  const host = pane?.querySelector('.card-body') || pane;
-  if (!host) return null;
-
-  let wrap = document.getElementById('byfieldStickyWrap');
-  if (!wrap) {
-    wrap = document.createElement('div');
-    wrap.id = 'byfieldStickyWrap';
-    wrap.className = 'sticky-block';
-    host.insertBefore(wrap, host.firstChild);
-  }
-
-  const filterRow = host.querySelector('#byfieldSearchName')?.closest('.row');
-  if (filterRow && filterRow.parentNode !== wrap) wrap.appendChild(filterRow);
-
-  return wrap;
-}
-
-// 逆引き用：フィルター置き場
-function ensureRankStickyWrap() {
-  const pane = document.getElementById('pane-search');
-  const host = pane?.querySelector('.card-body') || pane;
-  if (!host) return null;
-
-  let wrap = document.getElementById('rankStickyWrap');
-  if (!wrap) {
-    wrap = document.createElement('div');
-    wrap.id = 'rankStickyWrap';
-    wrap.className = 'sticky-block';
-
-    // テーブルの直前に差し込む
-    const tableWrap = document.querySelector('#pane-search #rankSearchTable')?.closest('.table-responsive');
-    if (tableWrap && tableWrap.parentNode === host) {
-      host.insertBefore(wrap, tableWrap);
-    } else {
-      host.insertBefore(wrap, host.firstChild);
-    }
-  }
-  return wrap;
-}
-
-// タブの高さを CSS 変数へ
-function updateStickyTop() {
-  const tabs = document.getElementById('mainTabs');
-  const h = tabs ? tabs.offsetHeight : 48;
-  document.documentElement.style.setProperty('--sticky-top', `${h}px`);
-}
-
-// 各タブ内 thead の固定位置（= タブ高 + そのタブのフィルター高）
-function updateTableHeaderOffsets() {
-  const rootVal = getComputedStyle(document.documentElement).getPropertyValue('--sticky-top').trim();
-  const tabsH = parseInt(rootVal || '0', 10) || (document.getElementById('mainTabs')?.offsetHeight || 0);
-
-  const panes = [
-    { id: 'pane-allfaces', wrapId: 'allFacesStickyWrap' },
-    { id: 'pane-byfield',  wrapId: 'byfieldStickyWrap'  },
-    { id: 'pane-search',   wrapId: 'rankStickyWrap'     },
-  ];
-
-  panes.forEach(({ id, wrapId }) => {
-    const pane = document.getElementById(id);
-    if (!pane) return;
-    const wrap = wrapId ? document.getElementById(wrapId) : null;
-    const extra = wrap ? wrap.offsetHeight : 0;
-    // この値が th の top になる
-    pane.style.setProperty('--thead-top', `${tabsH + extra}px`);
-  });
-}
-
-let _stickyTimer = null;
-function refreshStickyOffsetsSoon() {
-  if (_stickyTimer) clearTimeout(_stickyTimer);
-  _stickyTimer = setTimeout(() => {
-    updateStickyTop();
-    updateTableHeaderOffsets();
-  }, 0);
-}
-
-// 3シートのフィルターを sticky 化
-function setupStickyFilters() {
-  ensureAllFacesStickyWrap();
-  ensureByfieldStickyWrap();
-  ensureRankStickyWrap();
-  refreshStickyOffsetsSoon();
-}
-
 // ===================== 状態保存（★キーは IconNo 優先） =====================
 function rowKey(row){ return String(row.IconNo || row.No); }                 // 行用キー
 function entKey(ent){ return String(ent.iconNo || ent.no); }                 // まとめ用キー（形態ごと）
@@ -717,7 +603,6 @@ function renderAllFaces(state) {
         if (ent) openFieldRankModal(ent);
       });
     });
-  refreshStickyOffsetsSoon();
 }
 
 // ===================== フィールド別 =====================
@@ -841,7 +726,6 @@ function renderFieldTables(state) {
       });
     });
   });
-  refreshStickyOffsetsSoon();
 }
 
 // ミニ要約の入れ物を用意（なければ作成して #rankSearchTable の直前に挿入）
@@ -849,21 +733,13 @@ function ensureRankMiniSummaryContainer() {
   let el = document.getElementById('rankMiniSummary');
   if (el) return el;
 
-  const wrap = document.getElementById('rankStickyWrap');
-  el = document.createElement('div');
-  el.id = 'rankMiniSummary';
-  el.className = 'rank-mini-summary mt-2';
-
-  if (wrap) {
-    wrap.appendChild(el);     // ← フィルターの直下に常時表示
+    el = document.createElement('div');
+    el.id = 'rankMiniSummary';
+    el.className = 'rank-mini-summary mt-2';
+    const table = document.getElementById('rankSearchTable');
+    if (!table || !table.parentNode) return null;
+    table.parentNode.insertBefore(el, table);
     return el;
-  }
-
-  // フォールバック（従来どおりテーブル直前）
-  const table = document.getElementById('rankSearchTable');
-  if (!table || !table.parentNode) return null;
-  table.parentNode.insertBefore(el, table);
-  return el;
 }
 
 // 睡眠タイプセレクト要素を生成（DOMには挿入しない）
@@ -885,51 +761,39 @@ function createSleepTypeSelect() {
 }
 
 // 逆引きフィルターのDOMを「フィールド／ランク／睡眠タイプ」で再構成（行全体を置き換え）
-function buildReverseFilterBar() {
-  const fieldSel = document.getElementById('searchField');
-  const rankSel  = document.getElementById('searchRank');
-  if (!fieldSel || !rankSel) return;
+ function buildReverseFilterBar() {
+   const fieldSel = document.getElementById('searchField');
+   const rankSel  = document.getElementById('searchRank');
+   if (!fieldSel || !rankSel) return;
 
-  // ← ここがポイント：2つのselectを含む .row を特定し、中身を入れ替える
-  const row = fieldSel.closest('.row') || rankSel.closest('.row');
-  if (!row) return;
+   const row = fieldSel.closest('.row') || rankSel.closest('.row');
+   if (!row) return;
 
-  const typeSel = createSleepTypeSelect();
+   const typeSel = createSleepTypeSelect();
 
-  // ラベル＋セレクト1組の小コンポーネント
-  const makeGroup = (labelText, selectEl) => {
-    const wrap = document.createElement('div');
-    wrap.className = 'filter-item';
+   const makeGroup = (labelText, selectEl) => {
+     const wrap = document.createElement('div');
+     wrap.className = 'filter-item';
+     const lab = document.createElement('label');
+     lab.textContent = labelText;
+     lab.htmlFor = selectEl.id;
+     selectEl.classList.add('form-select','form-select-sm');
+     wrap.appendChild(lab);
+     wrap.appendChild(selectEl);
+     return wrap;
+   };
 
-    const lab = document.createElement('label');
-    lab.textContent = labelText;
-    lab.htmlFor = selectEl.id;
+    const bar = document.createElement('div');
+    bar.className = 'filter-bar';
+    bar.appendChild(makeGroup('フィールド', fieldSel));
+    bar.appendChild(makeGroup('ランク',     rankSel));
+    bar.appendChild(makeGroup('睡眠タイプ', typeSel));
 
-    selectEl.classList.add('form-select','form-select-sm');
+    row.replaceWith(bar);
 
-    wrap.appendChild(lab);
-    wrap.appendChild(selectEl);
-    return wrap;
-  };
-
-  // 新しいフィルターバー
-  const bar = document.createElement('div');
-  bar.className = 'filter-bar';
-
-  bar.appendChild(makeGroup('フィールド', fieldSel));
-  bar.appendChild(makeGroup('ランク',     rankSel));
-  bar.appendChild(makeGroup('睡眠タイプ', typeSel));
-
-  // 固定ラッパへ移設して、元の行は削除
-  const wrap = ensureRankStickyWrap();
-  if (wrap) wrap.appendChild(bar);
-  row.remove();
-  refreshStickyOffsetsSoon();
-
-  // リスナー（多重付与を避けるなら一旦removeしてからadd）
-  typeSel.removeEventListener('change', _onTypeChange);
-  typeSel.addEventListener('change', _onTypeChange);
-}
+    typeSel.removeEventListener('change', _onTypeChange);
+    typeSel.addEventListener('change', _onTypeChange);
+ }
 
 // 睡眠タイプ変更時のハンドラ
 function _onTypeChange() {
@@ -1065,7 +929,6 @@ function renderRankSearch(state) {
       }
     });
   });
-  refreshStickyOffsetsSoon();
 }
 
 // バックアップ用の簡単なエンコード/デコード（UTF-8対応）
@@ -1244,12 +1107,6 @@ async function main() {
   setupRankSearchControls();
   ensureRankSearchHeaderHasObtainedColumn();
   setupBackupUI();
-
-  // ==== 固定バー＆ヘッダーの位置を初期化 ====
-  setupStickyFilters();         // 全寝顔/フィールド別のフィルターを固定化
-  updateStickyTop();            // navタブ高さを反映
-  updateTableHeaderOffsets();   // thead の固定位置を反映
-  window.addEventListener('resize', ()=>{ updateStickyTop(); updateTableHeaderOffsets(); });
 
   const state = loadState();
   renderSummary(state);
