@@ -163,6 +163,38 @@ function isExcludedFromSummary(row) {
   return /ダークライ/i.test(row.Name || '');
 }
 
+// navタブの高さを実測して --sticky-top を更新
+function updateStickyTop(){
+  const tabs = document.getElementById('mainTabs');
+  const h = tabs ? tabs.offsetHeight : 0;
+  document.documentElement.style.setProperty('--sticky-top', `${h}px`);
+}
+
+// 「全寝顔」「フィールド別」のフィルター行を固定化
+function setupStickyFilters(){
+  const all = document.querySelector('#pane-allfaces .card-body > .row.g-2');
+  if (all) all.classList.add('sticky-block');
+
+  const by = document.querySelector('#pane-byfield .card-body > .row.g-2');
+  if (by) by.classList.add('sticky-block');
+}
+
+// 逆引きシート用：フィルター＆ミニ表を載せる固定ラッパを作成
+function ensureRankStickyWrap(){
+  let wrap = document.getElementById('rankStickyWrap');
+  if (wrap) return wrap;
+  const body = document.querySelector('#pane-search .card-body');
+  if (!body) return null;
+
+  // テーブルの .table-responsive の直前に差し込む
+  const tableWrap = body.querySelector('#rankSearchTable')?.closest('.table-responsive') || body.firstElementChild;
+  wrap = document.createElement('div');
+  wrap.id = 'rankStickyWrap';
+  wrap.className = 'sticky-block';
+  body.insertBefore(wrap, tableWrap);
+  return wrap;
+}
+
 // ===================== 状態保存（★キーは IconNo 優先） =====================
 function rowKey(row){ return String(row.IconNo || row.No); }                 // 行用キー
 function entKey(ent){ return String(ent.iconNo || ent.no); }                 // まとめ用キー（形態ごと）
@@ -351,7 +383,7 @@ function renderSummary(state) {
         if (CHECKABLE_STARS.includes(row.DisplayRarity) && getChecked(state, rowKey(row), row.DisplayRarity)) num++;
       }
     }
-    const rate = denom ? Math.round((num / denom) * 100) : 0;
+    const rate = denom ? Math.floor((num / denom) * 100) : 0;
     return { num, denom, rate };
   };
 
@@ -730,17 +762,22 @@ function renderFieldTables(state) {
 
 // ミニ要約の入れ物を用意（なければ作成して #rankSearchTable の直前に挿入）
 function ensureRankMiniSummaryContainer() {
-  // 既存があればそれを返す
   let el = document.getElementById('rankMiniSummary');
   if (el) return el;
 
-  // ランク検索の表(#rankSearchTable)の直前に置く
-  const table = document.getElementById('rankSearchTable');
-  if (!table || !table.parentNode) return null;
-
+  const wrap = document.getElementById('rankStickyWrap');
   el = document.createElement('div');
   el.id = 'rankMiniSummary';
-  el.className = 'rank-mini-summary mb-2'; // Bootstrap余白（必要に応じて調整）
+  el.className = 'rank-mini-summary mt-2';
+
+  if (wrap) {
+    wrap.appendChild(el);     // ← フィルターの直下に常時表示
+    return el;
+  }
+
+  // フォールバック（従来どおりテーブル直前）
+  const table = document.getElementById('rankSearchTable');
+  if (!table || !table.parentNode) return null;
   table.parentNode.insertBefore(el, table);
   return el;
 }
@@ -799,9 +836,10 @@ function buildReverseFilterBar() {
   bar.appendChild(makeGroup('ランク',     rankSel));
   bar.appendChild(makeGroup('睡眠タイプ', typeSel));
 
-  // 行の中身をまるごと置換（元のラベル等はここで消える）
-  while (row.firstChild) row.removeChild(row.firstChild);
-  row.appendChild(bar);
+  // 固定ラッパへ移設して、元の行は削除
+  const wrap = ensureRankStickyWrap();
+  if (wrap) wrap.appendChild(bar);
+  row.remove(); // 重複DOMを撤去
 
   // リスナー（多重付与を避けるなら一旦removeしてからadd）
   typeSel.removeEventListener('change', _onTypeChange);
@@ -1060,6 +1098,17 @@ function injectListLayoutCSS() {
   .modal-field-rank th, .modal-field-rank td { vertical-align:middle; }
   .modal-field-rank .field-icon{ height:18px; width:auto; margin-right:.25rem; }
 
+  /* ===== 固定バー（フィルター/ミニ表） ===== */
+  :root { --sticky-top: 48px; }  /* navタブの高さで調整。JSで自動上書きします */
+  .sticky-block{
+    position: sticky;
+    top: var(--sticky-top);
+    z-index: 1020;            /* テーブル見出しより前面 */
+    background:#fff;
+    padding: .5rem 0;
+    border-bottom: 1px solid rgba(0,0,0,.075);
+  }
+
   `;
   document.head.appendChild(style);
   _listLayoutStyleInjected = true;
@@ -1099,6 +1148,11 @@ async function main() {
   setupRankSearchControls();
   ensureRankSearchHeaderHasObtainedColumn();
   setupBackupUI();
+
+  // 固定バーの初期化＆追従
+  setupStickyFilters();         // 全寝顔/フィールド別のフィルターを固定化
+  updateStickyTop();            // navタブの高さを反映
+  window.addEventListener('resize', updateStickyTop);
 
   const state = loadState();
   renderSummary(state);
