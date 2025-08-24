@@ -167,7 +167,8 @@ function isExcludedFromSummary(row) {
 
 // 全寝顔用：検索行＋一括ON/OFFのバーを sticky にまとめる
 function ensureAllFacesStickyWrap() {
-  const host = document.querySelector('#pane-allfaces .card-body');
+  const pane = document.getElementById('pane-allfaces');
+  const host = pane?.querySelector('.card-body') || pane;
   if (!host) return null;
 
   let wrap = document.getElementById('allFacesStickyWrap');
@@ -190,7 +191,8 @@ function ensureAllFacesStickyWrap() {
 
 // フィールド別用：検索行を sticky にまとめる
 function ensureByfieldStickyWrap() {
-  const host = document.querySelector('#pane-byfield .card-body');
+  const pane = document.getElementById('pane-byfield');
+  const host = pane?.querySelector('.card-body') || pane;
   if (!host) return null;
 
   let wrap = document.getElementById('byfieldStickyWrap');
@@ -209,7 +211,8 @@ function ensureByfieldStickyWrap() {
 
 // 逆引き用：フィルター置き場
 function ensureRankStickyWrap() {
-  const host = document.querySelector('#pane-search .card-body');
+  const pane = document.getElementById('pane-search');
+  const host = pane?.querySelector('.card-body') || pane;
   if (!host) return null;
 
   let wrap = document.getElementById('rankStickyWrap');
