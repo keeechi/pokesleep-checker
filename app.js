@@ -163,6 +163,76 @@ function isExcludedFromSummary(row) {
   return /ダークライ/i.test(row.Name || '');
 }
 
+// ===== 固定UI用ヘルパ =====
+function ensureRankStickyWrap() {
+  // #pane-search 内の .card-body 先頭付近に、固定バー置き場を用意
+  const host = document.querySelector('#pane-search .card-body');
+  if (!host) return null;
+
+  let wrap = document.getElementById('rankStickyWrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'rankStickyWrap';
+    wrap.className = 'sticky-block';
+
+    // 可能ならテーブルの直前に差し込む
+    const tableWrap = document
+      .querySelector('#pane-search #rankSearchTable')
+      ?.closest('.table-responsive');
+
+    if (tableWrap && tableWrap.parentNode === host) {
+      host.insertBefore(wrap, tableWrap);
+    } else {
+      host.insertBefore(wrap, host.firstChild);
+    }
+  }
+  return wrap;
+}
+
+function updateStickyTop() {
+  // タブの実高さをCSS変数へ
+  const tabs = document.getElementById('mainTabs');
+  const h = tabs ? tabs.offsetHeight : 48;
+  document.documentElement.style.setProperty('--sticky-top', `${h}px`);
+}
+
+function updateTableHeaderOffsets() {
+  // 各タブ内の thead を「タブ高 + そのタブの固定バー高」の直下に固定
+  const rootVal = getComputedStyle(document.documentElement)
+    .getPropertyValue('--sticky-top').trim();
+  const tabsH = parseInt(rootVal || '0', 10) || (document.getElementById('mainTabs')?.offsetHeight || 0);
+
+  const panes = [
+    { id: 'pane-allfaces', wrapId: null },         // いまは固定バーなし
+    { id: 'pane-byfield',  wrapId: null },         // いまは固定バーなし
+    { id: 'pane-search',   wrapId: 'rankStickyWrap' }, // 逆引きのみ固定バーあり
+  ];
+
+  panes.forEach(({ id, wrapId }) => {
+    const pane = document.getElementById(id);
+    if (!pane) return;
+    const wrap = wrapId ? document.getElementById(wrapId) : null;
+    const extra = wrap ? wrap.offsetHeight : 0;
+    pane.style.setProperty('--thead-top', `${tabsH + extra}px`);
+  });
+}
+
+let _stickyTimer = null;
+function refreshStickyOffsetsSoon() {
+  // レイアウト変更後に次フレームでオフセット再計算
+  if (_stickyTimer) clearTimeout(_stickyTimer);
+  _stickyTimer = setTimeout(() => {
+    updateStickyTop();
+    updateTableHeaderOffsets();
+  }, 0);
+}
+
+function setupStickyFilters() {
+  // まずは逆引き用の固定置き場だけ用意（全寝顔/フィールド別はthead固定で対応）
+  ensureRankStickyWrap();
+  refreshStickyOffsetsSoon();
+}
+
 // ===================== 状態保存（★キーは IconNo 優先） =====================
 function rowKey(row){ return String(row.IconNo || row.No); }                 // 行用キー
 function entKey(ent){ return String(ent.iconNo || ent.no); }                 // まとめ用キー（形態ごと）
@@ -364,7 +434,7 @@ function renderSummary(state) {
       denom++;
       if (CHECKABLE_STARS.includes(row.DisplayRarity) && getChecked(state, rowKey(row), row.DisplayRarity)) num++;
     }
-    const rate = denom ? Math.round((num / denom) * 100) : 0;
+    const rate = denom ? Math.floor((num / denom) * 100) : 0;
     return { num, denom, rate };
   };
 
