@@ -264,14 +264,16 @@ td.toggle-cell:hover {
   border-bottom:1px solid rgba(0,0,0,.075);
 }
 
-/* 各タブの thead を“固定ブロックの直下”に固定 */
+/* タブ下に固定される thead */
 #pane-allfaces .sticky-header th,
 #pane-byfield  .sticky-header th,
 #pane-search   .sticky-header th{
   position: sticky;
   top: calc(var(--sticky-top) + var(--pane-sticky-extra, 0px));
   z-index: 1010;
-  background:#fff;
+  background: #fff;
+  /* Safari 対策として下線が透けにくくなる */
+  background-clip: padding-box;
 }
 
 /* 逆引きのミニ表（固定しても邪魔にならないよう軽量） */
