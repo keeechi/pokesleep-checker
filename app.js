@@ -164,8 +164,51 @@ function isExcludedFromSummary(row) {
 }
 
 // ===== 固定UI用ヘルパ =====
+
+// 全寝顔用：検索行＋一括ON/OFFのバーを sticky にまとめる
+function ensureAllFacesStickyWrap() {
+  const host = document.querySelector('#pane-allfaces .card-body');
+  if (!host) return null;
+
+  let wrap = document.getElementById('allFacesStickyWrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'allFacesStickyWrap';
+    wrap.className = 'sticky-block';
+    host.insertBefore(wrap, host.firstChild);
+  }
+
+  // 既存のフィルター行／一括ボタン行を移動
+  const filterRow = host.querySelector('#searchName')?.closest('.row');
+  if (filterRow && filterRow.parentNode !== wrap) wrap.appendChild(filterRow);
+
+  const bulkBar = host.querySelector('#btnAllOn')?.closest('.d-flex');
+  if (bulkBar && bulkBar.parentNode !== wrap) wrap.appendChild(bulkBar);
+
+  return wrap;
+}
+
+// フィールド別用：検索行を sticky にまとめる
+function ensureByfieldStickyWrap() {
+  const host = document.querySelector('#pane-byfield .card-body');
+  if (!host) return null;
+
+  let wrap = document.getElementById('byfieldStickyWrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'byfieldStickyWrap';
+    wrap.className = 'sticky-block';
+    host.insertBefore(wrap, host.firstChild);
+  }
+
+  const filterRow = host.querySelector('#byfieldSearchName')?.closest('.row');
+  if (filterRow && filterRow.parentNode !== wrap) wrap.appendChild(filterRow);
+
+  return wrap;
+}
+
+// 逆引き用：フィルター置き場
 function ensureRankStickyWrap() {
-  // #pane-search 内の .card-body 先頭付近に、固定バー置き場を用意
   const host = document.querySelector('#pane-search .card-body');
   if (!host) return null;
 
@@ -175,11 +218,8 @@ function ensureRankStickyWrap() {
     wrap.id = 'rankStickyWrap';
     wrap.className = 'sticky-block';
 
-    // 可能ならテーブルの直前に差し込む
-    const tableWrap = document
-      .querySelector('#pane-search #rankSearchTable')
-      ?.closest('.table-responsive');
-
+    // テーブルの直前に差し込む
+    const tableWrap = document.querySelector('#pane-search #rankSearchTable')?.closest('.table-responsive');
     if (tableWrap && tableWrap.parentNode === host) {
       host.insertBefore(wrap, tableWrap);
     } else {
@@ -189,23 +229,22 @@ function ensureRankStickyWrap() {
   return wrap;
 }
 
+// タブの高さを CSS 変数へ
 function updateStickyTop() {
-  // タブの実高さをCSS変数へ
   const tabs = document.getElementById('mainTabs');
   const h = tabs ? tabs.offsetHeight : 48;
   document.documentElement.style.setProperty('--sticky-top', `${h}px`);
 }
 
+// 各タブ内 thead の固定位置（= タブ高 + そのタブのフィルター高）
 function updateTableHeaderOffsets() {
-  // 各タブ内の thead を「タブ高 + そのタブの固定バー高」の直下に固定
-  const rootVal = getComputedStyle(document.documentElement)
-    .getPropertyValue('--sticky-top').trim();
+  const rootVal = getComputedStyle(document.documentElement).getPropertyValue('--sticky-top').trim();
   const tabsH = parseInt(rootVal || '0', 10) || (document.getElementById('mainTabs')?.offsetHeight || 0);
 
   const panes = [
-    { id: 'pane-allfaces', wrapId: null },         // いまは固定バーなし
-    { id: 'pane-byfield',  wrapId: null },         // いまは固定バーなし
-    { id: 'pane-search',   wrapId: 'rankStickyWrap' }, // 逆引きのみ固定バーあり
+    { id: 'pane-allfaces', wrapId: 'allFacesStickyWrap' },
+    { id: 'pane-byfield',  wrapId: 'byfieldStickyWrap'  },
+    { id: 'pane-search',   wrapId: 'rankStickyWrap'     },
   ];
 
   panes.forEach(({ id, wrapId }) => {
@@ -213,13 +252,13 @@ function updateTableHeaderOffsets() {
     if (!pane) return;
     const wrap = wrapId ? document.getElementById(wrapId) : null;
     const extra = wrap ? wrap.offsetHeight : 0;
+    // この値が th の top になる
     pane.style.setProperty('--thead-top', `${tabsH + extra}px`);
   });
 }
 
 let _stickyTimer = null;
 function refreshStickyOffsetsSoon() {
-  // レイアウト変更後に次フレームでオフセット再計算
   if (_stickyTimer) clearTimeout(_stickyTimer);
   _stickyTimer = setTimeout(() => {
     updateStickyTop();
@@ -227,8 +266,10 @@ function refreshStickyOffsetsSoon() {
   }, 0);
 }
 
+// 3シートのフィルターを sticky 化
 function setupStickyFilters() {
-  // まずは逆引き用の固定置き場だけ用意（全寝顔/フィールド別はthead固定で対応）
+  ensureAllFacesStickyWrap();
+  ensureByfieldStickyWrap();
   ensureRankStickyWrap();
   refreshStickyOffsetsSoon();
 }
