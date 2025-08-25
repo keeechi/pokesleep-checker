@@ -1090,6 +1090,8 @@ style.textContent = `
   .filter-item { display:flex; flex-direction:row; align-items:center; gap:8px; white-space:nowrap; }
   .filter-item label { margin:0 !important; font-weight:500; }
   .filter-item .form-select { width:auto; display:inline-block; }
+
+  /* PC（768px〜）は1行横並び */
   @media (min-width: 768px) {
     .filter-bar { flex-direction:row; flex-wrap:nowrap; align-items:center; gap:12px 16px; }
   }
@@ -1106,13 +1108,13 @@ style.textContent = `
   .modal-field-rank .field-icon{ height:18px; width:auto; margin-right:.25rem; }
 
   /* ===== 固定バー（フィルター/ミニ表） ===== */
-  :root { --sticky-top: 48px; }  /* タブ高さ。JS(measureTabsHeight)で実測更新 */
+  :root { --sticky-top: 48px; }  /* navタブの高さ。JS（measureTabsHeight）で実測して更新 */
 
-  /* ★ JSが作る固定ラッパ（paneごと） */
+  /* ★ JSが作る固定ラッパ */
   .pane-sticky-wrap{
     position: sticky;
     top: var(--sticky-top);
-    z-index: 1020;            /* テーブルヘッダーより手前 */
+    z-index: 1020;            /* テーブルヘッダーより前面 */
     background:#fff;
     padding: .5rem 0;
     border-bottom: 1px solid rgba(0,0,0,.075);
@@ -1126,7 +1128,7 @@ style.textContent = `
     top: calc(var(--sticky-top) + var(--pane-sticky-extra, 0px));
     z-index: 1010;
     background:#fff;
-    background-clip: padding-box; /* Safariのにじみ対策 */
+    background-clip: padding-box;
   }
 `;
   document.head.appendChild(style);
