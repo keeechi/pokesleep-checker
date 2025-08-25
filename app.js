@@ -1121,15 +1121,23 @@ style.textContent = `
   }
 
   /* ★ 各シート内 thead を“固定ブロックの直下”に固定 */
-  #pane-allfaces .sticky-header th,
-  #pane-byfield  .sticky-header th,
-  #pane-search   .sticky-header th{
-    position: sticky;
-    top: calc(var(--sticky-top) + var(--pane-sticky-extra, 0px));
-    z-index: 1010;
-    background:#fff;
-    background-clip: padding-box;
-  }
+#pane-allfaces thead.sticky-header,
+#pane-byfield  thead.sticky-header,
+#pane-search   thead.sticky-header{
+  position: sticky;
+  top: calc(var(--sticky-top) + var(--pane-sticky-extra, 0px));
+  z-index: 1010;
+  background:#fff;
+  background-clip: padding-box;
+  will-change: transform;
+}
+
+/* thead を sticky にしたので th は通常フロー */
+#pane-allfaces thead.sticky-header th,
+#pane-byfield  thead.sticky-header th,
+#pane-search   thead.sticky-header th{
+  position: static;
+}
 `;
   document.head.appendChild(style);
   _listLayoutStyleInjected = true;
