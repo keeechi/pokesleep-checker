@@ -1200,30 +1200,34 @@ async function main() {
   });
 
   // ==== ここから固定ブロックを組み立て ====
-  { // 全寝顔：フィルター行＋一括バー
+  {
     const host = document.querySelector('#pane-allfaces .card-body');
     const filterRow = host?.querySelector('#searchName')?.closest('.row');
     const bulkBar   = host?.querySelector('#btnAllOn')?.closest('.d-flex');
     setupPaneSticky('pane-allfaces', [filterRow, bulkBar]);
   }
 
-  { // フィールド別：フィルター行＋フィールド用ピルをまとめて固定 ★ 追加
+  {
     const host = document.querySelector('#pane-byfield .card-body');
     const filterRow = host?.querySelector('#byfieldSearchName')?.closest('.row');
-    const fieldPills = document.getElementById('fieldTabs');              // ★ これを固定ラッパに含める
-    setupPaneSticky('pane-byfield', [filterRow, fieldPills]);
+    setupPaneSticky('pane-byfield', [filterRow]);
   }
 
-  { // 逆引き：フィルターバー＋ミニ表をまとめて固定 ★ 追加
-    const searchFilterBar = document.querySelector('#pane-search .filter-bar'); // ★ buildReverseFilterBar後に存在
+  {
     const mini = ensureRankMiniSummaryContainer();
-    setupPaneSticky('pane-search', [searchFilterBar, mini]);
+    setupPaneSticky('pane-search', [mini]);
   }
 
-  // 計測と再計測（順序が大事：まとめ終わってから計測）
-  markStickyHeaders();
   refreshAllSticky();
   window.addEventListener('resize', refreshAllSticky);
-  window.addEventListener('load', refreshAllSticky); // ★ フォント読み込み後の高さ変動ケア
+  markStickyHeaders();
+  refreshAllSticky();
+  }
+
+  // タブが切り替わるたびにオフセットを再計測
+  document.getElementById('mainTabs')?.addEventListener('shown.bs.tab', () => {
+    markStickyHeaders();
+    refreshAllSticky();
+  });
 
 document.addEventListener('DOMContentLoaded', main);
