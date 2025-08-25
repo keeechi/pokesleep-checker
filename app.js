@@ -1233,3 +1233,5 @@ async function main() {
   });
 
 document.addEventListener('DOMContentLoaded', main);
+window.addEventListener('load', refreshAllSticky);
+
