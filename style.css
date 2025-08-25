@@ -264,16 +264,23 @@ td.toggle-cell:hover {
   border-bottom:1px solid rgba(0,0,0,.075);
 }
 
-/* タブ下に固定される thead */
-#pane-allfaces .sticky-header th,
-#pane-byfield  .sticky-header th,
-#pane-search   .sticky-header th{
+/* thead を行ごと固定：iOS Safari 安定 */
+#pane-allfaces thead.sticky-header,
+#pane-byfield  thead.sticky-header,
+#pane-search   thead.sticky-header{
   position: sticky;
   top: calc(var(--sticky-top) + var(--pane-sticky-extra, 0px));
   z-index: 1010;
-  background: #fff;
-  /* Safari 対策として下線が透けにくくなる */
-  background-clip: padding-box;
+  background:#fff;
+  background-clip: padding-box;   /* Safari でのにじみ防止 */
+  will-change: transform;         /* iOS での再描画安定化 */
+}
+
+/* thead を sticky にしたので、各 th は通常フロー（個別 sticky を無効化） */
+#pane-allfaces thead.sticky-header th,
+#pane-byfield  thead.sticky-header th,
+#pane-search   thead.sticky-header th{
+  position: static;
 }
 
 /* 逆引きのミニ表（固定しても邪魔にならないよう軽量） */
