@@ -199,18 +199,6 @@ function refreshAllSticky() {
   });
 }
 
-// ==== thead を sticky 対象にマーキング ====
-function markStickyHeaders() {
-  // 全寝顔
-  document.querySelector('#allFacesTable thead')?.classList.add('sticky-header');
-
-  // フィールド別（動的に複数生成される）
-  document.querySelectorAll('#fieldTabsContent thead').forEach(t => t.classList.add('sticky-header'));
-
-  // 逆引き
-  document.querySelector('#rankSearchTable thead')?.classList.add('sticky-header');
-}
-
 // ダークライ除外判定
 function isExcludedFromSummary(row) {
   if (EXCLUDED_SPECIES_FOR_SUMMARY.has(row.No)) return true;
@@ -657,7 +645,6 @@ function renderAllFaces(state) {
         if (ent) openFieldRankModal(ent);
       });
     });
-  markStickyHeaders();
   refreshAllSticky();
 }
 
@@ -680,7 +667,7 @@ function setupFieldTabs() {
     <div class="tab-pane fade ${i===0?'show active':''}" id="pane-field-${i}" role="tabpanel">
       <div class="table-responsive">
         <table class="table table-sm align-middle table-hover mb-0">
-          <thead class="table-light sticky-header">
+          <thead class="table-light">
             <tr>
               <th class="text-center">ポケモン</th>
               <th class="text-center">タイプ</th>
@@ -782,7 +769,6 @@ function renderFieldTables(state) {
       });
     });
   });
-  markStickyHeaders();
   refreshAllSticky();
 }
 
@@ -987,7 +973,6 @@ function renderRankSearch(state) {
       }
     });
   });
-  markStickyHeaders();
   refreshAllSticky();
 }
 
@@ -1120,24 +1105,6 @@ style.textContent = `
     border-bottom: 1px solid rgba(0,0,0,.075);
   }
 
-  /* ★ 各シート内 thead を“固定ブロックの直下”に固定 */
-#pane-allfaces thead.sticky-header,
-#pane-byfield  thead.sticky-header,
-#pane-search   thead.sticky-header{
-  position: sticky;
-  top: calc(var(--sticky-top) + var(--pane-sticky-extra, 0px));
-  z-index: 1010;
-  background:#fff;
-  background-clip: padding-box;
-  will-change: transform;
-}
-
-/* thead を sticky にしたので th は通常フロー */
-#pane-allfaces thead.sticky-header th,
-#pane-byfield  thead.sticky-header th,
-#pane-search   thead.sticky-header th{
-  position: static;
-}
 `;
   document.head.appendChild(style);
   _listLayoutStyleInjected = true;
@@ -1230,13 +1197,11 @@ async function main() {
 
   refreshAllSticky();
   window.addEventListener('resize', refreshAllSticky);
-  markStickyHeaders();
   refreshAllSticky();
   }
 
   // タブが切り替わるたびにオフセットを再計測
   document.getElementById('mainTabs')?.addEventListener('shown.bs.tab', () => {
-    markStickyHeaders();
     refreshAllSticky();
   });
 
