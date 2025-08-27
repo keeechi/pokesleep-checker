@@ -297,30 +297,30 @@ thead.is-sticky { position: static !important; top: auto !important; }
   border-bottom:1px solid rgba(0,0,0,.075);
 }
 
-/* ==== クローン化したヘッダー（表外に別置き） ==== */
-.cloned-sticky-head{
-  position: sticky;      /* ビューポートに対して貼り付く */
-  top: calc(var(--sticky-top, 0px) + var(--pane-sticky-extra, 0px));
-  z-index: 1015;         /* フィルター(1020)の一段下、本文より前 */
-  background:#fff;
-  border-bottom: 1px solid rgba(0,0,0,.1);
-  overflow: hidden;      /* 横スクロールは親の .table-responsive と同期させる */
-  will-change: transform;  /* iOSの描画安定化 */
-}
-.cloned-sticky-head table{ 
-  margin-bottom: 0 !important;
+/* 既存 sticky を無効化（あっても問題ないがズレ原因を消す） */
+thead.is-sticky { position: static !important; top: auto !important; }
+
+/* フローティングヘッダー（固定で別置き） */
+.floating-head {
+  position: fixed;
+  left: 0;
+  top: 0;                 /* JSで上書き */
+  z-index: 1015;          /* フィルタ類(1020)の1つ下 */
   background: #fff;
-  border-collapse: separate; /* Safari安定化 */
-  border-spacing: 0;
+  border-bottom: 1px solid rgba(0,0,0,.12);
+  display: none;          /* JSが表示制御 */
+  overflow: hidden;       /* 横スクロール同期時のはみ出し防止 */
+  will-change: transform; /* iOS安定化 */
 }
-.cloned-sticky-head thead th{
+.floating-head table {
+  margin: 0 !important;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+}
+.floating-head thead th,
+.floating-head thead td {
   background: #fff;
   background-clip: padding-box;
-  white-space: nowrap;   /* 折返しで高さが増えるのを防ぐ */
+  white-space: nowrap;    /* 折返しで高さが変わらないように */
 }
-table.table { border-collapse: separate; border-spacing: 0; }
-thead th, thead td, tbody th, tbody td { background-clip: padding-box; }
-
-/* 表の描画が重なるのを防ぐお作法 */
-table.table { border-collapse: separate; border-spacing: 0; }
-thead th, thead td, tbody th, tbody td { background-clip: padding-box; }
