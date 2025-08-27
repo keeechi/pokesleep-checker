@@ -300,28 +300,20 @@ thead.is-sticky { position: static !important; top: auto !important; }
 /* 既存の sticky 指定を完全無効化 */
 thead.is-sticky { position: static !important; top:auto !important; }
 
-/* フローティングヘッダー本体：GPU合成＆タッチ干渉なし */
+/* フローティングヘッダーの土台（未定義なら追加、定義済みなら上書き） */
 .floating-head{
   position: fixed;
-  left: 0; top: 0;              /* 縦位置は transform で動かす */
-  z-index: 1015;                /* フィルタ(1020)の一段下 */
-  background: #fff;
-  border-bottom: 1px solid rgba(0,0,0,.12);
+  left: 0; top: 0;
+  z-index: 1015;           /* フィルター(1020)より一段下 */
   display: none;
-  pointer-events: none;         /* iOSでスワイプが止まらないように */
-  will-change: transform;       /* GPU 合成 */
+  background:#fff;
+  border-bottom: 1px solid rgba(0,0,0,.12);
+  pointer-events: none;     /* iOSでのスワイプ阻害を回避 */
+  will-change: transform;
   transform: translate3d(0,0,0);
-  contain: layout paint style;  /* 再描画を局所化 */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  contain: layout paint style;
 }
-.floating-head table{
-  margin: 0 !important;
-  border-collapse: separate;
-  border-spacing: 0;
-  background:#fff;
-}
-.floating-head thead th,
-.floating-head thead td{
-  background:#fff;
-  background-clip: padding-box;
-  white-space: nowrap;
-}
+.floating-head table{ margin:0 !important; border-collapse:separate; border-spacing:0; background:#fff; }
+.floating-head thead th, .floating-head thead td{ background:#fff; background-clip:padding-box; white-space:nowrap; }
