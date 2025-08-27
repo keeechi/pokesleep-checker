@@ -212,6 +212,31 @@ function makeStickyHeaders(){
   document.querySelector('#pane-search thead')?.classList.add('is-sticky');
 }
 
+// タブ高＋そのシートの固定フィルター高を足して thead の top に直書きする
+function applyStickyHeaders() {
+  // タブ（上部の切り替えバー）の高さ
+  const tabs = document.getElementById('mainTabs');
+  const tabsH = tabs ? Math.ceil(tabs.getBoundingClientRect().height) : 0;
+
+  // 対象シート
+  ['pane-allfaces','pane-byfield','pane-search'].forEach(id => {
+    const pane = document.getElementById(id);
+    if (!pane) return;
+
+    // そのシートの固定フィルター（.pane-sticky-wrap）の高さ
+    const wrap = pane.querySelector(':scope .pane-sticky-wrap');
+    const wrapH = wrap ? Math.ceil(wrap.getBoundingClientRect().height) : 0;
+
+    const topPx = tabsH + wrapH;
+
+    // そのシート内の thead すべてを sticky 化し、top を明示的に指定
+    pane.querySelectorAll('thead').forEach(thead => {
+      thead.classList.add('is-sticky');
+      thead.style.top = `${topPx}px`;
+    });
+  });
+}
+
 // ダークライ除外判定
 function isExcludedFromSummary(row) {
   if (EXCLUDED_SPECIES_FOR_SUMMARY.has(row.No)) return true;
@@ -658,7 +683,7 @@ function renderAllFaces(state) {
         if (ent) openFieldRankModal(ent);
       });
     });
-  makeStickyHeaders();
+  applyStickyHeaders();
   refreshAllSticky();
 }
 
@@ -783,7 +808,7 @@ function renderFieldTables(state) {
       });
     });
   });
-  makeStickyHeaders();
+  applyStickyHeaders();
   refreshAllSticky();
 }
 
@@ -988,7 +1013,7 @@ function renderRankSearch(state) {
       }
     });
   });
-  makeStickyHeaders();
+  applyStickyHeaders();
   refreshAllSticky();
 }
 
@@ -1218,7 +1243,7 @@ async function main() {
 
   // タブが切り替わるたびにオフセットを再計測
   document.getElementById('mainTabs')?.addEventListener('shown.bs.tab', () => {
-    makeStickyHeaders();
+    applyStickyHeaders();
     refreshAllSticky();
   });
 
