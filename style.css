@@ -42,6 +42,23 @@
   overflow: hidden;
 }
 
+/* 薄型タブ（スマホ） */
+@media (max-width: 768px){
+  #mainTabs.nav-tabs { gap: 4px; }
+  #mainTabs .nav-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 8px;      /* ← 上下・左右の縮小ポイント */
+    font-size: .82rem;     /* 9.5～11px相当 */
+    line-height: 1; white-space: nowrap;
+  }
+  #mainTabs .nav-link .tab-ic {
+    width: 24px; height: 24px; flex: 0 0 auto;
+  }
+}
+/* もっと狭い端末は横スクロール */
+#mainTabsWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+#mainTabsWrap::-webkit-scrollbar { display: none; }
+
 /* ==================== Summary Table Design ==================== */
 /* うとうと（1行目） */
 .summary-table tbody tr:nth-child(1) > th,
