@@ -297,30 +297,31 @@ thead.is-sticky { position: static !important; top: auto !important; }
   border-bottom:1px solid rgba(0,0,0,.075);
 }
 
-/* 既存 sticky を無効化（あっても問題ないがズレ原因を消す） */
-thead.is-sticky { position: static !important; top: auto !important; }
+/* 既存の sticky 指定を完全無効化 */
+thead.is-sticky { position: static !important; top:auto !important; }
 
-/* フローティングヘッダー（固定で別置き） */
-.floating-head {
+/* フローティングヘッダー本体：GPU合成＆タッチ干渉なし */
+.floating-head{
   position: fixed;
-  left: 0;
-  top: 0;                 /* JSで上書き */
-  z-index: 1015;          /* フィルタ類(1020)の1つ下 */
+  left: 0; top: 0;              /* 縦位置は transform で動かす */
+  z-index: 1015;                /* フィルタ(1020)の一段下 */
   background: #fff;
   border-bottom: 1px solid rgba(0,0,0,.12);
-  display: none;          /* JSが表示制御 */
-  overflow: hidden;       /* 横スクロール同期時のはみ出し防止 */
-  will-change: transform; /* iOS安定化 */
+  display: none;
+  pointer-events: none;         /* iOSでスワイプが止まらないように */
+  will-change: transform;       /* GPU 合成 */
+  transform: translate3d(0,0,0);
+  contain: layout paint style;  /* 再描画を局所化 */
 }
-.floating-head table {
+.floating-head table{
   margin: 0 !important;
   border-collapse: separate;
   border-spacing: 0;
-  background: #fff;
+  background:#fff;
 }
 .floating-head thead th,
-.floating-head thead td {
-  background: #fff;
+.floating-head thead td{
+  background:#fff;
   background-clip: padding-box;
-  white-space: nowrap;    /* 折返しで高さが変わらないように */
+  white-space: nowrap;
 }
