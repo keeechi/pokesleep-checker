@@ -214,24 +214,12 @@ function makeStickyHeaders(){
 
 // タブ高＋そのシートの固定フィルター高を足して thead の top に直書きする
 function applyStickyHeaders() {
-  const tabs = document.getElementById('mainTabs');
-  const tabsH = tabs ? Math.ceil(tabs.getBoundingClientRect().height) : 0;
-
+  // すべての対象テーブルの thead に印（.is-sticky）を付けるだけ
   ['pane-allfaces','pane-byfield','pane-search'].forEach(id => {
     const pane = document.getElementById(id);
     if (!pane) return;
-
-    const wrap = pane.querySelector(':scope .pane-sticky-wrap');
-    const wrapH = wrap ? Math.ceil(wrap.getBoundingClientRect().height) : 0;
-
-    const topPx = tabsH + wrapH;
-
-    // ★ 重要：theadではなく各thにtopを適用
     pane.querySelectorAll('thead').forEach(thead => {
       thead.classList.add('is-sticky');
-      thead.querySelectorAll('th').forEach(th => {
-        th.style.top = `${topPx}px`;
-      });
     });
   });
 }
