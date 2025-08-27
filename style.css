@@ -267,19 +267,14 @@ td.toggle-cell:hover {
 /* 逆引きのミニ表（固定しても邪魔にならないよう軽量） */
 .rank-mini-summary:empty { display:none; }
 
+/* 共通：テーブルヘッダーを sticky にする */
 thead.is-sticky {
   position: sticky;
-  z-index: 1010;
+  z-index: 1010;             /* フィルター(z-index:1020)より一段下 */
   background: #fff;
   background-clip: padding-box;
-  /* top は JS で inline 指定（ここでは書かない） */
+  /* top は JS で inline 指定するのでここでは書かない */
 }
 
-/* どのシートでも使える共通 sticky ヘッダー */
-thead.is-sticky {
-  position: sticky;
-  z-index: 1010;
-  background: #fff;
-  background-clip: padding-box;
-  /* top は JS で inline 指定（ここでは書かない） */
-}
+/* iOS/Safari の再描画安定化（任意） */
+thead.is-sticky { will-change: transform; }
