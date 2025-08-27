@@ -267,7 +267,10 @@ td.toggle-cell:hover {
 /* 逆引きのミニ表（固定しても邪魔にならないよう軽量） */
 .rank-mini-summary:empty { display:none; }
 
-/* ====== stickyの前提：縦方向overflowを殺す（重要） ====== */
+/* ==== 既存の thead sticky を無効化（クローン方式に切替） ==== */
+thead.is-sticky { position: static !important; top: auto !important; }
+
+/* ==== stickyの大前提：縦overflowを可視化（祖先に overflow-y があると sticky は死ぬ） ==== */
 .tab-content,
 .tab-pane,
 #pane-allfaces, #pane-byfield, #pane-search,
@@ -275,8 +278,7 @@ td.toggle-cell:hover {
 #pane-allfaces .card-body, #pane-byfield .card-body, #pane-search .card-body {
   overflow-y: visible !important;
 }
-
-/* Bootstrapのラッパは横スクロールだけ許可。縦はvisibleにしてstickyを通す */
+/* 横スクロールだけ許可（縦はvisible） */
 #pane-allfaces .table-responsive,
 #pane-byfield  .table-responsive,
 #pane-search   .table-responsive {
@@ -284,32 +286,40 @@ td.toggle-cell:hover {
   overflow-y: visible !important;
 }
 
-/* ========== フィルター等の固定バー ========== */
-:root { --sticky-top: 48px; } /* タブの高さ（JSで上書き） */
-
+/* ==== フィルター群（pane-sticky-wrap）は従来通り sticky ==== */
+:root { --sticky-top: 48px; } /* JSで更新 */
 .pane-sticky-wrap{
   position: sticky;
   top: var(--sticky-top);
-  z-index: 1020;       /* ヘッダーより前面 */
+  z-index: 1020;         /* ヘッダーより前面 */
   background:#fff;
   padding:.5rem 0;
   border-bottom:1px solid rgba(0,0,0,.075);
 }
 
-/* ========== テーブルヘッダーの固定（Safari対応） ========== */
-/* theadをstickyにしない（Safari対策） */
-thead.is-sticky { position: static !important; }
-
-/* 各thセルをsticky化。topはCSS変数で一括制御（JSは変数だけ更新） */
-#pane-allfaces thead.is-sticky > tr > th,
-#pane-byfield  thead.is-sticky > tr > th,
-#pane-search   thead.is-sticky > tr > th {
-  position: sticky;
+/* ==== クローン化したヘッダー（表外に別置き） ==== */
+.cloned-sticky-head{
+  position: sticky;      /* ビューポートに対して貼り付く */
   top: calc(var(--sticky-top, 0px) + var(--pane-sticky-extra, 0px));
-  z-index: 1015;         /* フィルター(1020)の一段下 */
+  z-index: 1015;         /* フィルター(1020)の一段下、本文より前 */
+  background:#fff;
+  border-bottom: 1px solid rgba(0,0,0,.1);
+  overflow: hidden;      /* 横スクロールは親の .table-responsive と同期させる */
+  will-change: transform;  /* iOSの描画安定化 */
+}
+.cloned-sticky-head table{ 
+  margin-bottom: 0 !important;
+  background: #fff;
+  border-collapse: separate; /* Safari安定化 */
+  border-spacing: 0;
+}
+.cloned-sticky-head thead th{
   background: #fff;
   background-clip: padding-box;
+  white-space: nowrap;   /* 折返しで高さが増えるのを防ぐ */
 }
+table.table { border-collapse: separate; border-spacing: 0; }
+thead th, thead td, tbody th, tbody td { background-clip: padding-box; }
 
 /* 表の描画が重なるのを防ぐお作法 */
 table.table { border-collapse: separate; border-spacing: 0; }
