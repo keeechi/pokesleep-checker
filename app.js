@@ -281,6 +281,17 @@ function updateStickyCloneSizes(table){
 }
 
 // ====== 固定ヘッダー（iOS安定版：GPU transform + rAF + DPR丸め） ======
+// === rAF スケジューラ（イベント登録より前に定義しておく） ===
+let _rafScheduled = false;
+function _scheduleUpdate(){
+  if (_rafScheduled) return;
+  _rafScheduled = true;
+  requestAnimationFrame(() => {
+    _rafScheduled = false;
+    _updateAllFloaters();   // ← この関数は後で定義されていてOK（関数宣言はホイスティングされます）
+  });
+}
+
 const _floatHeads = new Map();      // table -> { host, innerTable, resp, pane, ro }
 const DPR = Math.max(1, Math.min(4, window.devicePixelRatio || 1));
 const px = n => (Math.round(n * DPR) / DPR) + 'px';
@@ -412,9 +423,11 @@ function applyStickyHeaders(){
 }
 
 // 画面イベントは rAF 経由で合成（iOSの慣性スクロールでもブレにくい）
-window.addEventListener('scroll',  _scheduleUpdate, { passive:true });
-window.addEventListener('resize',  _scheduleUpdate);
-document.getElementById('mainTabs')?.addEventListener('shown.bs.tab', _scheduleUpdate);
+const _safeSchedule = () => { if (typeof _scheduleUpdate === 'function') _scheduleUpdate(); };
+
+window.addEventListener('scroll',  _safeSchedule, { passive:true });
+window.addEventListener('resize',  _safeSchedule);
+document.getElementById('mainTabs')?.addEventListener('shown.bs.tab', _safeSchedule);
 
 
 // ダークライ除外判定
