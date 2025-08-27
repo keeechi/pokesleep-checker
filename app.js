@@ -1155,7 +1155,7 @@ style.textContent = `
 async function main() {
   injectListLayoutCSS();
 
-  // サマリー用の軽いスタイル
+  // サマリー用スタイル（元のまま）
   let _summaryStyleInjected = false;
   (function injectSummaryTableCSS(){
     if (_summaryStyleInjected) return;
@@ -1167,12 +1167,9 @@ async function main() {
       .summary-cell .sum-hr  { height: 1px; background: currentColor; opacity: .3; margin: 2px 12px; }
       .summary-cell .sum-per { opacity: .75; }
       .summary-table .field-head-icon{
-    height: 60px;         /* お好みで 20〜28px 程度 */
-    width: auto;
-    display: inline-block;
-    vertical-align: middle;
-    image-rendering: -webkit-optimize-contrast; /* 透明PNGの輪郭が綺麗に見えることが多い */
-    }
+        height: 60px; width: auto; display: inline-block; vertical-align: middle;
+        image-rendering: -webkit-optimize-contrast;
+      }
     `;
     document.head.appendChild(style);
     _summaryStyleInjected = true;
@@ -1186,18 +1183,43 @@ async function main() {
   ensureRankSearchHeaderHasObtainedColumn();
   setupBackupUI();
 
+  // === [A] 固定ブロックを「先に」組み立てる ===
+  {
+    const host = document.querySelector('#pane-allfaces .card-body');
+    const filterRow = host?.querySelector('#searchName')?.closest('.row');
+    const bulkBar   = host?.querySelector('#btnAllOn')?.closest('.d-flex');
+    setupPaneSticky('pane-allfaces', [filterRow, bulkBar]);
+  }
+  {
+    const host = document.querySelector('#pane-byfield .card-body');
+    const filterRow = host?.querySelector('#byfieldSearchName')?.closest('.row');
+    setupPaneSticky('pane-byfield', [filterRow]);
+  }
+  {
+    const mini = ensureRankMiniSummaryContainer();
+    setupPaneSticky('pane-search', [mini]);
+  }
+
+  // === [B] いったん計測 → thead の top を適用 ===
+  refreshAllSticky();
+  applyStickyHeaders();
+
+  // === [C] 各シートを描画（ここで高さが変わる） ===
   const state = loadState();
   renderSummary(state);
   renderAllFaces(state);
   renderFieldTables(state);
   renderRankSearch(state);
 
-  // 全寝顔の検索・フィルタ
+  // 描画により高さが変わったので、もう一度上書き
+  applyStickyHeaders();
+
+  // ▼ 全寝顔の検索・フィルタ（元のまま）
   document.getElementById('searchName').addEventListener('input', ()=>renderAllFaces(loadState()));
   document.getElementById('filterStyle').addEventListener('change', ()=>renderAllFaces(loadState()));
   document.getElementById('sortBy').addEventListener('change', ()=>renderAllFaces(loadState()));
 
-  // 全体一括ON/OFF（形態ごとに key で処理）
+  // ▼ 一括ON/OFF（元のまま）
   document.getElementById('btnAllOn').addEventListener('click', ()=>{
     if (!confirm('すべての寝顔をチェックします。よろしいですか？')) return;
     const state = loadState();
@@ -1206,6 +1228,7 @@ async function main() {
       CHECKABLE_STARS.forEach(star=>{ if (speciesHasStar(ent, star)) setChecked(state, key, star, true); });
     }
     renderAllFaces(state); renderFieldTables(state); renderSummary(state); renderRankSearch(state);
+    applyStickyHeaders();
   });
   document.getElementById('btnAllOff').addEventListener('click', ()=>{
     if (!confirm('すべての寝顔のチェックを解除します。よろしいですか？')) return;
@@ -1215,38 +1238,23 @@ async function main() {
       CHECKABLE_STARS.forEach(star=>{ if (speciesHasStar(ent, star)) setChecked(state, key, star, false); });
     }
     renderAllFaces(state); renderFieldTables(state); renderSummary(state); renderRankSearch(state);
-  });
-
-  // ==== ここから固定ブロックを組み立て ====
-  {
-    const host = document.querySelector('#pane-allfaces .card-body');
-    const filterRow = host?.querySelector('#searchName')?.closest('.row');
-    const bulkBar   = host?.querySelector('#btnAllOn')?.closest('.d-flex');
-    setupPaneSticky('pane-allfaces', [filterRow, bulkBar]);
-  }
-
-  {
-    const host = document.querySelector('#pane-byfield .card-body');
-    const filterRow = host?.querySelector('#byfieldSearchName')?.closest('.row');
-    setupPaneSticky('pane-byfield', [filterRow]);
-  }
-
-  {
-    const mini = ensureRankMiniSummaryContainer();
-    setupPaneSticky('pane-search', [mini]);
-  }
-
-  refreshAllSticky();
-  window.addEventListener('resize', refreshAllSticky);
-  refreshAllSticky();
-  }
-
-  // タブが切り替わるたびにオフセットを再計測
-  document.getElementById('mainTabs')?.addEventListener('shown.bs.tab', () => {
     applyStickyHeaders();
-    refreshAllSticky();
   });
 
-document.addEventListener('DOMContentLoaded', main);
-window.addEventListener('load', refreshAllSticky);
+  // 仕上げに計測＆適用（安全策）
+  refreshAllSticky();
+  applyStickyHeaders();
+}
 
+// タブ切替時：まず計測→次に適用
+document.getElementById('mainTabs')?.addEventListener('shown.bs.tab', () => {
+  refreshAllSticky();
+  applyStickyHeaders();
+});
+
+// DOM 構築完了で main 起動
+document.addEventListener('DOMContentLoaded', main);
+
+// 画面サイズ変化やロード完了時も毎回再適用
+window.addEventListener('resize', () => { refreshAllSticky(); applyStickyHeaders(); });
+window.addEventListener('load',   () => { refreshAllSticky(); applyStickyHeaders(); });
