@@ -267,17 +267,50 @@ td.toggle-cell:hover {
 /* 逆引きのミニ表（固定しても邪魔にならないよう軽量） */
 .rank-mini-summary:empty { display:none; }
 
-/* Safari/iOS対策：theadではなく“各thセル”をstickyにする */
-thead.is-sticky { position: static !important; }  /* thead自体のstickyは無効化 */
-thead.is-sticky > tr > th {
+/* ====== stickyの前提：縦方向overflowを殺す（重要） ====== */
+.tab-content,
+.tab-pane,
+#pane-allfaces, #pane-byfield, #pane-search,
+#pane-allfaces .card, #pane-byfield .card, #pane-search .card,
+#pane-allfaces .card-body, #pane-byfield .card-body, #pane-search .card-body {
+  overflow-y: visible !important;
+}
+
+/* Bootstrapのラッパは横スクロールだけ許可。縦はvisibleにしてstickyを通す */
+#pane-allfaces .table-responsive,
+#pane-byfield  .table-responsive,
+#pane-search   .table-responsive {
+  overflow-x: auto;
+  overflow-y: visible !important;
+}
+
+/* ========== フィルター等の固定バー ========== */
+:root { --sticky-top: 48px; } /* タブの高さ（JSで上書き） */
+
+.pane-sticky-wrap{
   position: sticky;
-  top: 0; /* 後でJSが上書きする */
-  z-index: 1015;             /* フィルタ(1020)より下、tbodyより上 */
+  top: var(--sticky-top);
+  z-index: 1020;       /* ヘッダーより前面 */
+  background:#fff;
+  padding:.5rem 0;
+  border-bottom:1px solid rgba(0,0,0,.075);
+}
+
+/* ========== テーブルヘッダーの固定（Safari対応） ========== */
+/* theadをstickyにしない（Safari対策） */
+thead.is-sticky { position: static !important; }
+
+/* 各thセルをsticky化。topはCSS変数で一括制御（JSは変数だけ更新） */
+#pane-allfaces thead.is-sticky > tr > th,
+#pane-byfield  thead.is-sticky > tr > th,
+#pane-search   thead.is-sticky > tr > th {
+  position: sticky;
+  top: calc(var(--sticky-top, 0px) + var(--pane-sticky-extra, 0px));
+  z-index: 1015;         /* フィルター(1020)の一段下 */
   background: #fff;
   background-clip: padding-box;
 }
 
-/* 念のため：縦方向のstickyを邪魔しない */
-#pane-allfaces .table-responsive,
-#pane-byfield  .table-responsive,
-#pane-search   .table-responsive { overflow-y: visible; }
+/* 表の描画が重なるのを防ぐお作法 */
+table.table { border-collapse: separate; border-spacing: 0; }
+thead th, thead td, tbody th, tbody td { background-clip: padding-box; }
