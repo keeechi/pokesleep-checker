@@ -285,18 +285,18 @@ const _floatHeads = new Map();      // table -> { host, innerTable, resp, pane, 
 const DPR = Math.max(1, Math.min(4, window.devicePixelRatio || 1));
 const px = n => (Math.round(n * DPR) / DPR) + 'px';
 
-let _rafScheduled = false;
-function _scheduleUpdate(){ if (_rafScheduled) return;
-  _rafScheduled = true;
-  requestAnimationFrame(()=>{ _rafScheduled = false; _updateAllFloaters(); });
-}
-
-function _getTopOffsetForPane(pane){
+function _getTopOffsetForTable(table){
   let top = 0;
   const tabs = document.getElementById('mainTabs');
   if (tabs) top = Math.max(top, Math.ceil(tabs.getBoundingClientRect().bottom));
-  const wrap = pane?.querySelector('.pane-sticky-wrap');
+
+  // ★「親セクション」を #pane-allfaces / #pane-byfield / #pane-search から取る
+  const paneSection = table.closest('#pane-allfaces, #pane-byfield, #pane-search');
+
+  // そのセクション直下の sticky ラッパ（= フィルター）
+  const wrap = paneSection ? paneSection.querySelector(':scope .pane-sticky-wrap') : null;
   if (wrap) top = Math.max(top, Math.ceil(wrap.getBoundingClientRect().bottom));
+
   return top;
 }
 function _isShown(el){ return !!(el && el.offsetParent !== null); }
@@ -305,9 +305,10 @@ function _ensureFloaterForTable(table){
   if (!table || _floatHeads.has(table)) return;
 
   const resp = table.closest('.table-responsive') || table.parentElement;
-  const pane = table.closest('.tab-pane') ||
-               table.closest('#pane-allfaces, #pane-byfield, #pane-search') ||
-               document.body;
+
+  // ★ ここを .tab-pane ではなく「親セクション」に
+  const paneSection =
+    table.closest('#pane-allfaces, #pane-byfield, #pane-search') || document.body;
 
   const host = document.createElement('div');
   host.className = 'floating-head';
@@ -318,17 +319,14 @@ function _ensureFloaterForTable(table){
   if (table.tHead) innerTable.appendChild(table.tHead.cloneNode(true));
   host.appendChild(innerTable);
 
-  // 横スクロール同期（パッシブ + rAF 合成）
   resp?.addEventListener('scroll', ()=>_scheduleUpdate(), { passive:true });
 
-  // サイズ変化へ追従（列幅/ラッパ幅）
   let ro = null;
   if (window.ResizeObserver){
     ro = new ResizeObserver(()=>_scheduleUpdate());
     ro.observe(table); if (resp) ro.observe(resp);
   }
-
-  _floatHeads.set(table, { host, innerTable, resp, pane, ro });
+  _floatHeads.set(table, { host, innerTable, resp, paneSection, ro });
 }
 
 function _syncColumns(table){
@@ -365,33 +363,28 @@ function _syncColumns(table){
 function _layoutFloater(table){
   const item = _floatHeads.get(table);
   if (!item) return;
-  const { host, innerTable, resp, pane } = item;
+  const { host, innerTable, resp, paneSection } = item;
 
-  if (!_isShown(table) || !_isShown(pane)){
+  // 非表示タブなどは無効
+  const shown = el => !!(el && el.offsetParent !== null);
+  if (!shown(table) || (paneSection && !shown(paneSection))){
     host.style.display = 'none';
     return;
   }
 
   const rectTable = table.getBoundingClientRect();
   const rectResp  = (resp || table).getBoundingClientRect();
-  const topOffset = _getTopOffsetForPane(pane);
+  const topOffset = _getTopOffsetForTable(table);
 
   const theadH = Math.ceil((table.tHead?.getBoundingClientRect().height) || 32);
   const shouldShow = rectTable.top < topOffset && (rectTable.bottom - theadH) > topOffset;
-
-  if (!shouldShow){
-    host.style.display = 'none';
-    return;
-  }
+  if (!shouldShow){ host.style.display = 'none'; return; }
 
   host.style.display = 'block';
-  // 横位置と幅は style で固定
   host.style.left  = px(rectResp.left);
   host.style.width = px(rectResp.width);
-  // 縦位置は transform で移動（iOSのスクロールでも安定）
-  host.style.transform = `translate3d(0, ${px(topOffset)}, 0)`;
+  host.style.transform = `translate3d(0, ${px(topOffset)}, 0)`;  // ★ iOS安定
 
-  // 横スクロールに追従（内部テーブルを逆方向へ移動）
   const sl = (resp && resp.scrollLeft) || 0;
   innerTable.style.transform = `translate3d(${-sl}px, 0, 0)`;
 }
@@ -403,18 +396,16 @@ function _updateAllFloaters(){
   });
 }
 
-// 入口（以前と同じ関数名）
 function applyStickyHeaders(){
   const tables = [
     document.querySelector('#allFacesTable'),
-    ...document.querySelectorAll('#fieldTabsContent table'),
+    // ★ アクティブ/非アクティブに関わらず全フィールドの table を拾う
+    ...document.querySelectorAll('#fieldTabsContent .table-responsive > table'),
     document.querySelector('#rankSearchTable')
   ].filter(Boolean);
 
   tables.forEach(t => _ensureFloaterForTable(t));
   _scheduleUpdate();
-
-  // 遅延読み込みの高さ揺れ対策（画像/フォント）
   setTimeout(_scheduleUpdate, 120);
   setTimeout(_scheduleUpdate, 500);
   requestAnimationFrame(_scheduleUpdate);
