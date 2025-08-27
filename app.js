@@ -280,11 +280,18 @@ function updateStickyCloneSizes(table){
   });
 }
 
-// ====== 固定ヘッダー: 固定(div)に thead をクローンして貼り付ける方式 ======
-const _floatHeads = new Map();  // table -> {host, innerTable, resp, pane, lastColCount}
+// ====== 固定ヘッダー（iOS安定版：GPU transform + rAF + DPR丸め） ======
+const _floatHeads = new Map();      // table -> { host, innerTable, resp, pane, ro }
+const DPR = Math.max(1, Math.min(4, window.devicePixelRatio || 1));
+const px = n => (Math.round(n * DPR) / DPR) + 'px';
 
-function _getActivePaneTopOffset(pane) {
-  // 画面上部の「タブ」と「そのpaneのフィルタ（.pane-sticky-wrap）」の“下端”を足し込む
+let _rafScheduled = false;
+function _scheduleUpdate(){ if (_rafScheduled) return;
+  _rafScheduled = true;
+  requestAnimationFrame(()=>{ _rafScheduled = false; _updateAllFloaters(); });
+}
+
+function _getTopOffsetForPane(pane){
   let top = 0;
   const tabs = document.getElementById('mainTabs');
   if (tabs) top = Math.max(top, Math.ceil(tabs.getBoundingClientRect().bottom));
@@ -292,134 +299,131 @@ function _getActivePaneTopOffset(pane) {
   if (wrap) top = Math.max(top, Math.ceil(wrap.getBoundingClientRect().bottom));
   return top;
 }
+function _isShown(el){ return !!(el && el.offsetParent !== null); }
 
-function _isVisible(el) {
-  // display:none などで非表示なら除外
-  return !!(el && el.offsetParent !== null);
-}
-
-function _ensureFloaterForTable(table) {
+function _ensureFloaterForTable(table){
   if (!table || _floatHeads.has(table)) return;
 
   const resp = table.closest('.table-responsive') || table.parentElement;
-  const pane = table.closest('.tab-pane') || table.closest('#pane-allfaces, #pane-byfield, #pane-search') || document.body;
+  const pane = table.closest('.tab-pane') ||
+               table.closest('#pane-allfaces, #pane-byfield, #pane-search') ||
+               document.body;
 
-  // host は body 配下に作る（position:fixed）
   const host = document.createElement('div');
   host.className = 'floating-head';
   host.setAttribute('aria-hidden', 'true');
   document.body.appendChild(host);
 
-  // クローン（theadのみ）
   const innerTable = table.cloneNode(false);
   if (table.tHead) innerTable.appendChild(table.tHead.cloneNode(true));
   host.appendChild(innerTable);
 
-  // 横スクロール同期
-  const onHScroll = () => {
-    const sl = (resp && resp.scrollLeft) || 0;
-    innerTable.style.transform = `translateX(${-sl}px)`;
-  };
-  resp?.addEventListener('scroll', onHScroll, { passive: true });
+  // 横スクロール同期（パッシブ + rAF 合成）
+  resp?.addEventListener('scroll', ()=>_scheduleUpdate(), { passive:true });
 
-  _floatHeads.set(table, { host, innerTable, resp, pane, lastColCount: 0 });
+  // サイズ変化へ追従（列幅/ラッパ幅）
+  let ro = null;
+  if (window.ResizeObserver){
+    ro = new ResizeObserver(()=>_scheduleUpdate());
+    ro.observe(table); if (resp) ro.observe(resp);
+  }
+
+  _floatHeads.set(table, { host, innerTable, resp, pane, ro });
 }
 
-function _syncFloaterColumns(table) {
+function _syncColumns(table){
   const item = _floatHeads.get(table);
   if (!item || !table.tHead) return;
 
-  const ths  = table.tHead.querySelectorAll('th,td');
+  // 列数が変わっていたら thead を作り直す
+  const ths = table.tHead.querySelectorAll('th,td');
   let cthead = item.innerTable.tHead;
-
-  // 列数が変わっていたら作り直す
-  if (!cthead || cthead.querySelectorAll('th,td').length !== ths.length) {
+  if (!cthead || cthead.querySelectorAll('th,td').length !== ths.length){
     item.innerTable.innerHTML = '';
     item.innerTable.appendChild(table.tHead.cloneNode(true));
     cthead = item.innerTable.tHead;
   }
   const cths = cthead.querySelectorAll('th,td');
 
-  // 幅合わせ（ピクセル固定）
+  // テーブルの総幅を合わせる
   const rectTable = table.getBoundingClientRect();
-  item.innerTable.style.width = Math.ceil(rectTable.width) + 'px';
+  item.innerTable.style.width = px(rectTable.width);
 
-  ths.forEach((th, i) => {
-    const w = Math.ceil(th.getBoundingClientRect().width);
+  // 各セル幅をピクセル固定（サブピクセルはDPR丸め）
+  ths.forEach((th, i)=>{
+    const w = th.getBoundingClientRect().width;
     const cth = cths[i];
-    if (cth) {
-      cth.style.width = cth.style.minWidth = cth.style.maxWidth = w + 'px';
+    if (cth){
+      const val = px(w);
+      cth.style.width = val;
+      cth.style.minWidth = val;
+      cth.style.maxWidth = val;
     }
   });
 }
 
-function _layoutFloater(table) {
+function _layoutFloater(table){
   const item = _floatHeads.get(table);
   if (!item) return;
-
   const { host, innerTable, resp, pane } = item;
 
-  if (!_isVisible(table) || !_isVisible(pane)) {
+  if (!_isShown(table) || !_isShown(pane)){
     host.style.display = 'none';
     return;
   }
 
-  // 対象テーブルとそのラッパの座標
   const rectTable = table.getBoundingClientRect();
   const rectResp  = (resp || table).getBoundingClientRect();
+  const topOffset = _getTopOffsetForPane(pane);
 
-  // ヘッダーを置くべき“画面上のY”
-  const topOffset = _getActivePaneTopOffset(pane);
-
-  // この範囲内だけ表示（表の上端を過ぎ、下端まではみ出さない）
-  const theadH = Math.ceil((table.tHead?.getBoundingClientRect().height) || 0) || 32;
+  const theadH = Math.ceil((table.tHead?.getBoundingClientRect().height) || 32);
   const shouldShow = rectTable.top < topOffset && (rectTable.bottom - theadH) > topOffset;
 
-  if (!shouldShow) {
+  if (!shouldShow){
     host.style.display = 'none';
     return;
   }
 
-  // 位置・サイズ
   host.style.display = 'block';
-  host.style.top     = topOffset + 'px';
-  host.style.left    = Math.max(0, Math.floor(rectResp.left)) + 'px';
-  host.style.width   = Math.floor(rectResp.width) + 'px';
+  // 横位置と幅は style で固定
+  host.style.left  = px(rectResp.left);
+  host.style.width = px(rectResp.width);
+  // 縦位置は transform で移動（iOSのスクロールでも安定）
+  host.style.transform = `translate3d(0, ${px(topOffset)}, 0)`;
 
-  // 横スクロール追従
+  // 横スクロールに追従（内部テーブルを逆方向へ移動）
   const sl = (resp && resp.scrollLeft) || 0;
-  innerTable.style.transform = `translateX(${-sl}px)`;
+  innerTable.style.transform = `translate3d(${-sl}px, 0, 0)`;
 }
 
-function _updateAllFloaters() {
-  _floatHeads.forEach((_, table) => {
-    _syncFloaterColumns(table);
+function _updateAllFloaters(){
+  _floatHeads.forEach((_, table)=>{
+    _syncColumns(table);
     _layoutFloater(table);
   });
 }
 
-// 既存呼び出し互換: これが “貼り付け” 全処理の入口
-function applyStickyHeaders() {
-  // 対象テーブルを列挙（ID直指定で確実に取りにいく）
+// 入口（以前と同じ関数名）
+function applyStickyHeaders(){
   const tables = [
     document.querySelector('#allFacesTable'),
     ...document.querySelectorAll('#fieldTabsContent table'),
     document.querySelector('#rankSearchTable')
   ].filter(Boolean);
 
-  tables.forEach(tbl => _ensureFloaterForTable(tbl));
-  _updateAllFloaters();
+  tables.forEach(t => _ensureFloaterForTable(t));
+  _scheduleUpdate();
 
-  // 遅延でサイズが変わる（フォント/画像/tabsの行高）対策
-  requestAnimationFrame(_updateAllFloaters);
-  setTimeout(_updateAllFloaters, 150);
-  setTimeout(_updateAllFloaters, 500);
+  // 遅延読み込みの高さ揺れ対策（画像/フォント）
+  setTimeout(_scheduleUpdate, 120);
+  setTimeout(_scheduleUpdate, 500);
+  requestAnimationFrame(_scheduleUpdate);
 }
 
-// 画面スクロール/リサイズ/タブ切替で都度合わせる
-window.addEventListener('scroll',  _updateAllFloaters, { passive: true });
-window.addEventListener('resize',  _updateAllFloaters);
-document.getElementById('mainTabs')?.addEventListener('shown.bs.tab', _updateAllFloaters);
+// 画面イベントは rAF 経由で合成（iOSの慣性スクロールでもブレにくい）
+window.addEventListener('scroll',  _scheduleUpdate, { passive:true });
+window.addEventListener('resize',  _scheduleUpdate);
+document.getElementById('mainTabs')?.addEventListener('shown.bs.tab', _scheduleUpdate);
 
 
 // ダークライ除外判定
