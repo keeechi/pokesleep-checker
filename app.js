@@ -280,22 +280,147 @@ function updateStickyCloneSizes(table){
   });
 }
 
-// === クローン方式: 3) 既存の applyStickyHeaders() を差し替え（呼び出し箇所はそのまま） ===
-function applyStickyHeaders(){
-  // 1) クローン未作成のテーブルにクローンを作る
-  document.querySelectorAll(
-    '#pane-allfaces .table-responsive > table, ' +
-    '#pane-byfield  .table-responsive > table, ' +
-    '#pane-search   .table-responsive > table'
-  ).forEach(tbl => ensureStickyCloneForTable(tbl));
+// ====== 固定ヘッダー: 固定(div)に thead をクローンして貼り付ける方式 ======
+const _floatHeads = new Map();  // table -> {host, innerTable, resp, pane, lastColCount}
 
-  // 2) すべてのクローンのサイズを最新化
-  document.querySelectorAll(
-    '#pane-allfaces .table-responsive > table, ' +
-    '#pane-byfield  .table-responsive > table, ' +
-    '#pane-search   .table-responsive > table'
-  ).forEach(tbl => updateStickyCloneSizes(tbl));
+function _getActivePaneTopOffset(pane) {
+  // 画面上部の「タブ」と「そのpaneのフィルタ（.pane-sticky-wrap）」の“下端”を足し込む
+  let top = 0;
+  const tabs = document.getElementById('mainTabs');
+  if (tabs) top = Math.max(top, Math.ceil(tabs.getBoundingClientRect().bottom));
+  const wrap = pane?.querySelector('.pane-sticky-wrap');
+  if (wrap) top = Math.max(top, Math.ceil(wrap.getBoundingClientRect().bottom));
+  return top;
 }
+
+function _isVisible(el) {
+  // display:none などで非表示なら除外
+  return !!(el && el.offsetParent !== null);
+}
+
+function _ensureFloaterForTable(table) {
+  if (!table || _floatHeads.has(table)) return;
+
+  const resp = table.closest('.table-responsive') || table.parentElement;
+  const pane = table.closest('.tab-pane') || table.closest('#pane-allfaces, #pane-byfield, #pane-search') || document.body;
+
+  // host は body 配下に作る（position:fixed）
+  const host = document.createElement('div');
+  host.className = 'floating-head';
+  host.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(host);
+
+  // クローン（theadのみ）
+  const innerTable = table.cloneNode(false);
+  if (table.tHead) innerTable.appendChild(table.tHead.cloneNode(true));
+  host.appendChild(innerTable);
+
+  // 横スクロール同期
+  const onHScroll = () => {
+    const sl = (resp && resp.scrollLeft) || 0;
+    innerTable.style.transform = `translateX(${-sl}px)`;
+  };
+  resp?.addEventListener('scroll', onHScroll, { passive: true });
+
+  _floatHeads.set(table, { host, innerTable, resp, pane, lastColCount: 0 });
+}
+
+function _syncFloaterColumns(table) {
+  const item = _floatHeads.get(table);
+  if (!item || !table.tHead) return;
+
+  const ths  = table.tHead.querySelectorAll('th,td');
+  let cthead = item.innerTable.tHead;
+
+  // 列数が変わっていたら作り直す
+  if (!cthead || cthead.querySelectorAll('th,td').length !== ths.length) {
+    item.innerTable.innerHTML = '';
+    item.innerTable.appendChild(table.tHead.cloneNode(true));
+    cthead = item.innerTable.tHead;
+  }
+  const cths = cthead.querySelectorAll('th,td');
+
+  // 幅合わせ（ピクセル固定）
+  const rectTable = table.getBoundingClientRect();
+  item.innerTable.style.width = Math.ceil(rectTable.width) + 'px';
+
+  ths.forEach((th, i) => {
+    const w = Math.ceil(th.getBoundingClientRect().width);
+    const cth = cths[i];
+    if (cth) {
+      cth.style.width = cth.style.minWidth = cth.style.maxWidth = w + 'px';
+    }
+  });
+}
+
+function _layoutFloater(table) {
+  const item = _floatHeads.get(table);
+  if (!item) return;
+
+  const { host, innerTable, resp, pane } = item;
+
+  if (!_isVisible(table) || !_isVisible(pane)) {
+    host.style.display = 'none';
+    return;
+  }
+
+  // 対象テーブルとそのラッパの座標
+  const rectTable = table.getBoundingClientRect();
+  const rectResp  = (resp || table).getBoundingClientRect();
+
+  // ヘッダーを置くべき“画面上のY”
+  const topOffset = _getActivePaneTopOffset(pane);
+
+  // この範囲内だけ表示（表の上端を過ぎ、下端まではみ出さない）
+  const theadH = Math.ceil((table.tHead?.getBoundingClientRect().height) || 0) || 32;
+  const shouldShow = rectTable.top < topOffset && (rectTable.bottom - theadH) > topOffset;
+
+  if (!shouldShow) {
+    host.style.display = 'none';
+    return;
+  }
+
+  // 位置・サイズ
+  host.style.display = 'block';
+  host.style.top     = topOffset + 'px';
+  host.style.left    = Math.max(0, Math.floor(rectResp.left)) + 'px';
+  host.style.width   = Math.floor(rectResp.width) + 'px';
+
+  // 横スクロール追従
+  const sl = (resp && resp.scrollLeft) || 0;
+  innerTable.style.transform = `translateX(${-sl}px)`;
+}
+
+function _updateAllFloaters() {
+  _floatHeads.forEach((_, table) => {
+    _syncFloaterColumns(table);
+    _layoutFloater(table);
+  });
+}
+
+// 既存呼び出し互換: これが “貼り付け” 全処理の入口
+function applyStickyHeaders() {
+  // 対象テーブルを列挙（ID直指定で確実に取りにいく）
+  const tables = [
+    document.querySelector('#allFacesTable'),
+    ...document.querySelectorAll('#fieldTabsContent table'),
+    document.querySelector('#rankSearchTable')
+  ].filter(Boolean);
+
+  tables.forEach(tbl => _ensureFloaterForTable(tbl));
+  _updateAllFloaters();
+
+  // 遅延でサイズが変わる（フォント/画像/tabsの行高）対策
+  requestAnimationFrame(_updateAllFloaters);
+  setTimeout(_updateAllFloaters, 150);
+  setTimeout(_updateAllFloaters, 500);
+}
+
+// 画面スクロール/リサイズ/タブ切替で都度合わせる
+window.addEventListener('scroll',  _updateAllFloaters, { passive: true });
+window.addEventListener('resize',  _updateAllFloaters);
+document.getElementById('mainTabs')?.addEventListener('shown.bs.tab', _updateAllFloaters);
+
 
 // ダークライ除外判定
 function isExcludedFromSummary(row) {
