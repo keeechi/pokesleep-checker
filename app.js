@@ -212,16 +212,89 @@ function makeStickyHeaders(){
   document.querySelector('#pane-search thead')?.classList.add('is-sticky');
 }
 
-// タブ高＋そのシートの固定フィルター高を足して thead の top に直書きする
-function applyStickyHeaders() {
-  // すべての対象テーブルの thead に印（.is-sticky）を付けるだけ
-  ['pane-allfaces','pane-byfield','pane-search'].forEach(id => {
-    const pane = document.getElementById(id);
-    if (!pane) return;
-    pane.querySelectorAll('thead').forEach(thead => {
-      thead.classList.add('is-sticky');
-    });
+// === クローン方式: 1) テーブルごとに上部にヘッダーを複製して差し込む ===
+function ensureStickyCloneForTable(table){
+  if (!table || table.dataset.stickyPrepared === '1') return;
+
+  const resp = table.closest('.table-responsive') || table.parentElement;
+  // すでにホストがあるか？
+  let host = resp.querySelector(':scope > .cloned-sticky-head');
+  if (!host) {
+    host = document.createElement('div');
+    host.className = 'cloned-sticky-head';
+    resp.insertBefore(host, resp.firstChild);
+    // 横スクロールを同期
+    resp.addEventListener('scroll', () => { host.scrollLeft = resp.scrollLeft; }, { passive: true });
+  }
+
+  // ヘッダーだけ持つクローンテーブルを作成
+  const cloneTable = table.cloneNode(false);
+  cloneTable.setAttribute('aria-hidden', 'true');
+  cloneTable.dataset.stickyClone = '1';
+  if (table.tHead) {
+    cloneTable.appendChild(table.tHead.cloneNode(true));
+  } else {
+    // thead がない表は対象外
+    return;
+  }
+  host.innerHTML = '';       // 同一 .table-responsive 内は常に最新を1つだけ
+  host.appendChild(cloneTable);
+
+  table.dataset.stickyPrepared = '1';
+  // 初回はサイズ合わせ
+  updateStickyCloneSizes(table);
+  // レイアウト確定後（フォント/画像）にももう一度
+  requestAnimationFrame(() => updateStickyCloneSizes(table));
+}
+
+// === クローン方式: 2) 列幅と総幅を元表と一致させる ===
+function updateStickyCloneSizes(table){
+  const resp = table.closest('.table-responsive') || table.parentElement;
+  const host = resp.querySelector(':scope > .cloned-sticky-head');
+  const cloneTable = host ? host.querySelector('table[data-sticky-clone="1"]') : null;
+  if (!host || !cloneTable || !table.tHead) return;
+
+  const ths  = table.tHead.querySelectorAll('th,td');
+  let cthead = cloneTable.tHead;
+  // 列数が変わっていたら作り直す
+  if (!cthead || cthead.querySelectorAll('th,td').length !== ths.length) {
+    cloneTable.innerHTML = '';
+    cloneTable.appendChild(table.tHead.cloneNode(true));
+    cthead = cloneTable.tHead;
+  }
+  const cths = cthead.querySelectorAll('th,td');
+
+  // テーブル全体の幅
+  const tableRect = table.getBoundingClientRect();
+  cloneTable.style.width = Math.ceil(tableRect.width) + 'px';
+
+  // 各列の幅を固定
+  ths.forEach((th, i) => {
+    const w = Math.ceil(th.getBoundingClientRect().width);
+    const cth = cths[i];
+    if (cth) {
+      cth.style.width    = w + 'px';
+      cth.style.minWidth = w + 'px';
+      cth.style.maxWidth = w + 'px';
+    }
   });
+}
+
+// === クローン方式: 3) 既存の applyStickyHeaders() を差し替え（呼び出し箇所はそのまま） ===
+function applyStickyHeaders(){
+  // 1) クローン未作成のテーブルにクローンを作る
+  document.querySelectorAll(
+    '#pane-allfaces .table-responsive > table, ' +
+    '#pane-byfield  .table-responsive > table, ' +
+    '#pane-search   .table-responsive > table'
+  ).forEach(tbl => ensureStickyCloneForTable(tbl));
+
+  // 2) すべてのクローンのサイズを最新化
+  document.querySelectorAll(
+    '#pane-allfaces .table-responsive > table, ' +
+    '#pane-byfield  .table-responsive > table, ' +
+    '#pane-search   .table-responsive > table'
+  ).forEach(tbl => updateStickyCloneSizes(tbl));
 }
 
 // ダークライ除外判定
