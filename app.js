@@ -199,6 +199,19 @@ function refreshAllSticky() {
   });
 }
 
+// レンダ後に thead に .is-sticky を付ける
+function makeStickyHeaders(){
+  // 全寝顔（1枚）
+  document.querySelector('#pane-allfaces thead')?.classList.add('is-sticky');
+
+  // フィールド別（タブ内に複数テーブルがある）
+  document.querySelectorAll('#pane-byfield thead')
+    .forEach(t => t.classList.add('is-sticky'));
+
+  // 逆引き（1枚）
+  document.querySelector('#pane-search thead')?.classList.add('is-sticky');
+}
+
 // ダークライ除外判定
 function isExcludedFromSummary(row) {
   if (EXCLUDED_SPECIES_FOR_SUMMARY.has(row.No)) return true;
@@ -645,6 +658,7 @@ function renderAllFaces(state) {
         if (ent) openFieldRankModal(ent);
       });
     });
+  makeStickyHeaders();
   refreshAllSticky();
 }
 
@@ -769,6 +783,7 @@ function renderFieldTables(state) {
       });
     });
   });
+  makeStickyHeaders();
   refreshAllSticky();
 }
 
@@ -973,6 +988,7 @@ function renderRankSearch(state) {
       }
     });
   });
+  makeStickyHeaders();
   refreshAllSticky();
 }
 
@@ -1202,6 +1218,7 @@ async function main() {
 
   // タブが切り替わるたびにオフセットを再計測
   document.getElementById('mainTabs')?.addEventListener('shown.bs.tab', () => {
+    makeStickyHeaders();
     refreshAllSticky();
   });
 
