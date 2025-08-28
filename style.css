@@ -334,3 +334,40 @@ thead.is-sticky { position: static !important; top:auto !important; }
 }
 .floating-head table{ margin:0 !important; border-collapse:separate; border-spacing:0; background:#fff; }
 .floating-head thead th, .floating-head thead td{ background:#fff; background-clip:padding-box; white-space:nowrap; }
+
+/* ==== メインタブをアイコン化＋1行固定（必要なら横スクロール） ==== */
+
+/* ラッパは横スクロール許可（スクロールバーは非表示） */
+#mainTabsWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+#mainTabsWrap::-webkit-scrollbar { display: none; }
+
+/* タブULは折り返し禁止で1行 */
+#mainTabs { flex-wrap: nowrap !important; gap: 6px; }
+
+/* アイコンタブのボタン */
+#mainTabs .nav-link.tab-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 8px;          /* 省スペース */
+  line-height: 1;
+}
+
+/* アイコン画像は 20px 四方に統一 */
+#mainTabs .tab-img {
+  width: 20px;
+  height: 20px;
+  display: block;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* スマホ時はさらに詰める（任意） */
+@media (max-width: 576px) {
+  #mainTabs .nav-link.tab-icon { padding: 5px 6px; }
+}
+
+/* バックアップだけテキスト表示のため、上下詰めて統一感を出す */
+#mainTabs .nav-link:not(.tab-icon) {
+  padding: 6px 10px;
+  white-space: nowrap;
+}
