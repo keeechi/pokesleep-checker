@@ -396,18 +396,18 @@ thead.is-sticky { position: static !important; top:auto !important; }
   z-index: 3000; /* 1020/1015 を超える値 */
 }
 
-/* ドロップダウンを最前面＋内容幅にフィット */
+/* ドロップダウンを内容幅にフィット＆前面に */
 #mainTabs .dropdown-menu {
-  position: absolute;    /* 既定 */
-  z-index: 3000;         /* 他要素より前面 */
-  min-width: unset;      /* ← Bootstrap既定(10rem)を解除 */
-  width: max-content;    /* ← 中身の最長幅に合わせる */
-  max-width: calc(100vw - 24px); /* 画面外にはみ出さない保険 */
-  white-space: nowrap;   /* 折り返さず項目幅を素直に採用 */
+  min-width: unset;
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  white-space: nowrap;
+  z-index: 3000;
 }
 
-/* fixed表示モード時（JSで付与） */
+/* 固定表示モード：Popperの移動を完全無効化＆余白ゼロ */
 #mainTabs .dropdown-menu.dropdown-fixed {
   position: fixed;
   transform: none !important;
+  margin: 0 !important;
 }
