@@ -390,3 +390,14 @@ thead.is-sticky { position: static !important; top:auto !important; }
   position: absolute;
   z-index: 2000;   /* stickyヘッダーやカードより前に出す */
 }
+
+/* ハンバーガーのメニューを前面に（他のsticky等より上） */
+#mainTabs .dropdown-menu {
+  z-index: 3000; /* 1020/1015 を超える値 */
+}
+
+/* 固定描画モード時（JSで付与） */
+#mainTabs .dropdown-menu.dropdown-fixed {
+  position: fixed;        /* 画面に固定配置（親のoverflowの影響を受けない） */
+  transform: none !important; /* Popperのtranslateを無効化 */
+}
