@@ -1452,34 +1452,51 @@ document.addEventListener('DOMContentLoaded', main);
 window.addEventListener('resize', () => { refreshAllSticky(); applyStickyHeaders(); });
 window.addEventListener('load',   () => { refreshAllSticky(); applyStickyHeaders(); });
 
-// ==== ハンバーガーメニュー：スクロール不要のオーバーレイ表示 ====
-(function attachFixedDropdown(){
+// ==== ハンバーガードロップダウン：トグル直下に固定表示 ====
+(function attachFixedDropdown() {
   const btn = document.getElementById('tab-menu');
   if (!btn) return;
   const container = btn.closest('.dropdown');
 
-  // 開く直前：位置の初期セット（幅はCSSに任せる）
+  // 共通：メニュー取得ヘルパ
+  const getMenu = () => container?.querySelector('.dropdown-menu');
+
+  // 開く直前：位置を決定（幅はCSSの max-content に任せる）
   container.addEventListener('show.bs.dropdown', () => {
-    const menu = container.querySelector('.dropdown-menu');
+    const menu = getMenu();
     if (!menu) return;
+
+    // まず fixed モードに
+    menu.classList.add('dropdown-fixed');
+
+    // Popper が使う属性/スタイルは後で付与されることがあるので、先にリセット
+    menu.removeAttribute('data-bs-popper');
+    menu.style.transform = 'none';
+    menu.style.margin = '0';
 
     const r = btn.getBoundingClientRect();
-    const pageX = window.scrollX || document.documentElement.scrollLeft || 0;
-    const pageY = window.scrollY || document.documentElement.scrollTop  || 0;
+    const pageX = window.scrollX || 0;
+    const pageY = window.scrollY || 0;
 
-    menu.classList.add('dropdown-fixed');
-    menu.style.left = Math.round(r.left + pageX) + 'px';
-    menu.style.top  = Math.round(r.bottom + pageY) + 'px';
-    // 幅は CSS の width:max-content に任せるので設定しない
+    // トグルの右端揃えに合わせる
+    const gap = 4;
+    menu.style.left = Math.round(r.right + pageX - menu.offsetWidth) + 'px';
+    menu.style.top  = Math.round(r.bottom + pageY + gap) + 'px';
   });
 
-  // 表示完了後：画面右端へはみ出す場合だけ左に寄せ直す
+  // 表示完了：右端にはみ出す場合だけ左に寄せ直す。Popperの干渉も無効化。
   container.addEventListener('shown.bs.dropdown', () => {
-    const menu = container.querySelector('.dropdown-menu');
+    const menu = getMenu();
     if (!menu) return;
 
+    // Popperが付けた属性/余白/変形を無効化（保険）
+    menu.removeAttribute('data-bs-popper');
+    menu.style.transform = 'none';
+    menu.style.margin = '0';
+
+    // 右端クランプ
     const rect = menu.getBoundingClientRect();
-    const padding = 8; // 画面端との余白
+    const padding = 8;
     if (rect.right > window.innerWidth - padding) {
       const delta = rect.right - (window.innerWidth - padding);
       const leftNow = parseFloat(menu.style.left || '0');
@@ -1487,12 +1504,14 @@ window.addEventListener('load',   () => { refreshAllSticky(); applyStickyHeaders
     }
   });
 
-  // 閉じるときにリセット
+  // 閉じたらリセット
   container.addEventListener('hidden.bs.dropdown', () => {
-    const menu = container.querySelector('.dropdown-menu');
+    const menu = getMenu();
     if (!menu) return;
     menu.classList.remove('dropdown-fixed');
     menu.style.left = '';
     menu.style.top = '';
+    menu.style.transform = '';
+    menu.style.margin = '';
   });
 })();
