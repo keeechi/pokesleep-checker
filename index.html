@@ -90,15 +90,26 @@
         <img class="tab-img" src="assets/icons/tabs/icon_tab_03.png" alt="">
       </button>
     </li>
-    <li class="nav-item" role="presentation">
+<!-- 4つ目のタブをハンバーガーメニューに置き換え -->
+    <li class="nav-item dropdown" role="presentation">
       <button
-        class="nav-link"
-        id="tab-backup"
-        data-bs-toggle="tab"
-        data-bs-target="#pane-backup"
+        class="nav-link tab-icon dropdown-toggle"
+        id="tab-menu"
+        data-bs-toggle="dropdown"
         type="button"
         role="tab"
-      >バックアップ</button>
+        aria-expanded="false"
+        aria-label="その他機能"
+        title="その他機能"
+      >
+        <img class="tab-img" src="assets/icons/tabs/icon_hamburger.png" alt="">
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="tab-menu">
+        <li>
+          <a class="dropdown-item" data-bs-toggle="tab" href="#pane-backup" role="tab">バックアップ</a>
+        </li>
+        <!-- 今後ここに追加していける -->
+      </ul>
     </li>
   </ul>
 </div>
