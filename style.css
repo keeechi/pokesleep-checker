@@ -349,7 +349,7 @@ thead.is-sticky { position: static !important; top:auto !important; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 8px;          /* 省スペース */
+  padding: 18px 24px;          /* 省スペース */
   line-height: 1;
 }
 
@@ -363,11 +363,11 @@ thead.is-sticky { position: static !important; top:auto !important; }
 
 /* スマホ時はさらに詰める（任意） */
 @media (max-width: 576px) {
-  #mainTabs .nav-link.tab-icon { padding: 5px 6px; }
+  #mainTabs .nav-link.tab-icon { padding: 15px 18px; }
 }
 
 /* バックアップだけテキスト表示のため、上下詰めて統一感を出す */
 #mainTabs .nav-link:not(.tab-icon) {
-  padding: 6px 10px;
+  padding: 18px 30px;
   white-space: nowrap;
 }
