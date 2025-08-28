@@ -385,29 +385,19 @@ thead.is-sticky { position: static !important; top:auto !important; }
   font-size: 0.9rem;
 }
 
-/* ハンバーガータブのドロップダウンを最前面に */
-#mainTabs .dropdown-menu {
-  position: absolute;
-  z-index: 2000;   /* stickyヘッダーやカードより前に出す */
-}
-
-/* ハンバーガーのメニューを前面に（他のsticky等より上） */
-#mainTabs .dropdown-menu {
-  z-index: 3000; /* 1020/1015 を超える値 */
-}
-
 /* ドロップダウンを内容幅にフィット＆前面に */
 #mainTabs .dropdown-menu {
-  min-width: unset;
-  width: max-content;
+  min-width: unset;             /* Bootstrapの10remを解除 */
+  width: max-content;           /* 最長項目の幅に合わせる */
   max-width: calc(100vw - 24px);
   white-space: nowrap;
   z-index: 3000;
 }
 
-/* 固定表示モード：Popperの移動を完全無効化＆余白ゼロ */
+/* 固定表示モード：Popper移動無効化＆余白ゼロ */
 #mainTabs .dropdown-menu.dropdown-fixed {
   position: fixed;
   transform: none !important;
   margin: 0 !important;
 }
+
