@@ -341,9 +341,6 @@ thead.is-sticky { position: static !important; top:auto !important; }
 #mainTabsWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 #mainTabsWrap::-webkit-scrollbar { display: none; }
 
-/* タブULは折り返し禁止で1行 */
-#mainTabs { flex-wrap: nowrap !important; gap: 6px; }
-
 /* アイコン画像そのものを 38px 四方に */
 #mainTabs .tab-img {
   width: 38px;
@@ -357,7 +354,7 @@ thead.is-sticky { position: static !important; top:auto !important; }
   align-items: center;
   justify-content: center;
   padding: 6px 12px;   /* 38px + 6px*2 = 50px の縦ヒットエリア */
-  min-height: 50px;    /* 指標: 44px以上を確保 */
+  min-height: 65px;    /* 指標: 44px以上を確保 */
   min-width: 50px;     /* 横も最低50px確保して押しやすく */
   line-height: 1;
 }
@@ -370,7 +367,7 @@ thead.is-sticky { position: static !important; top:auto !important; }
 }
 
 /* 1行固定＆横スクロール（既存と同じ。未設定なら有効化） */
-#mainTabs { flex-wrap: nowrap !important; gap: 6px; }
+#mainTabs { flex-wrap: nowrap !important; gap: 8px; }
 #mainTabsWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 #mainTabsWrap::-webkit-scrollbar { display: none; }
 
