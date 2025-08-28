@@ -1451,3 +1451,39 @@ document.addEventListener('DOMContentLoaded', main);
 // 画面サイズ変化やロード完了時も毎回再適用
 window.addEventListener('resize', () => { refreshAllSticky(); applyStickyHeaders(); });
 window.addEventListener('load',   () => { refreshAllSticky(); applyStickyHeaders(); });
+
+// ==== ハンバーガーメニュー：スクロール不要のオーバーレイ表示 ====
+(function attachFixedDropdown(){
+  const btn = document.getElementById('tab-menu');
+  if (!btn) return;
+  const container = btn.closest('.dropdown'); // <li class="nav-item dropdown">...
+
+  // 開く瞬間に画面座標へ固定配置
+  container.addEventListener('show.bs.dropdown', () => {
+    const menu = container.querySelector('.dropdown-menu');
+    if (!menu) return;
+
+    // 参照点はトリガーボタン
+    const r = btn.getBoundingClientRect();
+
+    // メニューを fixed にして座標指定（ページスクロール量を加味）
+    menu.classList.add('dropdown-fixed');
+    const pageX = window.scrollX || document.documentElement.scrollLeft || 0;
+    const pageY = window.scrollY || document.documentElement.scrollTop  || 0;
+
+    // 左寄せ配置（必要なら right寄せも可）
+    menu.style.left    = Math.round(r.left + pageX) + 'px';
+    menu.style.top     = Math.round(r.bottom + pageY) + 'px';
+
+    // 最低幅はボタン幅に合わせる（広い方が使いやすい）
+    menu.style.minWidth = Math.max(r.width, 180) + 'px';
+  });
+
+  // 閉じるときに元へ戻す（通常のdropdownにも戻れるようリセット）
+  container.addEventListener('hidden.bs.dropdown', () => {
+    const menu = container.querySelector('.dropdown-menu');
+    if (!menu) return;
+    menu.classList.remove('dropdown-fixed');
+    menu.style.left = menu.style.top = menu.style.minWidth = '';
+  });
+})();
