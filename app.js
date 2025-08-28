@@ -1456,34 +1456,43 @@ window.addEventListener('load',   () => { refreshAllSticky(); applyStickyHeaders
 (function attachFixedDropdown(){
   const btn = document.getElementById('tab-menu');
   if (!btn) return;
-  const container = btn.closest('.dropdown'); // <li class="nav-item dropdown">...
+  const container = btn.closest('.dropdown');
 
-  // 開く瞬間に画面座標へ固定配置
+  // 開く直前：位置の初期セット（幅はCSSに任せる）
   container.addEventListener('show.bs.dropdown', () => {
     const menu = container.querySelector('.dropdown-menu');
     if (!menu) return;
 
-    // 参照点はトリガーボタン
     const r = btn.getBoundingClientRect();
-
-    // メニューを fixed にして座標指定（ページスクロール量を加味）
-    menu.classList.add('dropdown-fixed');
     const pageX = window.scrollX || document.documentElement.scrollLeft || 0;
     const pageY = window.scrollY || document.documentElement.scrollTop  || 0;
 
-    // 左寄せ配置（必要なら right寄せも可）
-    menu.style.left    = Math.round(r.left + pageX) + 'px';
-    menu.style.top     = Math.round(r.bottom + pageY) + 'px';
-
-    // 最低幅はボタン幅に合わせる（広い方が使いやすい）
-    menu.style.minWidth = Math.max(r.width, 180) + 'px';
+    menu.classList.add('dropdown-fixed');
+    menu.style.left = Math.round(r.left + pageX) + 'px';
+    menu.style.top  = Math.round(r.bottom + pageY) + 'px';
+    // 幅は CSS の width:max-content に任せるので設定しない
   });
 
-  // 閉じるときに元へ戻す（通常のdropdownにも戻れるようリセット）
+  // 表示完了後：画面右端へはみ出す場合だけ左に寄せ直す
+  container.addEventListener('shown.bs.dropdown', () => {
+    const menu = container.querySelector('.dropdown-menu');
+    if (!menu) return;
+
+    const rect = menu.getBoundingClientRect();
+    const padding = 8; // 画面端との余白
+    if (rect.right > window.innerWidth - padding) {
+      const delta = rect.right - (window.innerWidth - padding);
+      const leftNow = parseFloat(menu.style.left || '0');
+      menu.style.left = Math.max(padding, leftNow - delta) + 'px';
+    }
+  });
+
+  // 閉じるときにリセット
   container.addEventListener('hidden.bs.dropdown', () => {
     const menu = container.querySelector('.dropdown-menu');
     if (!menu) return;
     menu.classList.remove('dropdown-fixed');
-    menu.style.left = menu.style.top = menu.style.minWidth = '';
+    menu.style.left = '';
+    menu.style.top = '';
   });
 })();
