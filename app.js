@@ -1452,56 +1452,52 @@ document.addEventListener('DOMContentLoaded', main);
 window.addEventListener('resize', () => { refreshAllSticky(); applyStickyHeaders(); });
 window.addEventListener('load',   () => { refreshAllSticky(); applyStickyHeaders(); });
 
-// ==== ハンバーガードロップダウン：トグル直下に固定表示 ====
+// ==== ハンバーガードロップダウン：トグル直下に固定表示（viewport基準） ====
 (function attachFixedDropdown() {
   const btn = document.getElementById('tab-menu');
   if (!btn) return;
   const container = btn.closest('.dropdown');
-
-  // 共通：メニュー取得ヘルパ
   const getMenu = () => container?.querySelector('.dropdown-menu');
 
-  // 開く直前：位置を決定（幅はCSSの max-content に任せる）
+  // 開く直前：位置設定（viewport基準。scrollX/Y は絶対に足さない）
   container.addEventListener('show.bs.dropdown', () => {
     const menu = getMenu();
     if (!menu) return;
 
-    // まず fixed モードに
     menu.classList.add('dropdown-fixed');
-
-    // Popper が使う属性/スタイルは後で付与されることがあるので、先にリセット
-    menu.removeAttribute('data-bs-popper');
+    menu.removeAttribute('data-bs-popper'); // Popper無効化（保険）
     menu.style.transform = 'none';
     menu.style.margin = '0';
 
     const r = btn.getBoundingClientRect();
-    const pageX = window.scrollX || 0;
-    const pageY = window.scrollY || 0;
-
-    // トグルの右端揃えに合わせる
-    const gap = 4;
-    menu.style.left = Math.round(r.right + pageX - menu.offsetWidth) + 'px';
-    menu.style.top  = Math.round(r.bottom + pageY + gap) + 'px';
+    const gap = 4; // ボタンとの隙間
+    // まずはボタン左端に揃える（幅はCSSの max-content に任せる）
+    menu.style.left = Math.round(r.left) + 'px';
+    menu.style.top  = Math.round(r.bottom + gap) + 'px';
   });
 
-  // 表示完了：右端にはみ出す場合だけ左に寄せ直す。Popperの干渉も無効化。
+  // 表示完了後：はみ出し時のみ位置を微調整
   container.addEventListener('shown.bs.dropdown', () => {
     const menu = getMenu();
     if (!menu) return;
 
-    // Popperが付けた属性/余白/変形を無効化（保険）
+    // Popperの介入を念のため再無効化
     menu.removeAttribute('data-bs-popper');
     menu.style.transform = 'none';
     menu.style.margin = '0';
 
-    // 右端クランプ
     const rect = menu.getBoundingClientRect();
-    const padding = 8;
+    const padding = 8; // 画面端の余白
+    let left = parseFloat(menu.style.left || '0');
+
+    // 右端はみ出し → 左へ寄せる
     if (rect.right > window.innerWidth - padding) {
-      const delta = rect.right - (window.innerWidth - padding);
-      const leftNow = parseFloat(menu.style.left || '0');
-      menu.style.left = Math.max(padding, leftNow - delta) + 'px';
+      left -= rect.right - (window.innerWidth - padding);
     }
+    // 左端はみ出し → padding まで戻す
+    if (left < padding) left = padding;
+
+    menu.style.left = Math.round(left) + 'px';
   });
 
   // 閉じたらリセット
@@ -1515,3 +1511,4 @@ window.addEventListener('load',   () => { refreshAllSticky(); applyStickyHeaders
     menu.style.margin = '';
   });
 })();
+
