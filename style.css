@@ -371,3 +371,16 @@ thead.is-sticky { position: static !important; top:auto !important; }
 #mainTabsWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 #mainTabsWrap::-webkit-scrollbar { display: none; }
 
+/* ハンバーガーメニュータブのスタイル */
+#mainTabs .nav-item.dropdown .nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  min-height: 50px;
+  min-width: 50px;
+}
+
+#mainTabs .nav-item .dropdown-menu {
+  font-size: 0.9rem;
+}
