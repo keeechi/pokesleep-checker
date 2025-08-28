@@ -344,31 +344,33 @@ thead.is-sticky { position: static !important; top:auto !important; }
 /* タブULは折り返し禁止で1行 */
 #mainTabs { flex-wrap: nowrap !important; gap: 6px; }
 
-/* アイコンタブのボタン */
+/* アイコン画像そのものを 38px 四方に */
+#mainTabs .tab-img {
+  width: 38px;
+  height: 38px;
+  display: block;
+}
+
+/* アイコンタブのボタン：指で押しやすいヒットエリアに（常時） */
 #mainTabs .nav-link.tab-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 8px;          /* 省スペース */
+  padding: 6px 12px;   /* 38px + 6px*2 = 50px の縦ヒットエリア */
+  min-height: 50px;    /* 指標: 44px以上を確保 */
+  min-width: 50px;     /* 横も最低50px確保して押しやすく */
   line-height: 1;
 }
 
-/* アイコン画像は 20px 四方に統一 */
-#mainTabs .tab-img {
-  width: 20px;
-  height: 20px;
-  display: block;
-  image-rendering: -webkit-optimize-contrast;
-}
-
-/* スマホ時はさらに詰める（任意） */
-@media (max-width: 576px) {
-  #mainTabs .nav-link.tab-icon { padding: 5px 6px; }
-}
-
-/* バックアップだけテキスト表示のため、上下詰めて統一感を出す */
+/* バックアップ（文字タブ）も高さを揃えて押しやすく */
 #mainTabs .nav-link:not(.tab-icon) {
-  padding: 6px 10px;
+  padding: 6px 12px;
+  min-height: 50px;
   white-space: nowrap;
 }
+
+/* 1行固定＆横スクロール（既存と同じ。未設定なら有効化） */
+#mainTabs { flex-wrap: nowrap !important; gap: 6px; }
+#mainTabsWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+#mainTabsWrap::-webkit-scrollbar { display: none; }
 
