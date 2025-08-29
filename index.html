@@ -49,68 +49,47 @@
 <div id="mainTabsWrap" class="sticky-top bg-white pt-3" style="top:0;">
   <ul class="nav nav-tabs flex-nowrap" id="mainTabs" role="tablist">
     <li class="nav-item" role="presentation">
-      <button
-        class="nav-link active tab-icon"
-        id="tab-allfaces"
-        data-bs-toggle="tab"
-        data-bs-target="#pane-allfaces"
-        type="button"
-        role="tab"
-        aria-label="全寝顔チェックシート"
-        title="全寝顔チェックシート"
-      >
+      <button class="nav-link active tab-icon" id="tab-allfaces"
+        data-bs-toggle="tab" data-bs-target="#pane-allfaces" type="button" role="tab"
+        aria-label="全寝顔チェックシート" title="全寝顔チェックシート">
         <img class="tab-img" src="assets/icons/tabs/icon_tab_01.png" alt="">
       </button>
     </li>
     <li class="nav-item" role="presentation">
-      <button
-        class="nav-link tab-icon"
-        id="tab-byfield"
-        data-bs-toggle="tab"
-        data-bs-target="#pane-byfield"
-        type="button"
-        role="tab"
-        aria-label="フィールド別寝顔一覧"
-        title="フィールド別寝顔一覧"
-      >
+      <button class="nav-link tab-icon" id="tab-byfield"
+        data-bs-toggle="tab" data-bs-target="#pane-byfield" type="button" role="tab"
+        aria-label="フィールド別寝顔一覧" title="フィールド別寝顔一覧">
         <img class="tab-img" src="assets/icons/tabs/icon_tab_02.png" alt="">
       </button>
     </li>
     <li class="nav-item" role="presentation">
-      <button
-        class="nav-link tab-icon"
-        id="tab-search"
-        data-bs-toggle="tab"
-        data-bs-target="#pane-search"
-        type="button"
-        role="tab"
-        aria-label="現在のフィールド・ランクから検索"
-        title="現在のフィールド・ランクから検索"
-      >
+      <button class="nav-link tab-icon" id="tab-search"
+        data-bs-toggle="tab" data-bs-target="#pane-search" type="button" role="tab"
+        aria-label="現在のフィールド・ランクから検索" title="現在のフィールド・ランクから検索">
         <img class="tab-img" src="assets/icons/tabs/icon_tab_03.png" alt="">
       </button>
     </li>
-<!-- 4つ目のタブをハンバーガーメニューに置き換え -->
-    <li class="nav-item dropdown" role="presentation">
-      <button
-        class="nav-link tab-icon dropdown-toggle"
-        id="tab-menu"
-        data-bs-toggle="dropdown"
-        data-bs-display="static"
-        type="button"
-        role="tab"
-        aria-expanded="false"
-        aria-label="その他機能"
-        title="その他機能"
-      >
+
+    <!-- 4つ目：ハンバーガーメニュー -->
+    <li class="nav-item" role="presentation" style="position:relative;">
+      <button class="nav-link tab-icon" id="tab-menu" type="button" role="tab"
+        aria-label="その他機能" title="その他機能">
         <img class="tab-img" src="assets/icons/tabs/icon_hamburger.png" alt="">
       </button>
-      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="tab-menu">
-        <li>
-          <a class="dropdown-item" data-bs-toggle="tab" href="#pane-backup" role="tab">バックアップ</a>
-        </li>
-        <!-- 今後ここに追加していける -->
-      </ul>
+      <!-- アコーディオン風メニュー -->
+      <nav id="hamburgerMenu" style="display:none; position:absolute; top:100%; left:0; background:#333; color:#fff; z-index:4000; min-width:150px;">
+        <ul style="list-style:none; margin:0; padding:0;">
+          <li style="border-bottom:1px solid #fff;">
+            <a href="#pane-backup" class="hamburger-item" style="display:block; color:#fff; padding:10px; text-decoration:none;">バックアップ</a>
+          </li>
+          <!-- 追加メニュー例 -->
+          <!--
+          <li style="border-bottom:1px solid #fff;">
+            <a href="#pane-sample" class="hamburger-item" style="display:block; color:#fff; padding:10px; text-decoration:none;">新機能サンプル01</a>
+          </li>
+          -->
+        </ul>
+      </nav>
     </li>
   </ul>
 </div>
