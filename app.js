@@ -1485,3 +1485,32 @@ window.addEventListener('load',   () => { refreshAllSticky(); applyStickyHeaders
     });
   });
 })();
+
+// ── 3タブの幅を同一に揃える ─────────────────────
+function equalizeMainTabWidths() {
+  const ids = ['tab-allfaces','tab-byfield','tab-search'];
+  const els = ids.map(id => document.getElementById(id)).filter(Boolean);
+  if (!els.length) return;
+
+  // 一旦リセットして自然な幅を取得
+  document.documentElement.style.setProperty('--tab-eq-width', 'auto');
+
+  // レイアウト確定後に計測
+  requestAnimationFrame(() => {
+    const maxW = Math.max(...els.map(el => Math.ceil(el.getBoundingClientRect().width)));
+    document.documentElement.style.setProperty('--tab-eq-width', maxW + 'px');
+  });
+}
+
+// 初期化の最後に必ず呼ぶ（あなたの main() の最後でもOK）
+document.addEventListener('DOMContentLoaded', () => {
+  equalizeMainTabWidths();
+});
+
+// フォント/画像で幅が変わる可能性があるので保険
+window.addEventListener('load', equalizeMainTabWidths);
+window.addEventListener('resize', equalizeMainTabWidths);
+
+// タブ内の文言や表示状態が動的に変わる場合も更新
+document.getElementById('mainTabs')?.addEventListener('shown.bs.tab', equalizeMainTabWidths);
+
