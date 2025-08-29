@@ -756,10 +756,12 @@ function buildFieldRankMatrixHTML(ent) {
   if (rows.length === 0) return `<div class="text-muted">このポケモンの出現情報が見つかりません。</div>`;
 
   return `
+/*  
     <div class="mb-2 small text-body-secondary">＊＊＊出現フィールドとランク＊＊＊</div>
     <div class="table-responsive">
       <table class="table table-sm align-middle">${header}<tbody>${rows.join('')}</tbody></table>
     </div>`;
+*/
 }
 
 // 3) エントリ検索 & モーダルオープン
