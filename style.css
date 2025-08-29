@@ -436,3 +436,23 @@ thead.is-sticky { position: static !important; top: auto !important; }
 
 #mainTabsWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 #mainTabsWrap::-webkit-scrollbar { display: none; }
+
+/* スマホでタブ1〜3を等分、タブ4は最小幅 */
+@media (max-width: 576px){
+  /* 等分（タブ1〜3） */
+  #mainTabs .nav-item {
+    flex: 1 1 0;     /* 等間隔に分配 */
+    min-width: 0;    /* はみ出し防止（重要） */
+  }
+  #mainTabs .nav-item .nav-link {
+    width: 100%;     /* li の幅いっぱいに広げる */
+  }
+
+  /* ハンバーガー（タブ4）は最小幅に */
+  #mainTabs .nav-item.nav-item--more {
+    flex: 0 0 auto;  /* 自分の中身ぶんだけの幅 */
+  }
+  #mainTabs .nav-item.nav-item--more .nav-link {
+    width: auto;     /* 等分拡張を解除 */
+  }
+}
