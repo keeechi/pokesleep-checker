@@ -59,6 +59,53 @@
 #mainTabsWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 #mainTabsWrap::-webkit-scrollbar { display: none; }
 
+/* ── アイコン＋2行ラベル ───────────────────────── */
+#mainTabs .nav-link.tab-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 12px;
+  min-height: 65px;      /* 既存の押しやすさは維持 */
+  line-height: 1;
+  width: var(--tab-eq-width, auto);  /* ← JSで最大幅に合わせて等幅化 */
+}
+
+#mainTabs .tab-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#mainTabs .tab-img {
+  width: 38px;
+  height: 38px;
+  display: block;
+  flex: 0 0 auto;
+}
+
+/* ラベルは2行・中央揃え・小さめ */
+#mainTabs .tab-label {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;     /* 2行に分けるのは .l1 .l2 の改行で */
+  line-height: 1.05;
+}
+
+#mainTabs .tab-label .l1,
+#mainTabs .tab-label .l2 {
+  font-size: 10px;         /* 小さめ。後で自由に調整OK */
+  font-weight: 600;        /* 視認性を少し上げる */
+}
+
+/* スマホ時は若干詰める（必要に応じて調整） */
+@media (max-width: 768px) {
+  #mainTabs .nav-link.tab-icon { gap: 6px; padding: 6px 8px; }
+  #mainTabs .tab-inner { gap: 6px; }
+}
+
 /* ==================== Summary Table Design ==================== */
 /* うとうと（1行目） */
 .summary-table tbody tr:nth-child(1) > th,
