@@ -1486,6 +1486,7 @@ window.addEventListener('load',   () => { refreshAllSticky(); applyStickyHeaders
   });
 })();
 
+/*
 // ── 3タブの幅を同一に揃える ─────────────────────
 function equalizeMainTabWidths() {
   const ids = ['tab-allfaces','tab-byfield','tab-search'];
@@ -1501,6 +1502,7 @@ function equalizeMainTabWidths() {
     document.documentElement.style.setProperty('--tab-eq-width', maxW + 'px');
   });
 }
+*/
 
 // 初期化の最後に必ず呼ぶ（あなたの main() の最後でもOK）
 document.addEventListener('DOMContentLoaded', () => {
