@@ -13,22 +13,49 @@
   <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
-<script src="assets/icons/pokemon_icons/pokemon_icons.js"></script>
+  <!-- ポケモンSVG -->
+  <script src="assets/icons/pokemon_icons/pokemon_icons.js"></script>
 
-<!-- 既存 -->
-<!-- <script src="app.js" defer></script> -->
-
-<!-- 追加の軽いスタイル（必要なら既存style.cssに移動OK） -->
-
+  <!-- 既存スタイル -->
+  <link rel="stylesheet" href="./style.css">
   <style>
-    :root { --cell-checked-bg: rgba(13,110,253,.1); }
+    /* ここは最小限の上書きだけ（本体CSSは style.css にあります） */
     body { font-family: "M PLUS Rounded 1c", system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", Meiryo, sans-serif; }
-    .cell-checked { background: var(--cell-checked-bg); }
-    .cell-disabled { color: #6c757d; }
-    .cell-absent { color: #adb5bd; } /* 存在しない寝顔（チェックボックス自体を出さない） */
-  </style>
 
-  <link rel="stylesheet" href="./style.css"><!-- あれば -->
+    /* タブのアイコン画像を 38px 四方で統一（押しやすい余白は style.css 側にあり） */
+    #mainTabs .tab-img { width:38px; height:38px; display:block; }
+
+    /* ハンバーガーメニュー（常に最前面に重ねる・viewport基準で固定） */
+    #hamburgerMenu{
+      display:none;
+      position:fixed !important;
+      top:0; left:0;               /* JS で座標を上書き */
+      z-index:2147483647 !important;
+      background:#fff;
+      color:#333;
+      border:1px solid rgba(0,0,0,.15);
+      border-radius:.5rem;
+      box-shadow:0 6px 20px rgba(0,0,0,.15);
+      width:max-content;
+      max-width:calc(100vw - 24px);
+      white-space:nowrap;
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+    #hamburgerMenu ul{ list-style:none; margin:0; padding:.25rem 0; }
+    #hamburgerMenu li{ margin:0; }
+    #hamburgerMenu a{
+      display:block; padding:.5rem .875rem;
+      text-decoration:none; color:inherit;
+    }
+    #hamburgerMenu a:hover{ background:#f6f6f6; color:inherit; }
+
+    /* ハンバーガーボタン（dropdown不使用のため個別ヒットエリア） */
+    #tab-menu{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:6px 12px; min-height:50px; min-width:50px; line-height:1;
+    }
+  </style>
 </head>
 <body>
   <header class="container py-3">
@@ -36,7 +63,7 @@
   </header>
 
   <main class="container">
-    <!-- Summary（タイトル行は削除） -->
+    <!-- Summary -->
     <section id="summary" class="mb-3">
       <div class="card">
         <div class="card-body">
@@ -45,54 +72,42 @@
       </div>
     </section>
 
-<!-- Tabs -->
-<div id="mainTabsWrap" class="sticky-top bg-white pt-3" style="top:0;">
-  <ul class="nav nav-tabs flex-nowrap" id="mainTabs" role="tablist">
-    <li class="nav-item" role="presentation">
-      <button class="nav-link active tab-icon" id="tab-allfaces"
-        data-bs-toggle="tab" data-bs-target="#pane-allfaces" type="button" role="tab"
-        aria-label="全寝顔チェックシート" title="全寝顔チェックシート">
-        <img class="tab-img" src="assets/icons/tabs/icon_tab_01.png" alt="">
-      </button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link tab-icon" id="tab-byfield"
-        data-bs-toggle="tab" data-bs-target="#pane-byfield" type="button" role="tab"
-        aria-label="フィールド別寝顔一覧" title="フィールド別寝顔一覧">
-        <img class="tab-img" src="assets/icons/tabs/icon_tab_02.png" alt="">
-      </button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link tab-icon" id="tab-search"
-        data-bs-toggle="tab" data-bs-target="#pane-search" type="button" role="tab"
-        aria-label="現在のフィールド・ランクから検索" title="現在のフィールド・ランクから検索">
-        <img class="tab-img" src="assets/icons/tabs/icon_tab_03.png" alt="">
-      </button>
-    </li>
+    <!-- Tabs -->
+    <div id="mainTabsWrap" class="sticky-top bg-white pt-3" style="top:0;">
+      <ul class="nav nav-tabs flex-nowrap" id="mainTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active tab-icon" id="tab-allfaces"
+            data-bs-toggle="tab" data-bs-target="#pane-allfaces" type="button" role="tab"
+            aria-label="全寝顔チェックシート" title="全寝顔チェックシート">
+            <img class="tab-img" src="assets/icons/tabs/icon_tab_01.png" alt="">
+          </button>
+        </li>
 
-    <!-- 4つ目：ハンバーガーメニュー -->
-    <li class="nav-item" role="presentation" style="position:relative;">
-      <button class="nav-link tab-icon" id="tab-menu" type="button" role="tab"
-        aria-label="その他機能" title="その他機能">
-        <img class="tab-img" src="assets/icons/tabs/icon_hamburger.png" alt="">
-      </button>
-      <!-- アコーディオン風メニュー -->
-      <nav id="hamburgerMenu" style="display:none; position:absolute; top:100%; left:0; background:#333; color:#fff; z-index:4000; min-width:150px;">
-        <ul style="list-style:none; margin:0; padding:0;">
-          <li style="border-bottom:1px solid #fff;">
-            <a href="#pane-backup" class="hamburger-item" style="display:block; color:#fff; padding:10px; text-decoration:none;">バックアップ</a>
-          </li>
-          <!-- 追加メニュー例 -->
-          <!--
-          <li style="border-bottom:1px solid #fff;">
-            <a href="#pane-sample" class="hamburger-item" style="display:block; color:#fff; padding:10px; text-decoration:none;">新機能サンプル01</a>
-          </li>
-          -->
-        </ul>
-      </nav>
-    </li>
-  </ul>
-</div>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link tab-icon" id="tab-byfield"
+            data-bs-toggle="tab" data-bs-target="#pane-byfield" type="button" role="tab"
+            aria-label="フィールド別寝顔一覧" title="フィールド別寝顔一覧">
+            <img class="tab-img" src="assets/icons/tabs/icon_tab_02.png" alt="">
+          </button>
+        </li>
+
+        <li class="nav-item" role="presentation">
+          <button class="nav-link tab-icon" id="tab-search"
+            data-bs-toggle="tab" data-bs-target="#pane-search" type="button" role="tab"
+            aria-label="現在のフィールド・ランクから検索" title="現在のフィールド・ランクから検索">
+            <img class="tab-img" src="assets/icons/tabs/icon_tab_03.png" alt="">
+          </button>
+        </li>
+
+        <!-- 4つ目：ハンバーガーボタン（中にメニュー本体は置かない） -->
+        <li class="nav-item" role="presentation">
+          <button class="nav-link tab-icon" id="tab-menu" type="button" role="tab"
+            aria-label="その他機能" title="その他機能">
+            <img class="tab-img" src="assets/icons/tabs/icon_hamburger.png" alt="">
+          </button>
+        </li>
+      </ul>
+    </div>
 
     <div class="tab-content pb-5" id="mainTabsContent">
       <!-- 全寝顔チェックシート -->
@@ -124,7 +139,6 @@
               </div>
             </div>
 
-            <!-- 全体一括ON/OFF（確認ダイアログは維持） -->
             <div class="d-flex flex-wrap gap-2 mb-2">
               <button id="btnAllOn" class="btn btn-outline-primary btn-sm">すべて一括ON</button>
               <button id="btnAllOff" class="btn btn-outline-secondary btn-sm">すべて一括OFF</button>
@@ -133,16 +147,16 @@
 
             <div class="table-responsive" id="allFacesTableWrap">
               <table class="table table-sm align-middle table-hover mb-0" id="allFacesTable">
-<thead class="table-light sticky-header">
-  <tr>
-    <th style="min-width:72px;width:60px;">ポケモン</th>
-    <th class="text-center" style="min-width:42px;">☆1</th>
-    <th class="text-center" style="min-width:42px;">☆2</th>
-    <th class="text-center" style="min-width:42px;">☆3</th>
-    <th class="text-center" style="min-width:42px;">☆4</th>
-    <th class="text-center" style="min-width:42px;">行まとめ</th>
-  </tr>
-</thead>
+                <thead class="table-light sticky-header">
+                  <tr>
+                    <th style="min-width:72px;width:60px;">ポケモン</th>
+                    <th class="text-center" style="min-width:42px;">☆1</th>
+                    <th class="text-center" style="min-width:42px;">☆2</th>
+                    <th class="text-center" style="min-width:42px;">☆3</th>
+                    <th class="text-center" style="min-width:42px;">☆4</th>
+                    <th class="text-center" style="min-width:42px;">行まとめ</th>
+                  </tr>
+                </thead>
                 <tbody><!-- JSで描画 --></tbody>
               </table>
             </div>
@@ -155,29 +169,29 @@
         <div class="card">
           <div class="card-body">
             <div class="row g-2 align-items-end mb-3">
-  <div class="col-12 col-md-6">
-    <label class="form-label">名前検索</label>
-    <input id="byfieldSearchName" class="form-control" placeholder="例）きも → キモリ / ヤルキモノ がヒット">
-  </div>
-  <div class="col-6 col-md-3">
-    <label class="form-label">睡眠タイプ</label>
-    <select id="byfieldFilterStyle" class="form-select">
-      <option value="">すべて</option>
-      <option value="うとうと">うとうと</option>
-      <option value="すやすや">すやすや</option>
-      <option value="ぐっすり">ぐっすり</option>
-    </select>
-  </div>
-  <div class="col-6 col-md-3">
-    <label class="form-label">並び替え</label>
-    <select id="byfieldSortBy" class="form-select">
-      <option value="no-asc">No昇順</option>
-      <option value="no-desc">No降順</option>
-      <option value="name-asc">名前昇順</option>
-      <option value="name-desc">名前降順</option>
-    </select>
-  </div>
-</div>
+              <div class="col-12 col-md-6">
+                <label class="form-label">名前検索</label>
+                <input id="byfieldSearchName" class="form-control" placeholder="例）きも → キモリ / ヤルキモノ がヒット">
+              </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label">睡眠タイプ</label>
+                <select id="byfieldFilterStyle" class="form-select">
+                  <option value="">すべて</option>
+                  <option value="うとうと">うとうと</option>
+                  <option value="すやすや">すやすや</option>
+                  <option value="ぐっすり">ぐっすり</option>
+                </select>
+              </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label">並び替え</label>
+                <select id="byfieldSortBy" class="form-select">
+                  <option value="no-asc">No昇順</option>
+                  <option value="no-desc">No降順</option>
+                  <option value="name-asc">名前昇順</option>
+                  <option value="name-desc">名前降順</option>
+                </select>
+              </div>
+            </div>
             <ul class="nav nav-pills mb-3" id="fieldTabs" role="tablist"><!-- JS --></ul>
             <div class="tab-content" id="fieldTabsContent"><!-- JS --></div>
           </div>
@@ -194,8 +208,8 @@
                 <select id="searchField" class="form-select"></select>
               </div>
               <div class="col-12 col-md-6">
-                  <label class="form-label">ランク</label>
-                  <select id="searchRank" class="form-select"></select>
+                <label class="form-label">ランク</label>
+                <select id="searchRank" class="form-select"></select>
               </div>
             </div>
             <p class="text-muted small mb-2">選択ランク以下で出現する「未入手」の寝顔のみ表示します。</p>
@@ -220,30 +234,138 @@
       <div class="tab-pane fade pt-3" id="pane-backup" role="tabpanel" aria-labelledby="tab-backup">
         <div class="card">
           <div class="card-body">
-              <div class="mb-3 d-flex flex-wrap gap-2">
-                <button id="btnExportText" class="btn btn-primary">バックアップ用テキストを作成</button>
-                <button id="btnImportText" class="btn btn-outline-primary">テキストから復旧</button>
-              </div>
+            <div class="mb-3 d-flex flex-wrap gap-2">
+              <button id="btnExportText" class="btn btn-primary">バックアップ用テキストを作成</button>
+              <button id="btnImportText" class="btn btn-outline-primary">テキストから復旧</button>
+            </div>
 
-              <div class="mb-2">
-                <textarea id="backupText" class="form-control" rows="4"
-                  placeholder="ここにバックアップ用テキストが表示されます。復旧する場合は、ここに貼り付けて『テキストから復旧』を押してください。"></textarea>
-                <div class="form-text">
-                  ※ このテキストをメモアプリ等に保存しておけば、あとで貼り付けて復旧できます。
-                </div>
+            <div class="mb-2">
+              <textarea id="backupText" class="form-control" rows="4"
+                placeholder="ここにバックアップ用テキストが表示されます。復旧する場合は、ここに貼り付けて『テキストから復旧』を押してください。"></textarea>
+              <div class="form-text">
+                ※ このテキストをメモアプリ等に保存しておけば、あとで貼り付けて復旧できます。
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </div><!-- /tab-content -->
   </main>
 
   <footer class="container py-4 text-center text-muted small">
     &copy; 2025 寝顔チェッカー（非公式ファンツール）
   </footer>
 
+  <!-- メニュー本体は body 直下（タブの外）に置く：最前面＆overflowの影響を受けない -->
+  <nav id="hamburgerMenu" aria-label="その他機能メニュー">
+    <ul>
+      <li><a href="#pane-backup" class="hamburger-item">バックアップ</a></li>
+      <!-- 追加入力例：
+      <li><a href="#pane-sample01" class="hamburger-item">新機能サンプル01</a></li>
+      -->
+    </ul>
+  </nav>
+
+  <!-- JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // ------------------------------
+    // ハンバーガーメニュー（固定・最前面・スクロール不要）
+    // ------------------------------
+    (function () {
+      const btn = document.getElementById('tab-menu');
+      const menu = document.getElementById('hamburgerMenu');
+      if (!btn || !menu) return;
+
+      function placeMenu() {
+        const r = btn.getBoundingClientRect();
+        const gap = 6; // ボタンの直下に少しだけ余白
+        const left = Math.round(r.left + (window.pageXOffset || 0));
+        const top  = Math.round(r.bottom + (window.pageYOffset || 0) + gap);
+
+        // いったん表示してサイズ測定（非表示時はサイズが取れない）
+        menu.style.display = 'block';
+        menu.style.left = left + 'px';
+        menu.style.top  = top  + 'px';
+
+        // 右端はみ出しクランプ
+        const rect = menu.getBoundingClientRect();
+        const padding = 8;
+        const overflowX = rect.right - (window.innerWidth - padding);
+        if (overflowX > 0) {
+          menu.style.left = Math.max(padding, left - overflowX) + 'px';
+        }
+      }
+
+      function openMenu() {
+        placeMenu();
+        document.addEventListener('click', onDocClick, { capture: true });
+        window.addEventListener('resize', closeMenu);
+        window.addEventListener('scroll', closeMenu, { passive: true });
+      }
+
+      function closeMenu() {
+        menu.style.display = 'none';
+        document.removeEventListener('click', onDocClick, { capture: true });
+        window.removeEventListener('resize', closeMenu);
+        window.removeEventListener('scroll', closeMenu);
+      }
+
+      function onDocClick(e) {
+        if (menu.contains(e.target) || btn.contains(e.target)) return;
+        closeMenu();
+      }
+
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (menu.style.display === 'block') {
+          closeMenu();
+        } else {
+          openMenu();
+        }
+      });
+
+      // メニュー項目クリック：該当パネルをアクティブ化して閉じる
+      menu.addEventListener('click', function (e) {
+        const a = e.target.closest('a.hamburger-item');
+        if (!a) return;
+
+        e.preventDefault();
+        const targetSel = a.getAttribute('href'); // 例: "#pane-backup"
+        activatePane(targetSel);
+        closeMenu();
+      });
+
+      // Bootstrap のタブボタンが無いパネルもアクティブ化できるようにする
+      function activatePane(selector) {
+        const pane = document.querySelector(selector);
+        if (!pane) return;
+
+        // 既存アクティブを解除
+        const activeBtn = document.querySelector('#mainTabs .nav-link.active');
+        if (activeBtn) activeBtn.classList.remove('active');
+
+        const activePane = document.querySelector('.tab-pane.show.active');
+        if (activePane) activePane.classList.remove('show', 'active');
+
+        // 対象パネルをアクティブ化
+        pane.classList.add('show', 'active');
+
+        // スクロール位置がタブの下に来るよう微調整（任意）
+        const wrap = document.getElementById('mainTabsWrap');
+        const y = wrap.getBoundingClientRect().bottom + window.pageYOffset + 8;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+
+      // Esc で閉じる
+      document.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Escape' && menu.style.display === 'block') closeMenu();
+      });
+    })();
+  </script>
+
+  <!-- 既存アプリ本体 -->
   <script src="./app.js" defer></script>
 </body>
 </html>
