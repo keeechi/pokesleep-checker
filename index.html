@@ -93,17 +93,15 @@
 <!-- 4つ目のタブをハンバーガーメニューに置き換え -->
 <li class="nav-item" role="presentation">
   <button
-    class="nav-link tab-icon"
-    id="tab-menu"
+    class="nav-link"
+    id="tab-backup"
+    data-bs-toggle="tab"
+    data-bs-target="#pane-backup"
     type="button"
-    aria-label="その他機能"
-    title="その他機能"
-    data-bs-toggle="offcanvas"
-    data-bs-target="#moreSheet"
-    aria-controls="moreSheet"
-  >
-    <img class="tab-img" src="assets/icons/tabs/icon_hamburger.png" alt="">
-  </button>
+    role="tab"
+    aria-label="バックアップ"
+    title="バックアップ"
+  >バックアップ</button>
 </li>
 
     <div class="tab-content pb-5" id="mainTabsContent">
@@ -254,48 +252,6 @@
   <footer class="container py-4 text-center text-muted small">
     &copy; 2025 寝顔チェッカー（非公式ファンツール）
   </footer>
-
-  <!-- その他機能：下から出るアクションシート風メニュー -->
-  <div class="offcanvas offcanvas-bottom" tabindex="-1" id="moreSheet"
-       aria-labelledby="moreSheetLabel" data-bs-scroll="false" data-bs-backdrop="true">
-    <div class="offcanvas-header">
-      <h5 class="mb-0" id="moreSheetLabel">その他機能</h5>
-      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="閉じる"></button>
-    </div>
-    <div class="offcanvas-body pt-2">
-      <div class="list-group list-group-flush">
-        <a href="#" class="list-group-item list-group-item-action"
-           data-open-pane="#pane-backup" data-bs-dismiss="offcanvas">バックアップ</a>
-        <!-- 追加したい機能は下に足すだけ -->
-        <!-- <a href="#" class="list-group-item list-group-item-action"
-             data-open-pane="#pane-sample" data-bs-dismiss="offcanvas">新機能サンプル01</a> -->
-      </div>
-    </div>
-  </div>
-  
-  <script>
-  document.addEventListener('click', function(e){
-    const a = e.target.closest('[data-open-pane]');
-    if (!a) return;
-    e.preventDefault();
-  
-    const sel  = a.getAttribute('data-open-pane');
-    const pane = document.querySelector(sel);
-    if (!pane) return;
-  
-    // 既存アクティブを解除して対象パネルを表示
-    document.querySelector('#mainTabs .nav-link.active')?.classList.remove('active');
-    document.querySelector('.tab-pane.show.active')?.classList.remove('show','active');
-    pane.classList.add('show','active');
-  
-    // タブの直下まで軽くスクロール（好みで）
-    const wrap = document.getElementById('mainTabsWrap');
-    if (wrap) {
-      const y = wrap.getBoundingClientRect().bottom + window.pageYOffset + 8;
-      window.scrollTo({ top: y, behavior: 'smooth' });
-    }
-  });
-</script>
   
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="./app.js" defer></script>
