@@ -371,33 +371,8 @@ thead.is-sticky { position: static !important; top:auto !important; }
 #mainTabsWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 #mainTabsWrap::-webkit-scrollbar { display: none; }
 
-/* ハンバーガーメニュータブのスタイル */
-#mainTabs .nav-item.dropdown .nav-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 12px;
-  min-height: 50px;
-  min-width: 50px;
+/* ハンバーガーメニューのリンク */
+#hamburgerMenu a:hover {
+  background:#444;
+  color:#ccc;
 }
-
-#mainTabs .nav-item .dropdown-menu {
-  font-size: 0.9rem;
-}
-
-/* ドロップダウンを内容幅にフィット＆前面に */
-#mainTabs .dropdown-menu {
-  min-width: unset;             /* Bootstrapの10remを解除 */
-  width: max-content;           /* 最長項目の幅に合わせる */
-  max-width: calc(100vw - 24px);
-  white-space: nowrap;
-  z-index: 3000;
-}
-
-/* 固定表示モード：Popper移動無効化＆余白ゼロ */
-#mainTabs .dropdown-menu.dropdown-fixed {
-  position: fixed;
-  transform: none !important;
-  margin: 0 !important;
-}
-
