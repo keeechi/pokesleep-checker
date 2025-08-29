@@ -371,6 +371,21 @@ thead.is-sticky { position: static !important; top:auto !important; }
 #mainTabsWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 #mainTabsWrap::-webkit-scrollbar { display: none; }
 
+/* ハンバーガーメニュー（他の全要素より前面に重ねる） */
+#hamburgerMenu {
+  display:none;
+  position:fixed;   /* viewport基準なのでスクロールにも影響されない */
+  z-index: 9999;    /* ページ内で最優先にする */
+  background:#fff;
+  color:#333;
+  border:1px solid rgba(0,0,0,.15);
+  border-radius:.5rem;
+  box-shadow:0 6px 20px rgba(0,0,0,.15);
+  width:max-content;
+  max-width:calc(100vw - 24px);
+  white-space:nowrap;
+}
+
 /* ハンバーガーメニューのリンク */
 #hamburgerMenu a:hover {
   background:#444;
