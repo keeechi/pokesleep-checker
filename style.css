@@ -95,7 +95,8 @@
 }
 
 #mainTabs .tab-label .l1,
-#mainTabs .tab-label .l2 {
+#mainTabs .tab-label .l2,
+#mainTabs .tab-label .l3 {
   font-size: 10px;         /* 小さめ。後で自由に調整OK */
   font-weight: 600;        /* 視認性を少し上げる */
 }
