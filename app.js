@@ -1451,3 +1451,36 @@ document.addEventListener('DOMContentLoaded', main);
 // 画面サイズ変化やロード完了時も毎回再適用
 window.addEventListener('resize', () => { refreshAllSticky(); applyStickyHeaders(); });
 window.addEventListener('load',   () => { refreshAllSticky(); applyStickyHeaders(); });
+
+// ハンバーガーメニュー開閉制御
+(function(){
+  const btn = document.getElementById("tab-menu");
+  const menu = document.getElementById("hamburgerMenu");
+  if (!btn || !menu) return;
+
+  btn.addEventListener("click", (e)=>{
+    e.stopPropagation();
+    menu.style.display = (menu.style.display === "block") ? "none" : "block";
+  });
+
+  // 外側クリックで閉じる
+  document.addEventListener("click", (e)=>{
+    if (!menu.contains(e.target) && e.target !== btn) {
+      menu.style.display = "none";
+    }
+  });
+
+  // メニュークリック時に対象タブをアクティブ化
+  document.querySelectorAll("#hamburgerMenu .hamburger-item").forEach(a=>{
+    a.addEventListener("click", (e)=>{
+      e.preventDefault();
+      const target = document.querySelector(a.getAttribute("href"));
+      if (target) {
+        // BootstrapのタブAPIで切り替え
+        const triggerEl = document.querySelector(`[data-bs-target="${a.getAttribute("href")}"]`);
+        if (triggerEl) new bootstrap.Tab(triggerEl).show();
+      }
+      menu.style.display = "none";
+    });
+  });
+})();
