@@ -1452,63 +1452,35 @@ document.addEventListener('DOMContentLoaded', main);
 window.addEventListener('resize', () => { refreshAllSticky(); applyStickyHeaders(); });
 window.addEventListener('load',   () => { refreshAllSticky(); applyStickyHeaders(); });
 
-// ==== ハンバーガードロップダウン：トグル直下に固定表示（viewport基準） ====
-(function attachFixedDropdown() {
-  const btn = document.getElementById('tab-menu');
-  if (!btn) return;
-  const container = btn.closest('.dropdown');
-  const getMenu = () => container?.querySelector('.dropdown-menu');
+// ハンバーガーメニュー開閉制御
+(function(){
+  const btn = document.getElementById("tab-menu");
+  const menu = document.getElementById("hamburgerMenu");
+  if (!btn || !menu) return;
 
-  // 開く直前：位置設定（viewport基準。scrollX/Y は絶対に足さない）
-  container.addEventListener('show.bs.dropdown', () => {
-    const menu = getMenu();
-    if (!menu) return;
-
-    menu.classList.add('dropdown-fixed');
-    menu.removeAttribute('data-bs-popper'); // Popper無効化（保険）
-    menu.style.transform = 'none';
-    menu.style.margin = '0';
-
-    const r = btn.getBoundingClientRect();
-    const gap = 4; // ボタンとの隙間
-    // まずはボタン左端に揃える（幅はCSSの max-content に任せる）
-    menu.style.left = Math.round(r.left) + 'px';
-    menu.style.top  = Math.round(r.bottom + gap) + 'px';
+  btn.addEventListener("click", (e)=>{
+    e.stopPropagation();
+    menu.style.display = (menu.style.display === "block") ? "none" : "block";
   });
 
-  // 表示完了後：はみ出し時のみ位置を微調整
-  container.addEventListener('shown.bs.dropdown', () => {
-    const menu = getMenu();
-    if (!menu) return;
-
-    // Popperの介入を念のため再無効化
-    menu.removeAttribute('data-bs-popper');
-    menu.style.transform = 'none';
-    menu.style.margin = '0';
-
-    const rect = menu.getBoundingClientRect();
-    const padding = 8; // 画面端の余白
-    let left = parseFloat(menu.style.left || '0');
-
-    // 右端はみ出し → 左へ寄せる
-    if (rect.right > window.innerWidth - padding) {
-      left -= rect.right - (window.innerWidth - padding);
+  // 外側クリックで閉じる
+  document.addEventListener("click", (e)=>{
+    if (!menu.contains(e.target) && e.target !== btn) {
+      menu.style.display = "none";
     }
-    // 左端はみ出し → padding まで戻す
-    if (left < padding) left = padding;
-
-    menu.style.left = Math.round(left) + 'px';
   });
 
-  // 閉じたらリセット
-  container.addEventListener('hidden.bs.dropdown', () => {
-    const menu = getMenu();
-    if (!menu) return;
-    menu.classList.remove('dropdown-fixed');
-    menu.style.left = '';
-    menu.style.top = '';
-    menu.style.transform = '';
-    menu.style.margin = '';
+  // メニュークリック時に対象タブをアクティブ化
+  document.querySelectorAll("#hamburgerMenu .hamburger-item").forEach(a=>{
+    a.addEventListener("click", (e)=>{
+      e.preventDefault();
+      const target = document.querySelector(a.getAttribute("href"));
+      if (target) {
+        // BootstrapのタブAPIで切り替え
+        const triggerEl = document.querySelector(`[data-bs-target="${a.getAttribute("href")}"]`);
+        if (triggerEl) new bootstrap.Tab(triggerEl).show();
+      }
+      menu.style.display = "none";
+    });
   });
 })();
-
