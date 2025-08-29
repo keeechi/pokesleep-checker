@@ -769,9 +769,11 @@ function findEntryByEntKey(key) {
 }
 function openFieldRankModal(ent) {
   const { modal, el } = ensureFieldRankModal();
-  el.querySelector('.modal-title').textContent = `${ent.no} ${ent.name} の出現フィールド・ランク`;
-  el.querySelector('.modal-body').innerHTML = buildFieldRankMatrixHTML(ent);
-  modal.show();
+  const title = el.querySelector('.modal-title');
+    title.textContent = `${ent.no} ${ent.name} の出現フィールド・ランク`;
+    title.style.fontSize = '12pt';
+    el.querySelector('.modal-body').innerHTML = buildFieldRankMatrixHTML(ent);
+    modal.show();
 }
 
 let LAST_RENDER_ENTRIES = [];
