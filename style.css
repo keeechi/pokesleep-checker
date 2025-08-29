@@ -371,24 +371,22 @@ thead.is-sticky { position: static !important; top:auto !important; }
 #mainTabsWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 #mainTabsWrap::-webkit-scrollbar { display: none; }
 
-/* ハンバーガーメニュー（最前面で重ねる） */
-#hamburgerMenu{
+/* ハンバーガーメニュー（常に最前面に重ねる） */
+#hamburgerMenu {
   display:none;
-  position:fixed;                 /* 親のoverflow等の影響を受けない */
-  z-index:9999;                   /* 他要素より常に前面 */
+  position:fixed !important;   /* viewport基準で固定 */
+  top:0; left:0;               /* JSで座標を上書き */
+  z-index: 2147483647 !important; /* ほぼ絶対に負けない最大値 */
   background:#fff;
   color:#333;
   border:1px solid rgba(0,0,0,.15);
   border-radius:.5rem;
   box-shadow:0 6px 20px rgba(0,0,0,.15);
-  width:max-content;              /* 最長文字列にフィット */
-  max-width:calc(100vw - 24px);   /* 画面外にはみ出さない保険 */
+  width:max-content;
+  max-width:calc(100vw - 24px);
   white-space:nowrap;
-
-  /* ← ここが今回の要点 */
-  overflow:auto;                  
+  overflow:auto;
   -webkit-overflow-scrolling:touch;
-  padding-bottom:env(safe-area-inset-bottom, 0);
 }
 
 #hamburgerMenu ul{ list-style:none; margin:0; padding:.25rem 0; }
