@@ -84,74 +84,64 @@ function labelForRank(n) {
   return `${stage}${idx}`;
 }
 
-function buildRankMiniSummaryHTML(field, rank, state /*, sleepTypeFilter = '' */) {
-  const STAGES = ['ノーマル','スーパー','ハイパー','マスター'];
-  const ROW_CLASS = { 'うとうと':'row-uto', 'すやすや':'row-suya', 'ぐっすり':'row-gu' };
-  const TYPES = SLEEP_TYPES; // ← ここがポイント（常に全タイプ）
+function buildRankMiniSummaryHTML(field, rank, state, sleepTypeFilter = '', statusFilter = 'すべて') {
+  // 対象は「そのフィールドで rank 以下に出現する ☆1〜☆4」
+  // 列: うとうと / すやすや / ぐっすり / 合計
+  // 行: 入手済 / 未入手 / 合計
+  const TYPES = SLEEP_TYPES;
 
-  // 初期化
-  const counts = {};
-  SLEEP_TYPES.forEach(t => { counts[t] = { ノーマル:0, スーパー:0, ハイパー:0, マスター:0 }; });
+  // カウンタ初期化
+  const got = { 'うとうと':0, 'すやすや':0, 'ぐっすり':0 };
+  const not = { 'うとうと':0, 'すやすや':0, 'ぐっすり':0 };
 
-  // 集計（タイプでは絞らない）
   for (const row of RAW_ROWS) {
     const rNum = getFieldRankNum(row, field);
     if (!rNum || rNum > rank) continue;
-    if (!CHECKABLE_STARS.includes(row.DisplayRarity)) continue;
-    if (getChecked(state, rowKey(row), row.DisplayRarity)) continue;
+    if (!CHECKABLE_STARS.includes(row.DisplayRarity)) continue;  // ☆1〜☆4のみ
+    if (sleepTypeFilter && row.Style !== sleepTypeFilter) continue;
 
-    const st = splitStage(rNum).stage;
-    const type = row.Style || '';
-    if (counts[type] && st in counts[type]) counts[type][st] += 1;
+    const style = row.Style;
+    const k = rowKey(row);
+    const star = row.DisplayRarity;
+    const isChecked = getChecked(state, k, star);
+
+    if (isChecked) got[style] = (got[style] || 0) + 1;
+    else           not[style] = (not[style] || 0) + 1;
   }
 
-  // 合計0なら表示しない
-  const total = TYPES.reduce((sum, t) =>
-    sum + STAGES.reduce((s, st) => s + counts[t][st], 0), 0);
-  if (total === 0) return null;
+  // 合計列
+  const gotTotal = TYPES.reduce((s,t)=>s+got[t],0);
+  const notTotal = TYPES.reduce((s,t)=>s+not[t],0);
+  const all = { 'うとうと': got['うとうと']+not['うとうと'],
+                'すやすや': got['すやすや']+not['すやすや'],
+                'ぐっすり': got['ぐっすり']+not['ぐっすり'] };
+  const allTotal = gotTotal + notTotal;
 
-  // 列合計（縦）
-  const colTotals = {};
-  STAGES.forEach(st => {
-    colTotals[st] = TYPES.reduce((sum, t) => sum + counts[t][st], 0);
-  });
+  // 0件なら空を返す（表示なし）
+  if (allTotal === 0) return '';
 
-  // 行合計（横）
-  const rowTotals = {};
-  TYPES.forEach(t => { rowTotals[t] = STAGES.reduce((s, st) => s + counts[t][st], 0); });
-  const grandTotal = TYPES.reduce((s, t) => s + rowTotals[t], 0);
+  const td = (n)=>`<td class="text-center">${n}</td>`;
+  const th = (s)=>`<th class="text-start">${s}</th>`;
 
-  // ヘッダー
-  const headerRow = `
-    <tr>
-      <th style="width:72px;"></th>
-      ${STAGES.map(s => `<th class="text-center">${s}</th>`).join('')}
-      <th class="text-center">合計</th>
-    </tr>`;
+  const header = `
+    <thead class="table-light">
+      <tr>
+        <th style="width:72px;"></th>
+        ${TYPES.map(t=>`<th class="text-center">${t}</th>`).join('')}
+        <th class="text-center">合計</th>
+      </tr>
+    </thead>`;
 
-  // ボディ
-  const bodyRows = TYPES.map(t => `
-    <tr class="${ROW_CLASS[t] || ''}">
-      <th class="text-start">${t}</th>
-      ${STAGES.map(s => `<td class="text-center">${counts[t][s]}</td>`).join('')}
-      <td class="text-center fw-semibold">${rowTotals[t]}</td>
-    </tr>
-  `).join('');
-
-  // フッター
-  const footerRow = `
-    <tr class="table-light fw-semibold">
-      <th class="text-start">合計</th>
-      ${STAGES.map(s => `<td class="text-center">${colTotals[s]}</td>`).join('')}
-      <td class="text-center">${grandTotal}</td>
-    </tr>`;
+  const rowGot = `<tr>${th('入手済')}${td(got['うとうと'])}${td(got['すやすや'])}${td(got['ぐっすり'])}${td(gotTotal)}</tr>`;
+  const rowNot = `<tr>${th('未入手')}${td(not['うとうと'])}${td(not['すやすや'])}${td(not['ぐっすり'])}${td(notTotal)}</tr>`;
+  const rowAll = `<tr class="table-light fw-semibold">${th('合計')}${td(all['うとうと'])}${td(all['すやすや'])}${td(all['ぐっすり'])}${td(allTotal)}</tr>`;
 
   return `
     <div class="card border-0">
       <div class="table-responsive">
         <table class="table table-sm mb-2 align-middle" style="font-size:0.9rem;">
-          <thead class="table-light">${headerRow}</thead>
-          <tbody>${bodyRows}${footerRow}</tbody>
+          ${header}
+          <tbody>${rowGot}${rowNot}${rowAll}</tbody>
         </table>
       </div>
     </div>`;
@@ -1038,40 +1028,62 @@ function createSleepTypeSelect() {
   return sel;
 }
 
+function createStatusSelect() {
+  let sel = document.getElementById('searchStatus');
+  if (sel) return sel;
+
+  sel = document.createElement('select');
+  sel.id = 'searchStatus';
+  sel.className = 'form-select form-select-sm';
+  sel.innerHTML = [
+    { v:'すべて', t:'すべて' },
+    { v:'未入手', t:'未入手' },
+    { v:'入手済', t:'入手済' },
+  ].map(o => `<option value="${o.v}">${o.t}</option>`).join('');
+  sel.value = 'すべて';
+  return sel;
+}
+
 // 逆引きフィルターのDOMを「フィールド／ランク／睡眠タイプ」で再構成（行全体を置き換え）
- function buildReverseFilterBar() {
-   const fieldSel = document.getElementById('searchField');
-   const rankSel  = document.getElementById('searchRank');
-   if (!fieldSel || !rankSel) return;
+function buildReverseFilterBar() {
+  const fieldSel = document.getElementById('searchField');
+  const rankSel  = document.getElementById('searchRank');
+  if (!fieldSel || !rankSel) return;
 
-   const row = fieldSel.closest('.row') || rankSel.closest('.row');
-   if (!row) return;
+  const row = fieldSel.closest('.row') || rankSel.closest('.row');
+  if (!row) return;
 
-   const typeSel = createSleepTypeSelect();
+  const typeSel   = createSleepTypeSelect();
+  const statusSel = createStatusSelect();
 
-   const makeGroup = (labelText, selectEl) => {
-     const wrap = document.createElement('div');
-     wrap.className = 'filter-item';
-     const lab = document.createElement('label');
-     lab.textContent = labelText;
-     lab.htmlFor = selectEl.id;
-     selectEl.classList.add('form-select','form-select-sm');
-     wrap.appendChild(lab);
-     wrap.appendChild(selectEl);
-     return wrap;
-   };
+  const makeGroup = (labelText, selectEl) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'filter-item';
+    const lab = document.createElement('label');
+    lab.textContent = labelText;
+    lab.htmlFor = selectEl.id;
+    selectEl.classList.add('form-select','form-select-sm');
+    wrap.appendChild(lab);
+    wrap.appendChild(selectEl);
+    return wrap;
+  };
 
-    const bar = document.createElement('div');
-    bar.className = 'filter-bar';
-    bar.appendChild(makeGroup('フィールド', fieldSel));
-    bar.appendChild(makeGroup('ランク',     rankSel));
-    bar.appendChild(makeGroup('睡眠タイプ', typeSel));
+  const bar = document.createElement('div');
+  bar.className = 'filter-bar';
+  bar.appendChild(makeGroup('フィールド', fieldSel));
+  bar.appendChild(makeGroup('ランク',     rankSel));
+  bar.appendChild(makeGroup('睡眠タイプ', typeSel));
+  bar.appendChild(makeGroup('入手状況',   statusSel));
 
-    row.replaceWith(bar);
+  row.replaceWith(bar);
 
-    typeSel.removeEventListener('change', _onTypeChange);
-    typeSel.addEventListener('change', _onTypeChange);
- }
+  typeSel.removeEventListener('change', _onTypeChange);
+  typeSel.addEventListener('change', _onTypeChange);
+
+  statusSel.removeEventListener('change', _onStatusChange);
+  statusSel.addEventListener('change', _onStatusChange);
+}
+function _onStatusChange(){ renderRankSearch(loadState()); }
 
 // 睡眠タイプ変更時のハンドラ
 function _onTypeChange() {
@@ -1113,7 +1125,8 @@ function ensureRankSearchHeaderHasObtainedColumn() {
 function renderRankSearch(state) {
   const field = document.getElementById('searchField').value || FIELD_KEYS[0];
   const rank  = Math.max(1, Math.min(35, parseInt(document.getElementById('searchRank').value||'1',10)));
-  const typeFilter = (document.getElementById('searchType')?.value || '');   // ★ 追加
+  const typeFilter   = (document.getElementById('searchType')?.value || '');
+  const statusFilter = (document.getElementById('searchStatus')?.value || 'すべて');
   const tbody = document.querySelector('#rankSearchTable tbody');
 
   // ヘッダーに「入手済？」列を用意（HTMLそのままでも動くように）
@@ -1121,18 +1134,33 @@ function renderRankSearch(state) {
 
   const miniWrap = ensureRankMiniSummaryContainer();
   if (miniWrap) {
-    const miniHTML = buildRankMiniSummaryHTML(field, rank, state, typeFilter); // ★ 追加
-    miniWrap.innerHTML = miniHTML || '';
+    miniWrap.innerHTML = buildRankMiniSummaryHTML(field, rank, state, typeFilter, statusFilter) || '';
   }
 
   const items = [];
-  for (const row of RAW_ROWS) {
-    const rNum = getFieldRankNum(row, field);
+    for (const row of RAW_ROWS) {
+  const rNum = getFieldRankNum(row, field);
     if (!rNum || rNum > rank) continue;
-    if (typeFilter && row.Style !== typeFilter) continue; // ★ 追加
-    if (CHECKABLE_STARS.includes(row.DisplayRarity) && getChecked(state, rowKey(row), row.DisplayRarity)) continue;
-    items.push(row);
+    if (typeFilter && row.Style !== typeFilter) continue;
+
+  const k = rowKey(row);
+  const star = row.DisplayRarity;
+  const checkable = CHECKABLE_STARS.includes(star);
+  const isChecked = checkable ? getChecked(state, k, star) : false;
+
+  // 入手状況フィルター
+  if (statusFilter === '未入手') {
+    if (!checkable) continue;         // 判定不可のものは除外
+    if (isChecked) continue;          // 未入手のみ
+  } else if (statusFilter === '入手済') {
+    if (!checkable) continue;
+    if (!isChecked) continue;         // 入手済のみ
+  } else { // すべて
+    // 何でも通す（checkable じゃなくてもOK）
   }
+
+  items.push(row);
+}
   items.sort((a,b)=>{
     const c1 = a.No.localeCompare(b.No,'ja'); if (c1) return c1;
     const iA = RARITIES.indexOf(a.DisplayRarity), iB = RARITIES.indexOf(b.DisplayRarity);
@@ -1141,13 +1169,17 @@ function renderRankSearch(state) {
   });
 
   if (items.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="5" class="text-center">
-          <div class="completed-msg">COMPLETED</div>
-          <div class="text-muted small mt-1">この条件で出現する寝顔はすべて入手済みです</div>
-        </td>
-      </tr>`;
+    if (statusFilter === '未入手') {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" class="text-center">
+            <div class="completed-msg">COMPLETED</div>
+            <div class="text-muted small mt-1">この条件で出現する寝顔はすべて入手済みです</div>
+          </td>
+        </tr>`;
+    } else {
+      tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">該当するデータがありません</td></tr>`;
+    }
     return;
   }
 
@@ -1176,13 +1208,11 @@ function renderRankSearch(state) {
         <td class="text-center">${r.DisplayRarity || '-'}</td>
         <td class="text-center">${renderRankChip(needRank)}</td>
         <td class="text-center">
-          ${
-            checkable
-              ? `<input type="checkbox" class="form-check-input mark-obtained"
-                     data-key="${k}" data-star="${escapeHtml(star)}"
-                     ${isChecked ? 'checked' : ''}>`
-              : `<span class="text-muted">—</span>`
-          }
+        ${ checkable
+            ? `<input type="checkbox" class="form-check-input mark-obtained"
+                      data-key="${k}" data-star="${escapeHtml(star)}"
+                      ${isChecked ? 'checked' : ''}>`
+            : `<span class="text-muted">—</span>` }
         </td>
       </tr>`;
   }).join('');
@@ -1339,6 +1369,26 @@ style.textContent = `
     padding: .5rem 0;
     border-bottom: 1px solid rgba(0,0,0,.075);
   }
+
+  /* 逆引きフィルター（スマホは2×2、PCは1行） */
+  .filter-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 1行目: フィールド/ランク、2行目: タイプ/入手状況 */
+    gap: 10px 12px;
+    align-items: center;
+  }
+  @media (min-width: 768px) {
+    .filter-bar {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 12px 16px;
+    }
+  }
+  .filter-item { display:flex; flex-direction:row; align-items:center; gap:8px; white-space:nowrap; }
+  .filter-item label { margin:0 !important; font-weight:500; }
+  .filter-item .form-select { width:auto; display:inline-block; }
 
 `;
   document.head.appendChild(style);
