@@ -1271,6 +1271,11 @@ function renderRankSearch(state) {
   refreshAllSticky();
 }
 
+function compactRankFilters() {
+  const el = document.getElementById('rankSearchFilters');  // ←実際のIDに合わせて
+  if (el) el.classList.add('filters-compact');
+}
+
 // バックアップ用の簡単なエンコード/デコード（UTF-8対応）
 function encodeStateToText(state) {
   const json = JSON.stringify(state);
