@@ -290,11 +290,31 @@ td.toggle-cell:hover {
 .byfield-name-cell .pf-name { font-size:9pt; line-height:1.2; word-break:break-word; white-space:normal; max-width:calc(36px + 8px); }
 
 /* ミニ表（未入手カウント） */
+/*
 .rank-mini-summary:empty { display: none; }
 .rank-mini-summary tr.row-uto  > th, .rank-mini-summary tr.row-uto  > td  { background-color: #fff5db !important; }
 .rank-mini-summary tr.row-suya > th, .rank-mini-summary tr.row-suya > td { background-color: #e9f4ff !important; }
 .rank-mini-summary tr.row-gu   > th, .rank-mini-summary tr.row-gu   > td { background-color: #ecebff !important; }
 .rank-mini-summary table thead th { vertical-align: middle; }
+*/
+
+/* ▼ ミニ表（逆引きシート上部） */
+#rankMiniSummary {
+  --uto-bg:  #fff7cc; /* うとうと：淡い黄色 */
+  --suya-bg: #e6f6ff; /* すやすや：淡い水色 */
+  --gusu-bg: #d9e8ff; /* ぐっすり：淡い青 */
+}
+
+/* カラム配色（th/td 両方に適用） */
+#rankMiniSummary th.col-uto,  #rankMiniSummary td.col-uto  { background: var(--uto-bg); }
+#rankMiniSummary th.col-suya, #rankMiniSummary td.col-suya { background: var(--suya-bg); }
+#rankMiniSummary th.col-gusu, #rankMiniSummary td.col-gusu { background: var(--gusu-bg); }
+
+/* 合計カラムは太字 */
+#rankMiniSummary th.col-total,
+#rankMiniSummary td.col-total {
+  font-weight: 700;
+}
 
 /* 逆引きフィルター（横並び） */
 .filter-bar { display:flex; flex-direction:column; align-items:flex-start; gap:10px; }
