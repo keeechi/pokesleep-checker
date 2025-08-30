@@ -1164,6 +1164,8 @@ function renderRankSearch(state) {
   const miniWrap = ensureRankMiniSummaryContainer();
   if (miniWrap) {
     miniWrap.innerHTML = buildRankMiniSummaryHTML(field, rank, state, typeFilter, statusFilter) || '';
+    styleRankMiniSummary();
+    refreshAllSticky();
   }
 
   const items = [];
@@ -1197,20 +1199,28 @@ function renderRankSearch(state) {
     return a.Style.localeCompare(b.Style,'ja');
   });
 
-  if (items.length === 0) {
-    if (statusFilter === '未入手') {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="5" class="text-center">
-            <div class="completed-msg">COMPLETED</div>
-            <div class="text-muted small mt-1">この条件で出現する寝顔はすべて入手済みです</div>
-          </td>
-        </tr>`;
-    } else {
-      tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">該当するデータがありません</td></tr>`;
-    }
-    return;
+if (items.length === 0) {
+  if (statusFilter === '未入手') {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="text-center">
+          <div class="completed-msg">COMPLETED</div>
+          <div class="text-muted small mt-1">この条件で出現する寝顔はすべて入手済みです</div>
+        </td>
+      </tr>`;
+  } else {
+    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">該当するデータがありません</td></tr>`;
   }
+
+  // ★ ここで色付けなど最低限の後処理を実行してから return
+  styleRankMiniSummary();
+  compactRankFilters();
+  shrinkRankHelpText();
+  applyStickyHeaders();
+  refreshAllSticky();
+
+  return;
+}
 
   tbody.innerHTML = items.map(r=>{
     const needRank = getFieldRankNum(r, field);
@@ -1246,26 +1256,29 @@ function renderRankSearch(state) {
       </tr>`;
   }).join('');
   // ここでは再描画しない（＝行は残す）。ただしサマリーは更新。
-  tbody.querySelectorAll('input.mark-obtained').forEach(chk=>{
-    chk.addEventListener('change', (e) => {
-      const key  = e.target.dataset.key;
-      const star = e.target.dataset.star;
-      const on   = e.target.checked;
-      const s = loadState();
-      setChecked(s, key, star, on);
-      syncOtherViews(key, star, on);               // ← 他シートへ差分同期
-      renderSummary(s);
+tbody.querySelectorAll('input.mark-obtained').forEach(chk=>{
+  chk.addEventListener('change', (e) => {
+    const key  = e.target.dataset.key;
+    const star = e.target.dataset.star;
+    const on   = e.target.checked;
+    const s = loadState();
+    setChecked(s, key, star, on);
+    syncOtherViews(key, star, on);
+    renderSummary(s);
 
-      // ミニ要約だけは更新する（行は消さない＝仕様どおり）
-      const fieldNow = document.getElementById('searchField').value || FIELD_KEYS[0];
-      const rankNow  = Math.max(1, Math.min(35, parseInt(document.getElementById('searchRank').value||'1',10)));
-      const typeNow  = (document.getElementById('searchType')?.value || '');
-      const wrap = ensureRankMiniSummaryContainer();
-      if (wrap) {
-        wrap.innerHTML = buildRankMiniSummaryHTML(fieldNow, rankNow, s, typeNow) || '';
-      }
-    });
+    // ミニ要約だけは更新する（行は消さない＝仕様どおり）
+    const fieldNow  = document.getElementById('searchField').value || FIELD_KEYS[0];
+    const rankNow   = Math.max(1, Math.min(35, parseInt(document.getElementById('searchRank').value||'1',10)));
+    const typeNow   = (document.getElementById('searchType')?.value || '');
+    const statusNow = (document.getElementById('searchStatus')?.value || 'すべて'); // ← 追加（任意）
+    const wrap = ensureRankMiniSummaryContainer();
+    if (wrap) {
+      wrap.innerHTML = buildRankMiniSummaryHTML(fieldNow, rankNow, s, typeNow, statusNow) || '';
+      // ★ 差し替え直後に必ず色付け
+      styleRankMiniSummary();
+    }
   });
+});
   applyStickyHeaders();
   refreshAllSticky();
   styleRankMiniSummary();
