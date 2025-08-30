@@ -476,3 +476,47 @@ thead.is-sticky { position: static !important; top: auto !important; }
     width: auto;     /* 等分拡張を解除 */
   }
 }
+
+/* 逆引きシート上部のミニ表（#rankMiniSummary） */
+#rankMiniSummary {
+  --uto-bg:  #fff7cc; /* うとうと：淡い黄色 */
+  --suya-bg: #e6f6ff; /* すやすや：淡い水色 */
+  --gusu-bg: #d9e8ff; /* ぐっすり：淡い青 */
+}
+
+/* ヘッダと本文の同一列に色を付ける */
+#rankMiniSummary th.col-uto,  #rankMiniSummary td.col-uto  { background: var(--uto-bg); }
+#rankMiniSummary th.col-suya, #rankMiniSummary td.col-suya { background: var(--suya-bg); }
+#rankMiniSummary th.col-gusu, #rankMiniSummary td.col-gusu { background: var(--gusu-bg); }
+
+/* 合計列は太字 */
+#rankMiniSummary th.col-total,
+#rankMiniSummary td.col-total {
+  font-weight: 700;
+}
+
+/* フィルターUI全体を少し小さく（親に .filters-compact を付ける） */
+.filters-compact,
+.filters-compact label,
+.filters-compact .form-label,
+.filters-compact select,
+.filters-compact .form-select,
+.filters-compact .btn,
+.filters-compact .form-check-label,
+.filters-compact input[type="checkbox"] + label {
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+/* 説明文用 */
+#rankHelpText {
+  font-size: 0.9rem;
+  line-height: 1.3;
+  opacity: 0.9;
+}
+
+/* 逆引きの結果テーブル（例：.table-rank-result）の“ポケモン名”だけ微縮小 */
+.table-rank-result td.col-pokemon .poke-name {
+  font-size: 0.95em;
+  font-weight: 500; /* 任意。視認性維持 */
+}
