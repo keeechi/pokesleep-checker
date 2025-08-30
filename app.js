@@ -1010,6 +1010,36 @@ function ensureRankMiniSummaryContainer() {
     return el;
 }
 
+function styleRankMiniSummary() {
+  const table = document.querySelector('#rankMiniSummary table, #rankMiniSummary');
+  if (!table) return;
+
+  const thead = table.querySelector('thead');
+  const rows  = table.querySelectorAll('tr');
+  if (!thead || !rows.length) return;
+
+  const ths = thead.querySelectorAll('th');
+  const colClassByIndex = {};
+
+  ths.forEach((th, idx) => {
+    const t = (th.textContent || '').trim();
+    if (t.includes('うとうと'))  { th.classList.add('col-uto');   colClassByIndex[idx] = 'col-uto'; }
+    if (t.includes('すやすや'))  { th.classList.add('col-suya');  colClassByIndex[idx] = 'col-suya'; }
+    if (t.includes('ぐっすり'))  { th.classList.add('col-gusu');  colClassByIndex[idx] = 'col-gusu'; }
+    if (t.includes('合計'))      { th.classList.add('col-total'); colClassByIndex[idx] = 'col-total'; }
+  });
+
+  // 本文側の同一列にもクラスを付与
+  rows.forEach(tr => {
+    tr.querySelectorAll('td,th').forEach((cell, idx) => {
+      const cls = colClassByIndex[idx];
+      if (cls) cell.classList.add(cls);
+    });
+  });
+}
+// 例：renderRankSearch(state) や ensureRankMiniSummaryContainer() の直後に呼ぶ
+// styleRankMiniSummary();
+
 // 睡眠タイプセレクト要素を生成（DOMには挿入しない）
 function createSleepTypeSelect() {
   let sel = document.getElementById('searchType');
