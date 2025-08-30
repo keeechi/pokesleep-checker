@@ -520,3 +520,5 @@ thead.is-sticky { position: static !important; top: auto !important; }
   font-size: 0.95em;
   font-weight: 500; /* 任意。視認性維持 */
 }
+
+.filter-bar .filter-item--sort { grid-column: 1 / -1; }
