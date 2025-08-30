@@ -1180,9 +1180,10 @@ function renderRankSearch(state) {
   const sortMode     = (document.getElementById('searchSort')?.value || 'no-asc');
   const tbody = document.querySelector('#rankSearchTable tbody');
 
-  // ヘッダーに「入手済？」列を用意（HTMLそのままでも動くように）
+  // ヘッダーに「入手済？」列を用意
   ensureRankSearchHeaderHasObtainedColumn();
 
+  // ミニ表（差し替え直後に必ず色付け/高さ再計算）
   const miniWrap = ensureRankMiniSummaryContainer();
   if (miniWrap) {
     miniWrap.innerHTML = buildRankMiniSummaryHTML(field, rank, state, typeFilter, statusFilter) || '';
@@ -1190,31 +1191,30 @@ function renderRankSearch(state) {
     refreshAllSticky();
   }
 
+  // フィルタリング
   const items = [];
-    for (const row of RAW_ROWS) {
-  const rNum = getFieldRankNum(row, field);
+  for (const row of RAW_ROWS) {
+    const rNum = getFieldRankNum(row, field);
     if (!rNum || rNum > rank) continue;
     if (typeFilter && row.Style !== typeFilter) continue;
 
-  const k = rowKey(row);
-  const star = row.DisplayRarity;
-  const checkable = CHECKABLE_STARS.includes(star);
-  const isChecked = checkable ? getChecked(state, k, star) : false;
+    const k = rowKey(row);
+    const star = row.DisplayRarity;
+    const checkable = CHECKABLE_STARS.includes(star);
+    const isChecked = checkable ? getChecked(state, k, star) : false;
 
-  // 入手状況フィルター
-  if (statusFilter === '未入手') {
-    if (!checkable) continue;         // 判定不可のものは除外
-    if (isChecked) continue;          // 未入手のみ
-  } else if (statusFilter === '入手済') {
-    if (!checkable) continue;
-    if (!isChecked) continue;         // 入手済のみ
-  } else { // すべて
-    // 何でも通す（checkable じゃなくてもOK）
+    // 入手状況フィルター
+    if (statusFilter === '未入手') {
+      if (!checkable) continue;
+      if (isChecked) continue;
+    } else if (statusFilter === '入手済') {
+      if (!checkable) continue;
+      if (!isChecked) continue;
+    }
+    items.push(row);
   }
 
-  items.push(row);
-}
-  items.sort((a,b)=>{
+  // ▼ 並び替え（ここが修正ポイント：余計な sort の { を消し、最後に1回だけ sort）
   const cmpNoAsc    = (a,b) => a.No.localeCompare(b.No, 'ja');
   const cmpNoDesc   = (a,b) => b.No.localeCompare(a.No, 'ja');
   const cmpNameAsc  = (a,b) => a.Name.localeCompare(b.Name, 'ja');
@@ -1225,34 +1225,35 @@ function renderRankSearch(state) {
     return (a.Style || '').localeCompare(b.Style || '', 'ja');
   };
   const primary = sortMode === 'no-desc'   ? cmpNoDesc
-                : sortMode === 'name-asc' ? cmpNameAsc
-                : sortMode === 'name-desc'? cmpNameDesc
-                :                           cmpNoAsc;
+                : sortMode === 'name-asc'  ? cmpNameAsc
+                : sortMode === 'name-desc' ? cmpNameDesc
+                :                            cmpNoAsc;
+
   items.sort((a,b) => primary(a,b) || tieBreaker(a,b));
 
-if (items.length === 0) {
-  if (statusFilter === '未入手') {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="5" class="text-center">
-          <div class="completed-msg">COMPLETED</div>
-          <div class="text-muted small mt-1">この条件で出現する寝顔はすべて入手済みです</div>
-        </td>
-      </tr>`;
-  } else {
-    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">該当するデータがありません</td></tr>`;
+  // 0件時：メッセージ描画後もミニ表の色付け等を走らせてから return
+  if (items.length === 0) {
+    if (statusFilter === '未入手') {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" class="text-center">
+            <div class="completed-msg">COMPLETED</div>
+            <div class="text-muted small mt-1">この条件で出現する寝顔はすべて入手済みです</div>
+          </td>
+        </tr>`;
+    } else {
+      tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">該当するデータがありません</td></tr>`;
+    }
+    // 最低限の後処理
+    styleRankMiniSummary();
+    compactRankFilters();
+    shrinkRankHelpText();
+    applyStickyHeaders();
+    refreshAllSticky();
+    return;
   }
 
-  // ★ ここで色付けなど最低限の後処理を実行してから return
-  styleRankMiniSummary();
-  compactRankFilters();
-  shrinkRankHelpText();
-  applyStickyHeaders();
-  refreshAllSticky();
-
-  return;
-}
-
+  // テーブル描画
   tbody.innerHTML = items.map(r=>{
     const needRank = getFieldRankNum(r, field);
     const iconSvg = renderPokemonIconById(r.IconNo || getIconKeyFromNo(r.No), ICON_SIZE_FIELD);
@@ -1260,7 +1261,6 @@ if (items.length === 0) {
     const k = rowKey(r);
     const star = r.DisplayRarity;
     const checkable = CHECKABLE_STARS.includes(star);
-    // 未入手一覧なので通常は false のはずだが、念のため同期
     const isChecked = checkable ? getChecked(state, k, star) : false;
     
     return `
@@ -1278,38 +1278,39 @@ if (items.length === 0) {
         <td class="text-center">${r.DisplayRarity || '-'}</td>
         <td class="text-center">${renderRankChip(needRank)}</td>
         <td class="text-center">
-        ${ checkable
-            ? `<input type="checkbox" class="form-check-input mark-obtained"
-                      data-key="${k}" data-star="${escapeHtml(star)}"
-                      ${isChecked ? 'checked' : ''}>`
-            : `<span class="text-muted">—</span>` }
+          ${ checkable
+              ? `<input type="checkbox" class="form-check-input mark-obtained"
+                        data-key="${k}" data-star="${escapeHtml(star)}"
+                        ${isChecked ? 'checked' : ''}>`
+              : `<span class="text-muted">—</span>` }
         </td>
       </tr>`;
   }).join('');
-  // ここでは再描画しない（＝行は残す）。ただしサマリーは更新。
-tbody.querySelectorAll('input.mark-obtained').forEach(chk=>{
-  chk.addEventListener('change', (e) => {
-    const key  = e.target.dataset.key;
-    const star = e.target.dataset.star;
-    const on   = e.target.checked;
-    const s = loadState();
-    setChecked(s, key, star, on);
-    syncOtherViews(key, star, on);
-    renderSummary(s);
 
-    // ミニ要約だけは更新する（行は消さない＝仕様どおり）
-    const fieldNow  = document.getElementById('searchField').value || FIELD_KEYS[0];
-    const rankNow   = Math.max(1, Math.min(35, parseInt(document.getElementById('searchRank').value||'1',10)));
-    const typeNow   = (document.getElementById('searchType')?.value || '');
-    const statusNow = (document.getElementById('searchStatus')?.value || 'すべて'); // ← 追加（任意）
-    const wrap = ensureRankMiniSummaryContainer();
-    if (wrap) {
-      wrap.innerHTML = buildRankMiniSummaryHTML(fieldNow, rankNow, s, typeNow, statusNow) || '';
-      // ★ 差し替え直後に必ず色付け
-      styleRankMiniSummary();
-    }
+  // チェック変更→サマリー＆ミニ表更新（色付けも再適用）
+  tbody.querySelectorAll('input.mark-obtained').forEach(chk=>{
+    chk.addEventListener('change', (e) => {
+      const key  = e.target.dataset.key;
+      const star = e.target.dataset.star;
+      const on   = e.target.checked;
+      const s = loadState();
+      setChecked(s, key, star, on);
+      syncOtherViews(key, star, on);
+      renderSummary(s);
+
+      const fieldNow  = document.getElementById('searchField').value || FIELD_KEYS[0];
+      const rankNow   = Math.max(1, Math.min(35, parseInt(document.getElementById('searchRank').value||'1',10)));
+      const typeNow   = (document.getElementById('searchType')?.value || '');
+      const statusNow = (document.getElementById('searchStatus')?.value || 'すべて');
+      const wrap = ensureRankMiniSummaryContainer();
+      if (wrap) {
+        wrap.innerHTML = buildRankMiniSummaryHTML(fieldNow, rankNow, s, typeNow, statusNow) || '';
+        styleRankMiniSummary();
+      }
+    });
   });
-});
+
+  // 仕上げ
   applyStickyHeaders();
   refreshAllSticky();
   styleRankMiniSummary();
