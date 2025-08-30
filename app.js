@@ -1010,36 +1010,6 @@ function ensureRankMiniSummaryContainer() {
     return el;
 }
 
-function styleRankMiniSummary() {
-  const table = document.querySelector('#rankMiniSummary table, #rankMiniSummary');
-  if (!table) return;
-
-  const thead = table.querySelector('thead');
-  const rows  = table.querySelectorAll('tr');
-  if (!thead || !rows.length) return;
-
-  const ths = thead.querySelectorAll('th');
-  const colClassByIndex = {};
-
-  ths.forEach((th, idx) => {
-    const t = (th.textContent || '').trim();
-    if (t.includes('うとうと'))  { th.classList.add('col-uto');   colClassByIndex[idx] = 'col-uto'; }
-    if (t.includes('すやすや'))  { th.classList.add('col-suya');  colClassByIndex[idx] = 'col-suya'; }
-    if (t.includes('ぐっすり'))  { th.classList.add('col-gusu');  colClassByIndex[idx] = 'col-gusu'; }
-    if (t.includes('合計'))      { th.classList.add('col-total'); colClassByIndex[idx] = 'col-total'; }
-  });
-
-  // 本文側の同一列にもクラスを付与
-  rows.forEach(tr => {
-    tr.querySelectorAll('td,th').forEach((cell, idx) => {
-      const cls = colClassByIndex[idx];
-      if (cls) cell.classList.add(cls);
-    });
-  });
-}
-// 例：renderRankSearch(state) や ensureRankMiniSummaryContainer() の直後に呼ぶ
-// styleRankMiniSummary();
-
 // 睡眠タイプセレクト要素を生成（DOMには挿入しない）
 function createSleepTypeSelect() {
   let sel = document.getElementById('searchType');
@@ -1118,12 +1088,6 @@ function _onStatusChange(){ renderRankSearch(loadState()); }
 // 睡眠タイプ変更時のハンドラ
 function _onTypeChange() {
   renderRankSearch(loadState());
-}
-
-function shrinkRankHelpText() {
-  // 既に #rankHelpText があるなら不要。なければ代表要素にIDを付与。
-  const el = document.querySelector('.rank-help, .rank-desc, .rank-note'); // 想定されるクラス群
-  if (el && !el.id) el.id = 'rankHelpText';
 }
 
 // ===================== ランク検索（未入手のみ） =====================
@@ -1275,11 +1239,6 @@ function renderRankSearch(state) {
   });
   applyStickyHeaders();
   refreshAllSticky();
-}
-
-function compactRankFilters() {
-  const el = document.getElementById('rankSearchFilters');  // ←実際のIDに合わせて
-  if (el) el.classList.add('filters-compact');
 }
 
 // バックアップ用の簡単なエンコード/デコード（UTF-8対応）
@@ -1606,4 +1565,3 @@ window.addEventListener('resize', equalizeMainTabWidths);
 
 // タブ内の文言や表示状態が動的に変わる場合も更新
 document.getElementById('mainTabs')?.addEventListener('shown.bs.tab', equalizeMainTabWidths);
-
