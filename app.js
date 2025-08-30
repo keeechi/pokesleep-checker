@@ -147,6 +147,36 @@ function buildRankMiniSummaryHTML(field, rank, state, sleepTypeFilter = '', stat
     </div>`;
 }
 
+function styleRankMiniSummary() {
+  const root = document.getElementById('rankMiniSummary') 
+            || document.querySelector('#rankMiniSummary table') 
+            || document.querySelector('[data-mini-summary]'); // 保険
+  if (!root) return;
+
+  const table = root.tagName === 'TABLE' ? root : root.querySelector('table') || root;
+  const thead = table.querySelector('thead');
+  const rows  = table.querySelectorAll('tr');
+  if (!thead || !rows.length) return;
+
+  const ths = thead.querySelectorAll('th');
+  const colClassByIndex = {};
+
+  ths.forEach((th, idx) => {
+    const t = (th.textContent || '').trim();
+    if (t.includes('うとうと'))  { th.classList.add('col-uto');   colClassByIndex[idx] = 'col-uto'; }
+    if (t.includes('すやすや'))  { th.classList.add('col-suya');  colClassByIndex[idx] = 'col-suya'; }
+    if (t.includes('ぐっすり'))  { th.classList.add('col-gusu');  colClassByIndex[idx] = 'col-gusu'; }
+    if (t.includes('合計'))      { th.classList.add('col-total'); colClassByIndex[idx] = 'col-total'; }
+  });
+
+  rows.forEach(tr => {
+    tr.querySelectorAll('td,th').forEach((cell, idx) => {
+      const cls = colClassByIndex[idx];
+      if (cls) cell.classList.add(cls);
+    });
+  });
+}
+
 // ==== 固定（sticky）ユーティリティ ====
 
 // タブ高をCSS変数へ
@@ -996,7 +1026,6 @@ function renderFieldTables(state) {
   refreshAllSticky();
 }
 
-// ミニ要約の入れ物を用意（なければ作成して #rankSearchTable の直前に挿入）
 function ensureRankMiniSummaryContainer() {
   let el = document.getElementById('rankMiniSummary');
   if (el) return el;
@@ -1239,6 +1268,65 @@ function renderRankSearch(state) {
   });
   applyStickyHeaders();
   refreshAllSticky();
+  styleRankMiniSummary();
+  compactRankFilters();
+  shrinkRankHelpText();
+  markPokemonNameSpans();
+  afterRenderRankSearch();
+}
+
+function markPokemonNameSpans() {
+  const table = document.querySelector('.table-rank-result'); // 逆引き結果テーブル
+  if (!table) return;
+
+  // 「ポケモン」列のインデックスを特定し、ヘッダに .col-pokemon を付与
+  const ths = table.querySelectorAll('thead th');
+  let pokemonCol = -1;
+  ths.forEach((th, idx) => {
+    const t = (th.textContent || '').trim();
+    if (t.includes('ポケモン')) {
+      pokemonCol = idx;
+      th.classList.add('col-pokemon');
+    }
+  });
+  if (pokemonCol === -1) return;
+
+  // 各行の該当セル末尾のテキストを「名前」とみなし <span class="poke-name"> で包む
+  const rows = table.querySelectorAll('tbody tr');
+  rows.forEach(tr => {
+    const td = tr.children[pokemonCol];
+    if (!td) return;
+    if (td.querySelector('.poke-name')) return; // 二重適用防止
+
+    const walker = document.createTreeWalker(td, NodeFilter.SHOW_TEXT, null);
+    let lastText = null; let node;
+    while ((node = walker.nextNode())) {
+      if (node.nodeValue.trim()) lastText = node;
+    }
+    if (lastText) {
+      const span = document.createElement('span');
+      span.className = 'poke-name';
+      span.textContent = lastText.nodeValue.trim();
+      lastText.parentNode.replaceChild(span, lastText);
+      // 必要ならスペースを補う
+      td.insertBefore(document.createTextNode(' '), span);
+    }
+  });
+}
+
+function compactRankFilters() {
+  const el = document.getElementById('rankSearchFilters');
+  if (el) el.classList.add('filters-compact');
+}
+
+function shrinkRankHelpText() {
+  // 既に #rankHelpText が存在すれば何もしない
+  let el = document.getElementById('rankHelpText');
+  if (!el) {
+    // 代表的な説明文要素を探索（あなたの実装のクラスに合わせてOK）
+    el = document.querySelector('.rank-help, .rank-desc, .rank-note');
+    if (el) el.id = 'rankHelpText';
+  }
 }
 
 // バックアップ用の簡単なエンコード/デコード（UTF-8対応）
@@ -1565,3 +1653,10 @@ window.addEventListener('resize', equalizeMainTabWidths);
 
 // タブ内の文言や表示状態が動的に変わる場合も更新
 document.getElementById('mainTabs')?.addEventListener('shown.bs.tab', equalizeMainTabWidths);
+
+function afterRenderRankSearch() {
+  styleRankMiniSummary();
+  compactRankFilters();
+  shrinkRankHelpText();
+  markPokemonNameSpans();
+}
