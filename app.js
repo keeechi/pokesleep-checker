@@ -1120,6 +1120,12 @@ function _onTypeChange() {
   renderRankSearch(loadState());
 }
 
+function shrinkRankHelpText() {
+  // 既に #rankHelpText があるなら不要。なければ代表要素にIDを付与。
+  const el = document.querySelector('.rank-help, .rank-desc, .rank-note'); // 想定されるクラス群
+  if (el && !el.id) el.id = 'rankHelpText';
+}
+
 // ===================== ランク検索（未入手のみ） =====================
 function setupRankSearchControls() {
   // フィールド
