@@ -449,6 +449,94 @@ window.addEventListener('scroll',  _safeSchedule, { passive:true });
 window.addEventListener('resize',  _safeSchedule);
 document.getElementById('mainTabs')?.addEventListener('shown.bs.tab', _safeSchedule);
 
+// --- 依存ライブラリを動的読込（html-to-image UMD） ---
+function ensureHtmlToImage() {
+  return new Promise((resolve, reject) => {
+    if (window.htmlToImage && typeof window.htmlToImage.toPng === 'function') {
+      resolve(); return;
+    }
+    const s = document.createElement('script');
+    s.src = 'https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.min.js';
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('html-to-image の読み込みに失敗しました'));
+    document.head.appendChild(s);
+  });
+}
+
+// dataURL → Blob 変換（共有や File 作成用）
+function dataUrlToBlob(dataUrl) {
+  const [meta, b64] = dataUrl.split(',');
+  const mime = (meta.match(/data:(.*?);base64/) || [,'image/png'])[1];
+  const bin = atob(b64);
+  const len = bin.length;
+  const u8 = new Uint8Array(len);
+  for (let i=0;i<len;i++) u8[i] = bin.charCodeAt(i);
+  return new Blob([u8], { type: mime });
+}
+
+// 端末に応じた保存/共有フロー
+async function saveDataUrlSmart(dataUrl, filename = 'summary.png') {
+  const blob = dataUrlToBlob(dataUrl);
+
+  // 1) Web Share API（ファイル共有）対応なら最優先
+  if (navigator.canShare && typeof navigator.canShare === 'function') {
+    try {
+      const file = new File([blob], filename, { type: 'image/png' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'サマリー画像',
+          text: 'ポケモンスリープ 寝顔サマリー',
+        });
+        return;
+      }
+    } catch (_) { /* フォールバックへ */ }
+  }
+
+  // 2) download対応ブラウザ（Android Chrome 等）
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = filename;     // iOS Safari は無視
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  // 3) iOS Safari 等：新規タブで開いて「長押しで保存」
+  if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
+    const w = window.open();
+    if (w) { w.document.write(`<img src="${dataUrl}" style="width:100%;height:auto">`); }
+  }
+}
+
+// サマリー表をPNG化して保存/共有
+async function saveSummaryAsImage() {
+  await ensureHtmlToImage();
+
+  // 対象ノード：サマリーの <table class="summary-table"> 全体
+  const table = document.querySelector('#summaryGrid .summary-table') 
+             || document.querySelector('.summary-table');
+  if (!table) throw new Error('サマリー表が見つかりません');
+
+  // 画像に「保存ボタン」を写し込まないため一時的に隠す
+  const btn = document.getElementById('btnSaveSummaryImage');
+  const oldVis = btn ? btn.style.visibility : '';
+  if (btn) btn.style.visibility = 'hidden';
+
+  // DPI/白背景などを指定（スマホでくっきり）
+  const pixelRatio = Math.max(2, Math.min(3, window.devicePixelRatio || 1));
+  const dataUrl = await window.htmlToImage.toPng(table, {
+    pixelRatio,
+    backgroundColor: '#ffffff',
+    // 「見切れ」防止（余白を少し確保）
+    style: { padding: '8px' },
+    cacheBust: true
+  });
+
+  if (btn) btn.style.visibility = oldVis;
+
+  await saveDataUrlSmart(dataUrl, 'sleep_summary.png');
+}
 
 // ダークライ除外判定
 function isExcludedFromSummary(row) {
@@ -661,23 +749,27 @@ function renderSummary(state) {
     return { num, denom, rate };
   };
 
-  const header = `
-    <table class="table table-sm align-middle mb-0 summary-table">
-      <thead class="table-light">
-        <tr>
-          <th class="summary-lefthead-col"></th>
-<th class="text-center" style="width:80px;">全体</th>
-${FIELD_KEYS.map(f => {
-  const src = FIELD_HEAD_ICON[f];              // 画像パス取得
-  const alt = FIELD_SHORT[f] || f;             // 代替テキスト
-  return `
-    <th class="text-center" style="width:80px;">
-      <img src="${src}" alt="${alt}" class="field-head-icon" loading="lazy" decoding="async">
-    </th>`;
-}).join('')}
-        </tr>
-      </thead>
-      <tbody>
+    const header = `
+      <table class="table table-sm align-middle mb-0 summary-table">
+        <thead class="table-light">
+          <tr>
+            <th class="summary-lefthead-col text-center align-middle">
+              <button type="button" id="btnSaveSummaryImage" class="a1-save-btn" title="この表を画像で保存">
+                画像で保存
+              </button>
+            </th>
+            <th class="text-center" style="width:80px;">全体</th>
+            ${FIELD_KEYS.map(f => {
+              const src = FIELD_HEAD_ICON[f];
+              const alt = FIELD_SHORT[f] || f;
+              return `
+                <th class="text-center" style="width:80px;">
+                  <img src="${src}" alt="${alt}" class="field-head-icon" loading="lazy" decoding="async">
+                </th>`;
+            }).join('')}
+          </tr>
+        </thead>
+        <tbody>
         ${SLEEP_TYPES.map(style => {
           const totalCell = (() => {
             const d = calcForAll(style);
@@ -713,6 +805,16 @@ ${FIELD_KEYS.map(f => {
       </tbody>
     </table>`;
   root.innerHTML = header;
+  
+  // ボタン配線（多重登録防止に onclick で）
+  document.getElementById('btnSaveSummaryImage').onclick = async () => {
+    try {
+      await saveSummaryAsImage();
+    } catch (e) {
+      alert('画像の作成に失敗しました。時間をおいて再度お試しください。');
+      console.error(e);
+    }
+  };
 }
 
 // ===================== 全寝顔チェックシート =====================
