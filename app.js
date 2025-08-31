@@ -993,8 +993,10 @@ function renderFieldTables(state) {
         <tr>
           <td class="byfield-name-cell text-center align-middle">
             <div class="pf-wrap">
-              <div class="byfield-icon">
+              <div class="byfield-icon position-relative">
                 ${renderPokemonIconById(ent.iconNo || getIconKeyFromNo(ent.no), ICON_SIZE_FIELD)}
+                <button type="button" class="btn btn-light btn-xxs icon-more"
+                        data-entkey="${key}" aria-label="出現フィールド">▼</button>
               </div>
               <div class="pf-text">
                 <div class="pf-no text-muted">${ent.no}</div>
@@ -1025,6 +1027,16 @@ function renderFieldTables(state) {
   applyStickyHeaders();
   refreshAllSticky();
 }
+
+    // ▼ボタン（フィールド別）— モーダルを開く
+    tbody.querySelectorAll('button.icon-more').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const k = e.currentTarget.dataset.entkey;
+        const ent = findEntryByEntKey(k);
+        if (ent) openFieldRankModal(ent);
+      });
+    });
 
 function ensureRankMiniSummaryContainer() {
   let el = document.getElementById('rankMiniSummary');
@@ -1287,7 +1299,11 @@ items.sort((a,b) => primary(a,b) || tieBreaker(a,b));
       <tr>
         <td class="byfield-name-cell text-center align-middle">
           <div class="pf-wrap">
-            <div class="byfield-icon">${iconSvg}</div>
+            <div class="byfield-icon position-relative">
+              ${iconSvg}
+              <button type="button" class="btn btn-light btn-xxs icon-more"
+                      data-entkey="${k}" aria-label="出現フィールド">▼</button>
+            </div>
             <div class="pf-text">
               <div class="pf-no text-muted">${r.No}</div>
               <div class="pf-name">${escapeHtml(r.Name)}</div>
@@ -1330,6 +1346,17 @@ tbody.querySelectorAll('input.mark-obtained').forEach(chk=>{
     }
   });
 });
+
+  // ▼ボタン（逆引き）— モーダルを開く
+  tbody.querySelectorAll('button.icon-more').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const k = e.currentTarget.dataset.entkey;
+      const ent = findEntryByEntKey(k);
+      if (ent) openFieldRankModal(ent);
+    });
+  });
+  
   applyStickyHeaders();
   refreshAllSticky();
   styleRankMiniSummary();
@@ -1508,7 +1535,8 @@ style.textContent = `
 
   /* アイコン右上のミニボタン */
   .icon-more.btn-xxs{ padding:0 .3rem; font-size:.70rem; line-height:1.1 }
-  .poke-icon.position-relative .icon-more{
+  .poke-icon.position-relative .icon-more,
+  .byfield-icon.position-relative .icon-more{
     position:absolute; top:-6px; right:-6px; z-index:2;
   }
 
