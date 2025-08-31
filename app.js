@@ -1677,6 +1677,13 @@ window.addEventListener('load',   () => { refreshAllSticky(); applyStickyHeaders
     menu.style.display = (menu.style.display === "block") ? "none" : "block";
   });
 
+  // 外側クリックで閉じる
+  document.addEventListener("click", (e)=>{
+    if (!menu.contains(e.target) && e.target !== btn) {
+      menu.style.display = "none";
+    }
+  });
+
 // === HowTo(つかいかた) ボトムシート：独立イニシャライザ ===
 (function () {
   // 必要なDOMが無ければ生成（本文もここで用意）
@@ -1789,13 +1796,6 @@ window.addEventListener('load',   () => { refreshAllSticky(); applyStickyHeaders
   }
 })();
   
-  // 外側クリックで閉じる
-  document.addEventListener("click", (e)=>{
-    if (!menu.contains(e.target) && e.target !== btn) {
-      menu.style.display = "none";
-    }
-  });
-
   // メニュークリック時に対象タブをアクティブ化
   document.querySelectorAll("#hamburgerMenu .hamburger-item").forEach(a=>{
     a.addEventListener("click", (e)=>{
