@@ -1677,45 +1677,68 @@ window.addEventListener('load',   () => { refreshAllSticky(); applyStickyHeaders
     menu.style.display = (menu.style.display === "block") ? "none" : "block";
   });
 
-// ハンバーガーメニュー + つかいかた（HowTo）初期化：安全版
-(function(){
-  // ==== ハンバーガー ====
-  const menuBtn = document.getElementById('tab-menu');
-  const menu    = document.getElementById('hamburgerMenu');
+// === HowTo(つかいかた) ボトムシート：独立イニシャライザ ===
+(function () {
+  // 必要なDOMが無ければ生成（本文もここで用意）
+  function ensureHowtoDOM() {
+    let backdrop = document.getElementById('howtoBackdrop');
+    let sheet    = document.getElementById('howtoSheet');
 
-  if (menuBtn && menu) {
-    menuBtn.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
-    });
+    if (!backdrop) {
+      backdrop = document.createElement('div');
+      backdrop.id = 'howtoBackdrop';
+      backdrop.className = 'howto-backdrop';
+      backdrop.hidden = true;
+      document.body.appendChild(backdrop);
+    }
+    if (!sheet) {
+      sheet = document.createElement('div');
+      sheet.id = 'howtoSheet';
+      sheet.className = 'howto-sheet';
+      sheet.hidden = true;
+      sheet.innerHTML = `
+        <div class="howto-sheet__header">
+          <div class="howto-sheet__title">つかいかた</div>
+          <button type="button" class="howto-sheet__close" aria-label="閉じる">×</button>
+        </div>
+        <div class="howto-sheet__body">
+          <p class="howto-sec howto-sec--title"><strong>「全寝顔一覧」：</strong></p>
+          <ul class="howto-list">
+            <li>＊このシートから取得チェック(ON/OFF)を切り替えられます。</li>
+          </ul>
 
-    document.addEventListener('click', (e)=>{
-      if (!menu.contains(e.target) && e.target !== menuBtn) {
-        menu.style.display = 'none';
-      }
-    });
+          <p class="howto-sec howto-sec--title"><strong>「フィールド別寝顔一覧」：</strong></p>
+          <ul class="howto-list">
+            <li>＊各フィールドで出現する寝顔の一覧を確認できます。</li>
+            <li>＊このシートからも取得チェック(ON/OFF)を切り替えられます。</li>
+          </ul>
 
-    document.querySelectorAll('#hamburgerMenu .hamburger-item').forEach(a=>{
-      a.addEventListener('click', (e)=>{
-        e.preventDefault();
-        const targetSel = a.getAttribute('href');
-        const triggerEl = document.querySelector(`[data-bs-target="${targetSel}"]`);
-        if (triggerEl) new bootstrap.Tab(triggerEl).show();
-        menu.style.display = 'none';
-      });
-    });
+          <p class="howto-sec howto-sec--title"><strong>「フィールド・ランクから検索」：</strong></p>
+          <ul class="howto-list">
+            <li>＊「フィールド・ランク」や「取得状況」などから検索ができます。</li>
+            <li>＊このシートからも取得チェック(ON/OFF)を切り替えられます。</li>
+            <li>＊未取得の寝顔数などを確認しつつ「今日はどの睡眠タイプを狙おうか」みたいな使い方もしてみてください！</li>
+          </ul>
+        </div>`;
+      document.body.appendChild(sheet);
+    }
+    return { backdrop, sheet };
   }
 
-  // ==== つかいかた（HowTo） ====
-  const initHowto = () => {
-    const btn      = document.getElementById('tab-howto');
-    const sheet    = document.getElementById('howtoSheet');
-    const backdrop = document.getElementById('howtoBackdrop');
-    if (!btn || !sheet || !backdrop) return false;
+  function initHowto() {
+    const btn = document.getElementById('tab-howto');
+    if (!btn) return false;
 
-    const closeMenuIfOpen = () => {
-      if (menu) menu.style.display = 'none';
-    };
+    // DOM必須要素を確保（無ければ作る）
+    const { backdrop, sheet } = ensureHowtoDOM();
+
+    // Bootstrapのタブ干渉を無効化（念のため除去）
+    btn.removeAttribute('data-bs-toggle');
+    btn.removeAttribute('data-bs-target');
+
+    // ハンバーガーが開いていたら閉じる（重なり回避）
+    const menu = document.getElementById('hamburgerMenu');
+    const closeMenuIfOpen = () => { if (menu) menu.style.display = 'none'; };
 
     const open = () => {
       closeMenuIfOpen();
@@ -1741,21 +1764,28 @@ window.addEventListener('load',   () => { refreshAllSticky(); applyStickyHeaders
       sheet.addEventListener('transitionend', onEnd);
     };
 
-    btn.addEventListener('click', (e)=>{
+    // ★ キャプチャ段階で先に拾い、Bootstrapのタブ処理より確実に先行
+    const onBtnClick = (e) => {
       e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
       (sheet.hidden || !sheet.classList.contains('show')) ? open() : close();
-    });
+    };
+    btn.addEventListener('click', onBtnClick, { capture: true });
+
     backdrop.addEventListener('click', close);
     sheet.querySelector('.howto-sheet__close')?.addEventListener('click', close);
-    document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && sheet.classList.contains('show')) close(); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && sheet.classList.contains('show')) close();
+    });
 
     return true;
-  };
+  }
 
-  // その場で試し、未挿入なら後段でもう一度
+  // その場で初期化。見つからなければロード完了後に再試行
   if (!initHowto()) {
-    document.addEventListener('DOMContentLoaded', initHowto, { once:true });
-    window.addEventListener('load', initHowto, { once:true });
+    document.addEventListener('DOMContentLoaded', initHowto, { once: true });
+    window.addEventListener('load', initHowto, { once: true });
   }
 })();
   
