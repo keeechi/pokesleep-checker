@@ -1024,10 +1024,6 @@ function renderFieldTables(state) {
       });
     });
   });
-  applyStickyHeaders();
-  refreshAllSticky();
-}
-
     // ▼ボタン（フィールド別）— モーダルを開く
     tbody.querySelectorAll('button.icon-more').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
@@ -1037,6 +1033,9 @@ function renderFieldTables(state) {
         if (ent) openFieldRankModal(ent);
       });
     });
+  applyStickyHeaders();
+  refreshAllSticky();
+}
 
 function ensureRankMiniSummaryContainer() {
   let el = document.getElementById('rankMiniSummary');
@@ -1347,15 +1346,15 @@ tbody.querySelectorAll('input.mark-obtained').forEach(chk=>{
   });
 });
 
-  // ▼ボタン（逆引き）— モーダルを開く
-  tbody.querySelectorAll('button.icon-more').forEach(btn=>{
-    btn.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      const k = e.currentTarget.dataset.entkey;
-      const ent = findEntryByEntKey(k);
-      if (ent) openFieldRankModal(ent);
+    // ▼ボタン（逆引き）— モーダルを開く
+    tbody.querySelectorAll('button.icon-more').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const k = e.currentTarget.dataset.entkey;
+        const ent = findEntryByEntKey(k);
+        if (ent) openFieldRankModal(ent);
+      });
     });
-  });
   
   applyStickyHeaders();
   refreshAllSticky();
