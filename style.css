@@ -528,7 +528,7 @@ thead.is-sticky { position: static !important; top: auto !important; }
 /* スマホ時：ポケモン名は固定 9pt（≈12px） */
 @media (max-width: 576px) {
   #pane-search .byfield-name-cell .pf-name {
-    font-size: 9pt !important;   /* pf-name-small(7pt) を上書き */
+    font-size: 6pt !important;   /* pf-name-small(7pt) を上書き */
     line-height: 1.2;
   }
 }
