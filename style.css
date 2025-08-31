@@ -42,44 +42,16 @@
   overflow: hidden;
 }
 
-/* 薄型タブ（スマホ） */
-@media (max-width: 768px){
-  #mainTabs.nav-tabs { gap: 4px; }
-  #mainTabs .nav-link {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 6px 8px;      /* ← 上下・左右の縮小ポイント */
-    font-size: .82rem;     /* 9.5～11px相当 */
-    line-height: 1; white-space: nowrap;
-  }
-  #mainTabs .nav-link .tab-ic {
-    width: 24px; height: 24px; flex: 0 0 auto;
-  }
-}
-/* もっと狭い端末は横スクロール */
-#mainTabsWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-#mainTabsWrap::-webkit-scrollbar { display: none; }
-
 /* ── アイコン＋2行ラベル ───────────────────────── */
-#mainTabs .nav-link.tab-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 6px 12px;
-  min-height: 65px;      /* 既存の押しやすさは維持 */
-  line-height: 1;
-  width: var(--tab-eq-width, auto);  /* ← JSで最大幅に合わせて等幅化 */
-}
-
+/* ※ タブ本体のパディング/サイズ指定は下部の PC/スマホ用メディアクエリに集約 */
 #mainTabs .tab-inner {
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 
+/* 画像要素の共通（寸法はメディアクエリ側で指定） */
 #mainTabs .tab-img {
-  width: 38px;
-  height: 38px;
   display: block;
   flex: 0 0 auto;
 }
@@ -99,12 +71,6 @@
 #mainTabs .tab-label .l3 {
   font-size: 10px;         /* 小さめ。後で自由に調整OK */
   font-weight: 600;        /* 視認性を少し上げる */
-}
-
-/* スマホ時は若干詰める（必要に応じて調整） */
-@media (max-width: 768px) {
-  #mainTabs .nav-link.tab-icon { gap: 6px; padding: 6px 8px; }
-  #mainTabs .tab-inner { gap: 6px; }
 }
 
 /* ==================== Summary Table Design ==================== */
@@ -362,35 +328,12 @@ thead.is-sticky { position: static !important; top:auto !important; }
 .floating-head table{ margin:0 !important; border-collapse:separate; border-spacing:0; background:#fff; }
 .floating-head thead th, .floating-head thead td{ background:#fff; background-clip:padding-box; white-space:nowrap; }
 
-/* アイコン画像そのものを 38px 四方に */
-#mainTabs .tab-img {
-  width: 38px;
-  height: 38px;
-  display: block;
-}
-
-/* アイコンタブのボタン：指で押しやすいヒットエリアに（常時） */
-#mainTabs .nav-link.tab-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 12px;   /* 38px + 6px*2 = 50px の縦ヒットエリア */
-  min-height: 65px;    /* 指標: 44px以上を確保 */
-  min-width: 50px;     /* 横も最低50px確保して押しやすく */
-  line-height: 1;
-}
-
-/* バックアップ（文字タブ）も高さを揃えて押しやすく */
+/* バックアップ（文字タブ）も高さを揃えて押しやすく） */
 #mainTabs .nav-link:not(.tab-icon) {
   padding: 6px 12px;
   min-height: 50px;
   white-space: nowrap;
 }
-
-/* 1行固定＆横スクロール（既存と同じ。未設定なら有効化） */
-#mainTabs { flex-wrap: nowrap !important; gap: 8px; }
-#mainTabsWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-#mainTabsWrap::-webkit-scrollbar { display: none; }
 
 /* ハンバーガーメニュー（常に最前面に重ねる） */
 #hamburgerMenu {
@@ -442,29 +385,6 @@ thead.is-sticky { position: static !important; top:auto !important; }
 }
 
 thead.is-sticky { position: static !important; top: auto !important; }
-
-#mainTabsWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-#mainTabsWrap::-webkit-scrollbar { display: none; }
-
-/* スマホでタブ1〜3を等分、タブ4は最小幅 */
-@media (max-width: 576px){
-  /* 等分（タブ1〜3） */
-  #mainTabs .nav-item {
-    flex: 1 1 0;     /* 等間隔に分配 */
-    min-width: 0;    /* はみ出し防止（重要） */
-  }
-  #mainTabs .nav-item .nav-link {
-    width: 100%;     /* li の幅いっぱいに広げる */
-  }
-
-  /* ハンバーガー（タブ4）は最小幅に */
-  #mainTabs .nav-item.nav-item--more {
-    flex: 0 0 auto;  /* 自分の中身ぶんだけの幅 */
-  }
-  #mainTabs .nav-item.nav-item--more .nav-link {
-    width: auto;     /* 等分拡張を解除 */
-  }
-}
 
 /* 逆引きシート上部のミニ表（#rankMiniSummary） */
 #rankMiniSummary {
@@ -625,7 +545,8 @@ thead.is-sticky { position: static !important; top: auto !important; }
   #mainTabs { gap: 8px; }
   #mainTabs .nav-link { padding: 6px 12px; }
   #mainTabs .nav-link.tab-icon { 
-    min-height: 65px; min-width: 50px;
+    min-height: 65px; 
+    min-width: 50px;
     width: var(--tab-eq-width, auto); /* 等幅はPCだけ */
   }
   #mainTabs .tab-img { width: 38px; height: 38px; }
@@ -646,6 +567,6 @@ thead.is-sticky { position: static !important; top: auto !important; }
     width: auto;              /* ← 等幅を解除 */
     gap: 6px;
   }
-  /* クラス名を .tab-img に統一 */
-  #mainTabs .tab-img { width: 24px; height: 24px; flex: 0 0 auto; }
+  /* 画像寸法は .tab-img に統一（旧 .tab-ic は廃止） */
+  #mainTabs .tab-img { width: 24px; height: 24px; }
 }
