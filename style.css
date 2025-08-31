@@ -235,11 +235,11 @@
   word-break: break-word; white-space: normal;
 }
 #pane-byfield .byfield-name-cell .pf-no {
-  font-size: 9px; color: #6c757d;
+  font-size: 6px; color: #6c757d;
 }
 #pane-byfield .byfield-name-cell .pf-name {
-  font-weight: 600; font-size: 6px;
-  max-width: calc(36px + 10px); /* はみ出し防止（必要に応じて微調整） */
+  font-weight: 600; font-size: 7px;
+  max-width: calc(36px + 10px);
   margin: 0 auto;
 }
 
@@ -286,8 +286,6 @@ td.toggle-cell:hover {
 /* ポケモンセル共通（既存 byfield と共有） */
 .byfield-name-cell .pf-wrap { display:flex; flex-direction:column; align-items:center; }
 .byfield-name-cell .byfield-icon svg { display:block; border:1px solid #bbb; border-radius:10px; overflow:hidden; }
-.byfield-name-cell .pf-no { font-size:9pt; line-height:1.1; }
-.byfield-name-cell .pf-name { font-size:9pt; line-height:1.2; word-break:break-word; white-space:normal; max-width:calc(36px + 8px); }
 
 /* ▼ ミニ表（逆引きシート上部） */
 #rankMiniSummary {
@@ -527,7 +525,7 @@ thead.is-sticky { position: static !important; top: auto !important; }
 
 /* 逆引き（フィールド・ランクから検索）のポケモン名は端末共通で 9pt に固定 */
 #pane-search .byfield-name-cell .pf-text .pf-name {
-  font-size: 9pt !important;
+  font-size: 7pt !important;
   line-height: 1.2;
 }
 
@@ -546,20 +544,25 @@ thead.is-sticky { position: static !important; top: auto !important; }
 
 .filter-bar .filter-item--sort { grid-column: 1 / -1; }
 
-/* ポケモン名は端末共通で 9pt に固定（全寝顔＋フィールド・ランク検索） */
+/* === Pokemon meta: Noは6pt / Nameは7pt（全タブ統一）=== */
+#pane-allfaces .pf-no,
+#pane-byfield  .pf-no,
+#pane-search   .pf-no {
+  font-size: 6pt !important;
+  line-height: 1.1;
+}
+
 #pane-allfaces .pf-name,
-#pane-search  .pf-name {
-  font-size: 9pt !important;
+#pane-byfield  .pf-name,
+#pane-search   .pf-name {
+  font-size: 7pt !important;
   line-height: 1.2;
+  font-weight: 600;
 }
 
-/* JSが <span class="poke-name"> を挿入しても親サイズをそのまま継承させる */
+/* markPokemonNameSpans() が作る .poke-name は親のサイズを継承させる */
 #pane-allfaces .pf-name .poke-name,
-#pane-search  .pf-name .poke-name {
+#pane-byfield  .pf-name .poke-name,
+#pane-search   .pf-name .poke-name {
   font-size: inherit !important;
-}
-
-/* フェイルセーフ：古いビルドで .pf-name が未適用でも 9pt にする（適用後は削除可） */
-#pane-allfaces .name-cell .fw-semibold {
-  font-size: 9pt !important;
 }
