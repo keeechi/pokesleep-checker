@@ -570,3 +570,87 @@ thead.is-sticky { position: static !important; top: auto !important; }
   /* 画像寸法は .tab-img に統一（旧 .tab-ic は廃止） */
   #mainTabs .tab-img { width: 24px; height: 24px; }
 }
+
+/* ===== HowTo（ボトムシート） ===== */
+.howto-backdrop[hidden],
+.howto-sheet[hidden] { display: none !important; }
+
+.howto-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.4);
+  z-index: 2147483642;
+  opacity: 0; transition: opacity .2s ease;
+}
+.howto-backdrop.show { opacity: 1; }
+
+.howto-sheet {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  z-index: 2147483643;
+  background: #fff;
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+  box-shadow: 0 -8px 24px rgba(0,0,0,.18);
+  transform: translateY(100%);
+  transition: transform .24s ease;
+  max-height: 75vh;         /* 画面の75%まで */
+  overflow: hidden;
+  contain: layout paint style;
+}
+.howto-sheet.show { transform: translateY(0); }
+
+.howto-sheet__handle{
+  width: 44px; height: 4px; border-radius: 999px;
+  background: #d5d5d5; margin: 8px auto 4px;
+}
+.howto-sheet__header{
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 6px 12px 2px;
+  border-bottom: 1px solid rgba(0,0,0,.06);
+}
+.howto-sheet__body{
+  padding: 10px 14px 16px;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.howto-list{ margin: 0 0 12px 1.1em; padding: 0; }
+.howto-list li{ margin: .25rem 0; }
+
+/* セクション見出しは本文より +2pt & 太字 */
+.howto-sec-title{
+  font-size: calc(1rem + 2pt);
+  line-height: 1.2;
+  margin: 10px 0 6px;
+  font-weight: 700;
+}
+
+/* 本文は少しだけコンパクト気味（全体に合わせる） */
+.howto-sheet__body{ font-size: .95rem; }
+
+/* 開いている間は背面スクロール抑止（iOS対策含む） */
+body.is-howto-open { overflow: hidden; }
+
+/* ===== つかいかたタブ（できるだけ狭く） ===== */
+#mainTabs .nav-link.nav-link--howto {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 6px 10px;              /* 既存タブより少し狭め */
+  min-height: 50px;               /* タップ領域は維持 */
+  line-height: 1;
+}
+@media (max-width: 768px){
+  #mainTabs .nav-link.nav-link--howto {
+    padding: 4px 6px;             /* スマホはさらに詰める */
+    min-height: 44px;
+  }
+}
+
+/* スマホの等分レイアウト時でも「つかいかた」「ハンバーガー」は最小幅に */
+@media (max-width: 576px){
+  #mainTabs .nav-item.nav-item--howto,
+  #mainTabs .nav-item.nav-item--more {
+    flex: 0 0 auto;
+  }
+  #mainTabs .nav-item.nav-item--howto .nav-link,
+  #mainTabs .nav-item.nav-item--more .nav-link {
+    width: auto;
+  }
+}
