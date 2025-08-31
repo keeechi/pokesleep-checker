@@ -1023,7 +1023,6 @@ function renderFieldTables(state) {
         renderRankSearch(state);
       });
     });
-  });
     // ▼ボタン（フィールド別）— モーダルを開く
     tbody.querySelectorAll('button.icon-more').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
@@ -1033,6 +1032,8 @@ function renderFieldTables(state) {
         if (ent) openFieldRankModal(ent);
       });
     });
+    
+  });
   applyStickyHeaders();
   refreshAllSticky();
 }
