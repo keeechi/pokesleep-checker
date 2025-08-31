@@ -450,45 +450,57 @@ window.addEventListener('resize',  _safeSchedule);
 document.getElementById('mainTabs')?.addEventListener('shown.bs.tab', _safeSchedule);
 
 // --- 依存ライブラリを動的読込（html-to-image UMD） ---
-// --------- マルチCDNローダ＆フォールバック ---------
+// --- 共通: iOS 判定 & ローダ ---
+const IS_IOS = /iP(ad|hone|od)/.test(navigator.userAgent);
+
 function loadScriptSequential(urls, timeoutMs = 10000) {
   return new Promise((resolve, reject) => {
     let i = 0, lastErr = null, timer = null;
     const tryNext = () => {
       if (timer) clearTimeout(timer);
-      if (i >= urls.length) return reject(lastErr || new Error('全てのCDNからの読み込みに失敗しました'));
-
+      if (i >= urls.length) return reject(lastErr || new Error('全CDN失敗'));
       const s = document.createElement('script');
-      s.src = urls[i++];
-      s.async = true;
-
-      const cleanup = () => {
-        s.onload = s.onerror = null;
-        if (timer) clearTimeout(timer);
-      };
-
+      s.src = urls[i++]; s.async = true;
+      const cleanup = () => { s.onload = s.onerror = null; if (timer) clearTimeout(timer); };
       s.onload = () => { cleanup(); resolve(); };
-      s.onerror = (e) => { cleanup(); lastErr = e || new Error('script load error'); tryNext(); };
-
-      // タイムアウトで次に回す
-      timer = setTimeout(() => {
-        s.onload = s.onerror = null;
-        tryNext();
-      }, timeoutMs);
-
+      s.onerror = (e) => { cleanup(); lastErr = e || new Error('script error'); tryNext(); };
+      timer = setTimeout(() => { s.onload = s.onerror = null; tryNext(); }, timeoutMs);
       document.head.appendChild(s);
     };
     tryNext();
   });
 }
 
-// html-to-image or dom-to-image-more のどちらかを必ず用意
+// 画像/フォントのロード待ち（未ロードでも進めてしまうと iOS で失敗しやすい）
+async function waitForAssets(node) {
+  const imgs = Array.from(node.querySelectorAll('img')).filter(img => !img.complete);
+  await Promise.all(imgs.map(img => new Promise(res => {
+    img.onload = img.onerror = () => res();
+  })));
+  if (document.fonts && document.fonts.ready) {
+    try { await document.fonts.ready; } catch {}
+  }
+}
+
+// html-to-image / dom-to-image-more / html2canvas を用意
 async function ensureCaptureLib() {
-  // 既にどちらか入っていればOK
+  // 既に読み込み済みならそのまま
   if (window.htmlToImage?.toPng) return 'html-to-image';
   if (window.domtoimage?.toPng)  return 'dom-to-image-more';
+  if (window.html2canvas)        return 'html2canvas';
 
-  // 1) html-to-image を複数CDNから順に試す
+  // iOS はまず html2canvas を優先（成功率が高い）
+  if (IS_IOS) {
+    try {
+      await loadScriptSequential([
+        'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
+        'https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js'
+      ]);
+      if (window.html2canvas) return 'html2canvas';
+    } catch (_) {}
+  }
+
+  // html-to-image
   try {
     await loadScriptSequential([
       'https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.min.js',
@@ -496,33 +508,79 @@ async function ensureCaptureLib() {
       'https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js'
     ]);
     if (window.htmlToImage?.toPng) return 'html-to-image';
-  } catch (_) {
-    // 次へ
-  }
+  } catch (_) {}
 
-  // 2) 代替：dom-to-image-more をCDNから
+  // dom-to-image-more
+  try {
+    await loadScriptSequential([
+      'https://cdn.jsdelivr.net/npm/dom-to-image-more@3.4.5/dist/dom-to-image-more.min.js',
+      'https://unpkg.com/dom-to-image-more@3.4.5/dist/dom-to-image-more.min.js'
+    ]);
+    if (window.domtoimage?.toPng) return 'dom-to-image-more';
+  } catch (_) {}
+
+  // 最後に html2canvas（iOS以外でも保険）
   await loadScriptSequential([
-    'https://cdn.jsdelivr.net/npm/dom-to-image-more@3.4.5/dist/dom-to-image-more.min.js',
-    'https://unpkg.com/dom-to-image-more@3.4.5/dist/dom-to-image-more.min.js'
+    'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
+    'https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js'
   ]);
-  if (window.domtoimage?.toPng) return 'dom-to-image-more';
+  if (window.html2canvas) return 'html2canvas';
 
-  throw new Error('キャプチャ用ライブラリの読み込みに失敗しました');
+  throw new Error('キャプチャ用ライブラリ読み込み失敗');
 }
 
-// 統一呼び出し：どちらのライブラリでもPNG化できるように
-async function captureNodeToPng(node, options) {
+// 統一キャプチャ（iOS では JPEG 推奨）
+async function captureNodeToDataUrl(node, { pixelRatio = 2, backgroundColor = '#ffffff' } = {}) {
+  // *iOS の既知バグ回避のため最優先で html2canvas を使う*
+  if (IS_IOS && window.html2canvas) {
+    const canvas = await window.html2canvas(node, {
+      backgroundColor,
+      scale: Math.min(2, window.devicePixelRatio || 1) * 1.5, // 無理しない縮尺
+      useCORS: true,                                           // CORS画像を可能なら読む
+      logging: false,
+      allowTaint: false
+    });
+    // JPEG（メモリ節約＆共有時に軽い）
+    return canvas.toDataURL('image/jpeg', 0.92);
+  }
+
+  // html-to-image
   if (window.htmlToImage?.toPng) {
-    return await window.htmlToImage.toPng(node, options);
+    return await window.htmlToImage.toPng(node, {
+      backgroundColor,
+      pixelRatio,
+      cacheBust: true,
+      style: { padding: '8px' }
+    });
   }
+
+  // dom-to-image-more
   if (window.domtoimage?.toPng) {
-    // dom-to-image-more は option名が近いのでそのまま使える
-    return await window.domtoimage.toPng(node, options);
+    return await window.domtoimage.toPng(node, {
+      bgcolor: backgroundColor,
+      quality: 1,
+      cacheBust: true,
+      style: { padding: '8px' },
+      useCORS: true
+    });
   }
-  throw new Error('キャプチャ用ライブラリが見つかりません');
+
+  // html2canvas（保険）
+  if (window.html2canvas) {
+    const canvas = await window.html2canvas(node, {
+      backgroundColor,
+      scale: Math.min(2, window.devicePixelRatio || 1) * 1.5,
+      useCORS: true,
+      logging: false,
+      allowTaint: false
+    });
+    return canvas.toDataURL('image/png');
+  }
+
+  throw new Error('キャプチャ用ライブラリ未検出');
 }
 
-// dataURL → Blob
+// dataURL → Blob / 共有（既存のままでOKなら再利用）
 function dataUrlToBlob(dataUrl) {
   const [meta, b64] = dataUrl.split(',');
   const mime = (meta.match(/data:(.*?);base64/) || [,'image/png'])[1];
@@ -531,68 +589,57 @@ function dataUrlToBlob(dataUrl) {
   for (let i=0;i<bin.length;i++) u8[i] = bin.charCodeAt(i);
   return new Blob([u8], { type: mime });
 }
-
-// 端末に合わせた保存/共有
-async function saveDataUrlSmart(dataUrl, filename = 'summary.png') {
+async function saveDataUrlSmart(dataUrl, filename = 'summary.jpg') {
   const blob = dataUrlToBlob(dataUrl);
-
-  // Web Share API (ファイル共有)
   if (navigator.canShare && typeof navigator.canShare === 'function') {
     try {
-      const file = new File([blob], filename, { type: 'image/png' });
-      if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'サマリー画像', text: 'ポケモンスリープ 寝顔サマリー' });
+      const file = new File([blob], filename, { type: blob.type });
+      if (navigator.canShare({ files:[file] })) {
+        await navigator.share({ files:[file], title: 'サマリー画像' });
         return;
       }
     } catch {}
   }
-
-  // a[download]（iOS Safari 以外）
   const a = document.createElement('a');
-  a.href = dataUrl;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-
-  // iOS Safari フォールバック：新規タブで開いて長押し保存
-  if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
+  a.href = dataUrl; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  if (IS_IOS) {
     const w = window.open();
-    if (w) w.document.write(`<img src="${dataUrl}" style="width:100%;height:auto" />`);
+    if (w) w.document.write(`<img src="${dataUrl}" style="width:100%;height:auto">`);
   }
 }
 
-// 画像化＆保存メイン
+// メイン：サマリーを画像化して保存/共有
 async function saveSummaryAsImage() {
-  // 1) ライブラリを必ず用意（CDNフォールバック込み）
-  const libName = await ensureCaptureLib();
+  // ライブラリ確保
+  const lib = await ensureCaptureLib();
 
-  // 2) キャプチャ対象
+  // 対象テーブル
   const table = document.querySelector('#summaryGrid .summary-table') 
              || document.querySelector('.summary-table');
   if (!table) throw new Error('サマリー表が見つかりません');
 
-  // 3) キャプチャ直前にボタンだけ非表示（写り込み防止）
+  // 画像やフォントが未ロードだと iOS で失敗しやすい
+  await waitForAssets(table);
+
+  // 保存ボタンを一時的に隠す（写り込み防止）
   const btn = document.getElementById('btnSaveSummaryImage');
   const oldVis = btn ? btn.style.visibility : '';
   if (btn) btn.style.visibility = 'hidden';
 
-  // 4) PNG化
+  // iOS は JPEG名、それ以外は PNG名
+  const filename = IS_IOS ? 'sleep_summary.jpg' : 'sleep_summary.png';
   const pixelRatio = Math.max(2, Math.min(3, window.devicePixelRatio || 1));
-  const dataUrl = await captureNodeToPng(table, {
+
+  const dataUrl = await captureNodeToDataUrl(table, {
     pixelRatio,
-    bgcolor: '#ffffff',              // dom-to-image-more 用
-    backgroundColor: '#ffffff',      // html-to-image 用
-    cacheBust: true,
-    style: { padding: '8px' }
+    backgroundColor: '#ffffff'
   });
 
   if (btn) btn.style.visibility = oldVis;
 
-  // 5) 端末に合わせて保存/共有
-  await saveDataUrlSmart(dataUrl, 'sleep_summary.png');
+  await saveDataUrlSmart(dataUrl, filename);
 }
-
 
 // ダークライ除外判定
 function isExcludedFromSummary(row) {
