@@ -1677,46 +1677,86 @@ window.addEventListener('load',   () => { refreshAllSticky(); applyStickyHeaders
     menu.style.display = (menu.style.display === "block") ? "none" : "block";
   });
 
-  // つかいかた（HowTo）ボトムシート開閉
+// ハンバーガーメニュー + つかいかた（HowTo）初期化：安全版
 (function(){
-  const btn = document.getElementById('tab-howto');
-  const sheet = document.getElementById('howtoSheet');
-  const backdrop = document.getElementById('howtoBackdrop');
-  if (!btn || !sheet || !backdrop) return;
+  // ==== ハンバーガー ====
+  const menuBtn = document.getElementById('tab-menu');
+  const menu    = document.getElementById('hamburgerMenu');
 
-  const open = () => {
-    backdrop.hidden = false;
-    sheet.hidden = false;
-    requestAnimationFrame(() => {
-      backdrop.classList.add('show');
-      sheet.classList.add('show');
-      document.body.classList.add('is-howto-open');
-      btn.setAttribute('aria-expanded', 'true');
+  if (menuBtn && menu) {
+    menuBtn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
     });
-  };
-  const close = () => {
-    sheet.classList.remove('show');
-    backdrop.classList.remove('show');
-    btn.setAttribute('aria-expanded', 'false');
-    const onEnd = () => {
-      sheet.hidden = true;
-      backdrop.hidden = true;
-      document.body.classList.remove('is-howto-open');
-      sheet.removeEventListener('transitionend', onEnd);
+
+    document.addEventListener('click', (e)=>{
+      if (!menu.contains(e.target) && e.target !== menuBtn) {
+        menu.style.display = 'none';
+      }
+    });
+
+    document.querySelectorAll('#hamburgerMenu .hamburger-item').forEach(a=>{
+      a.addEventListener('click', (e)=>{
+        e.preventDefault();
+        const targetSel = a.getAttribute('href');
+        const triggerEl = document.querySelector(`[data-bs-target="${targetSel}"]`);
+        if (triggerEl) new bootstrap.Tab(triggerEl).show();
+        menu.style.display = 'none';
+      });
+    });
+  }
+
+  // ==== つかいかた（HowTo） ====
+  const initHowto = () => {
+    const btn      = document.getElementById('tab-howto');
+    const sheet    = document.getElementById('howtoSheet');
+    const backdrop = document.getElementById('howtoBackdrop');
+    if (!btn || !sheet || !backdrop) return false;
+
+    const closeMenuIfOpen = () => {
+      if (menu) menu.style.display = 'none';
     };
-    sheet.addEventListener('transitionend', onEnd);
+
+    const open = () => {
+      closeMenuIfOpen();
+      backdrop.hidden = false;
+      sheet.hidden = false;
+      requestAnimationFrame(() => {
+        backdrop.classList.add('show');
+        sheet.classList.add('show');
+        document.body.classList.add('is-howto-open');
+        btn.setAttribute('aria-expanded', 'true');
+      });
+    };
+    const close = () => {
+      sheet.classList.remove('show');
+      backdrop.classList.remove('show');
+      btn.setAttribute('aria-expanded', 'false');
+      const onEnd = () => {
+        sheet.hidden = true;
+        backdrop.hidden = true;
+        document.body.classList.remove('is-howto-open');
+        sheet.removeEventListener('transitionend', onEnd);
+      };
+      sheet.addEventListener('transitionend', onEnd);
+    };
+
+    btn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      (sheet.hidden || !sheet.classList.contains('show')) ? open() : close();
+    });
+    backdrop.addEventListener('click', close);
+    sheet.querySelector('.howto-sheet__close')?.addEventListener('click', close);
+    document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && sheet.classList.contains('show')) close(); });
+
+    return true;
   };
 
-  btn.addEventListener('click', (e) => {
-    e.preventDefault();
-    if (sheet.hidden || !sheet.classList.contains('show')) open();
-    else close();
-  });
-  backdrop.addEventListener('click', close);
-  sheet.querySelector('.howto-sheet__close')?.addEventListener('click', close);
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && sheet.classList.contains('show')) close();
-  });
+  // その場で試し、未挿入なら後段でもう一度
+  if (!initHowto()) {
+    document.addEventListener('DOMContentLoaded', initHowto, { once:true });
+    window.addEventListener('load', initHowto, { once:true });
+  }
 })();
   
   // 外側クリックで閉じる
