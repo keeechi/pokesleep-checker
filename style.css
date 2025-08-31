@@ -545,3 +545,16 @@ thead.is-sticky { position: static !important; top: auto !important; }
 }
 
 .filter-bar .filter-item--sort { grid-column: 1 / -1; }
+
+/* ポケモン名は端末共通で 9pt に固定（rank検索 & 全寝顔） */
+#pane-search  .pf-name,
+#pane-allfaces .pf-name {
+  font-size: 9pt !important;
+  line-height: 1.2;
+}
+
+/* JSが最後にテキストを <span class="poke-name"> で包んでも親のサイズを継承させる */
+#pane-search  .pf-name .poke-name,
+#pane-allfaces .pf-name .poke-name {
+  font-size: inherit !important;
+}
