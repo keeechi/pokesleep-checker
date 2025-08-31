@@ -654,3 +654,36 @@ body.is-howto-open { overflow: hidden; }
     width: auto;
   }
 }
+
+.howto-backdrop{
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.35);
+  opacity: 0; transition: opacity .2s ease;
+  z-index: 2147483646; /* ハンバーガー直下 */
+}
+.howto-backdrop.show{ opacity: 1; }
+
+.howto-sheet{
+  position: fixed; left: 0; right: 0; bottom: 0;
+  background: #fff; border-radius: 16px 16px 0 0;
+  box-shadow: 0 -8px 24px rgba(0,0,0,.15);
+  transform: translate3d(0, 100%, 0);
+  transition: transform .25s ease-out;
+  max-height: 80vh; overflow: auto;
+  z-index: 2147483647;
+}
+.howto-sheet.show{ transform: translate3d(0, 0, 0); }
+
+.howto-sheet__header{
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 10px 14px; border-bottom: 1px solid rgba(0,0,0,.08);
+}
+.howto-sheet__title{ font-weight:700; }
+.howto-sheet__close{
+  appearance:none; border:0; background:transparent;
+  font-size: 20px; line-height:1; padding: 4px 8px; cursor: pointer;
+}
+.howto-sheet__body{ padding: 12px 14px 16px; }
+.howto-sec--title{ font-weight: 700; font-size: calc(1rem + 2pt); margin: 8px 0 6px; }
+.howto-list{ margin: 0 0 10px 1em; padding: 0; }
+.howto-list li{ margin: 0.25em 0; list-style: none; }
