@@ -1081,12 +1081,14 @@ function createSortSelect() {
   sel.id = 'searchSort';
   sel.className = 'form-select form-select-sm';
   sel.innerHTML = [
-    { v:'no-asc',   t:'No昇順' },
-    { v:'no-desc',  t:'No降順' },
-    { v:'name-asc', t:'名前昇順' },
-    { v:'name-desc',t:'名前降順' },
+    { v:'no-asc',     t:'No昇順' },
+    { v:'no-desc',    t:'No降順' },
+    { v:'name-asc',   t:'名前昇順' },
+    { v:'name-desc',  t:'名前降順' },
+    { v:'rank-asc',   t:'出現ランク昇順' },
+    { v:'rank-desc',  t:'出現ランク降順' },
   ].map(o => `<option value="${o.v}">${o.t}</option>`).join('');
-  sel.value = 'no-asc';  // 既定
+  sel.value = 'no-asc';
   return sel;
 }
 
@@ -1101,7 +1103,7 @@ function buildReverseFilterBar() {
 
   const typeSel   = createSleepTypeSelect();
   const statusSel = createStatusSelect();
-  const sortSel   = createSortSelect();   // ★ 追加
+  const sortSel   = createSortSelect();
 
   const makeGroup = (labelText, selectEl, extraClass = '') => {
     const wrap = document.createElement('div');
@@ -1126,6 +1128,10 @@ function buildReverseFilterBar() {
   bar.appendChild(makeGroup('睡眠タイプ', typeSel));
   bar.appendChild(makeGroup('入手状況',   statusSel));
 
+  const sortWrap = makeGroup('ソート', sortSel);
+  sortWrap.classList.add('filter-item--sort');
+  bar.appendChild(sortWrap);
+
   // 3行目（全幅）
   bar.appendChild(makeGroup('ソート',     sortSel, 'filter-item--sort'));
 
@@ -1138,9 +1144,10 @@ function buildReverseFilterBar() {
   statusSel.removeEventListener('change', _onStatusChange);
   statusSel.addEventListener('change', _onStatusChange);
 
-  sortSel.removeEventListener('change', _onSortChange);  // ★ 追加
-  sortSel.addEventListener('change', _onSortChange);     // ★ 追加
+  sortSel.removeEventListener('change', _onSortChange);
+  sortSel.addEventListener('change', _onSortChange);
 }
+
 function _onStatusChange(){ renderRankSearch(loadState()); }
 function _onSortChange(){ renderRankSearch(loadState()); }
 
