@@ -449,197 +449,6 @@ window.addEventListener('scroll',  _safeSchedule, { passive:true });
 window.addEventListener('resize',  _safeSchedule);
 document.getElementById('mainTabs')?.addEventListener('shown.bs.tab', _safeSchedule);
 
-// --- 依存ライブラリを動的読込（html-to-image UMD） ---
-// --- 共通: iOS 判定 & ローダ ---
-const IS_IOS = /iP(ad|hone|od)/.test(navigator.userAgent);
-
-function loadScriptSequential(urls, timeoutMs = 10000) {
-  return new Promise((resolve, reject) => {
-    let i = 0, lastErr = null, timer = null;
-    const tryNext = () => {
-      if (timer) clearTimeout(timer);
-      if (i >= urls.length) return reject(lastErr || new Error('全CDN失敗'));
-      const s = document.createElement('script');
-      s.src = urls[i++]; s.async = true;
-      const cleanup = () => { s.onload = s.onerror = null; if (timer) clearTimeout(timer); };
-      s.onload = () => { cleanup(); resolve(); };
-      s.onerror = (e) => { cleanup(); lastErr = e || new Error('script error'); tryNext(); };
-      timer = setTimeout(() => { s.onload = s.onerror = null; tryNext(); }, timeoutMs);
-      document.head.appendChild(s);
-    };
-    tryNext();
-  });
-}
-
-// 画像/フォントのロード待ち（未ロードでも進めてしまうと iOS で失敗しやすい）
-async function waitForAssets(node) {
-  const imgs = Array.from(node.querySelectorAll('img')).filter(img => !img.complete);
-  await Promise.all(imgs.map(img => new Promise(res => {
-    img.onload = img.onerror = () => res();
-  })));
-  if (document.fonts && document.fonts.ready) {
-    try { await document.fonts.ready; } catch {}
-  }
-}
-
-// html-to-image / dom-to-image-more / html2canvas を用意
-async function ensureCaptureLib() {
-  // 既に読み込み済みならそのまま
-  if (window.htmlToImage?.toPng) return 'html-to-image';
-  if (window.domtoimage?.toPng)  return 'dom-to-image-more';
-  if (window.html2canvas)        return 'html2canvas';
-
-  // iOS はまず html2canvas を優先（成功率が高い）
-  if (IS_IOS) {
-    try {
-      await loadScriptSequential([
-        'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
-        'https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js'
-      ]);
-      if (window.html2canvas) return 'html2canvas';
-    } catch (_) {}
-  }
-
-  // html-to-image
-  try {
-    await loadScriptSequential([
-      'https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.min.js',
-      'https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js',
-      'https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js'
-    ]);
-    if (window.htmlToImage?.toPng) return 'html-to-image';
-  } catch (_) {}
-
-  // dom-to-image-more
-  try {
-    await loadScriptSequential([
-      'https://cdn.jsdelivr.net/npm/dom-to-image-more@3.4.5/dist/dom-to-image-more.min.js',
-      'https://unpkg.com/dom-to-image-more@3.4.5/dist/dom-to-image-more.min.js'
-    ]);
-    if (window.domtoimage?.toPng) return 'dom-to-image-more';
-  } catch (_) {}
-
-  // 最後に html2canvas（iOS以外でも保険）
-  await loadScriptSequential([
-    'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
-    'https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js'
-  ]);
-  if (window.html2canvas) return 'html2canvas';
-
-  throw new Error('キャプチャ用ライブラリ読み込み失敗');
-}
-
-// 統一キャプチャ（iOS では JPEG 推奨）
-async function captureNodeToDataUrl(node, { pixelRatio = 2, backgroundColor = '#ffffff' } = {}) {
-  // *iOS の既知バグ回避のため最優先で html2canvas を使う*
-  if (IS_IOS && window.html2canvas) {
-    const canvas = await window.html2canvas(node, {
-      backgroundColor,
-      scale: Math.min(2, window.devicePixelRatio || 1) * 1.5, // 無理しない縮尺
-      useCORS: true,                                           // CORS画像を可能なら読む
-      logging: false,
-      allowTaint: false
-    });
-    // JPEG（メモリ節約＆共有時に軽い）
-    return canvas.toDataURL('image/jpeg', 0.92);
-  }
-
-  // html-to-image
-  if (window.htmlToImage?.toPng) {
-    return await window.htmlToImage.toPng(node, {
-      backgroundColor,
-      pixelRatio,
-      cacheBust: true,
-      style: { padding: '8px' }
-    });
-  }
-
-  // dom-to-image-more
-  if (window.domtoimage?.toPng) {
-    return await window.domtoimage.toPng(node, {
-      bgcolor: backgroundColor,
-      quality: 1,
-      cacheBust: true,
-      style: { padding: '8px' },
-      useCORS: true
-    });
-  }
-
-  // html2canvas（保険）
-  if (window.html2canvas) {
-    const canvas = await window.html2canvas(node, {
-      backgroundColor,
-      scale: Math.min(2, window.devicePixelRatio || 1) * 1.5,
-      useCORS: true,
-      logging: false,
-      allowTaint: false
-    });
-    return canvas.toDataURL('image/png');
-  }
-
-  throw new Error('キャプチャ用ライブラリ未検出');
-}
-
-// dataURL → Blob / 共有（既存のままでOKなら再利用）
-function dataUrlToBlob(dataUrl) {
-  const [meta, b64] = dataUrl.split(',');
-  const mime = (meta.match(/data:(.*?);base64/) || [,'image/png'])[1];
-  const bin = atob(b64);
-  const u8 = new Uint8Array(bin.length);
-  for (let i=0;i<bin.length;i++) u8[i] = bin.charCodeAt(i);
-  return new Blob([u8], { type: mime });
-}
-async function saveDataUrlSmart(dataUrl, filename = 'summary.jpg') {
-  const blob = dataUrlToBlob(dataUrl);
-  if (navigator.canShare && typeof navigator.canShare === 'function') {
-    try {
-      const file = new File([blob], filename, { type: blob.type });
-      if (navigator.canShare({ files:[file] })) {
-        await navigator.share({ files:[file], title: 'サマリー画像' });
-        return;
-      }
-    } catch {}
-  }
-  const a = document.createElement('a');
-  a.href = dataUrl; a.download = filename;
-  document.body.appendChild(a); a.click(); a.remove();
-  if (IS_IOS) {
-    const w = window.open();
-    if (w) w.document.write(`<img src="${dataUrl}" style="width:100%;height:auto">`);
-  }
-}
-
-// メイン：サマリーを画像化して保存/共有
-async function saveSummaryAsImage() {
-  // ライブラリ確保
-  const lib = await ensureCaptureLib();
-
-  // 対象テーブル
-  const table = document.querySelector('#summaryGrid .summary-table') 
-             || document.querySelector('.summary-table');
-  if (!table) throw new Error('サマリー表が見つかりません');
-
-  // 画像やフォントが未ロードだと iOS で失敗しやすい
-  await waitForAssets(table);
-
-  // 保存ボタンを一時的に隠す（写り込み防止）
-  const btn = document.getElementById('btnSaveSummaryImage');
-  const oldVis = btn ? btn.style.visibility : '';
-  if (btn) btn.style.visibility = 'hidden';
-
-  // iOS は JPEG名、それ以外は PNG名
-  const filename = IS_IOS ? 'sleep_summary.jpg' : 'sleep_summary.png';
-  const pixelRatio = Math.max(2, Math.min(3, window.devicePixelRatio || 1));
-
-  const dataUrl = await captureNodeToDataUrl(table, {
-    pixelRatio,
-    backgroundColor: '#ffffff'
-  });
-
-  if (btn) btn.style.visibility = oldVis;
-
-  await saveDataUrlSmart(dataUrl, filename);
-}
 
 // ダークライ除外判定
 function isExcludedFromSummary(row) {
@@ -852,27 +661,23 @@ function renderSummary(state) {
     return { num, denom, rate };
   };
 
-    const header = `
-      <table class="table table-sm align-middle mb-0 summary-table">
-        <thead class="table-light">
-          <tr>
-            <th class="summary-lefthead-col text-center align-middle">
-              <button type="button" id="btnSaveSummaryImage" class="a1-save-btn" title="この表を画像で保存">
-                画像で保存
-              </button>
-            </th>
-            <th class="text-center" style="width:80px;">全体</th>
-            ${FIELD_KEYS.map(f => {
-              const src = FIELD_HEAD_ICON[f];
-              const alt = FIELD_SHORT[f] || f;
-              return `
-                <th class="text-center" style="width:80px;">
-                  <img src="${src}" alt="${alt}" class="field-head-icon" loading="lazy" decoding="async">
-                </th>`;
-            }).join('')}
-          </tr>
-        </thead>
-        <tbody>
+  const header = `
+    <table class="table table-sm align-middle mb-0 summary-table">
+      <thead class="table-light">
+        <tr>
+          <th class="summary-lefthead-col"></th>
+<th class="text-center" style="width:80px;">全体</th>
+${FIELD_KEYS.map(f => {
+  const src = FIELD_HEAD_ICON[f];              // 画像パス取得
+  const alt = FIELD_SHORT[f] || f;             // 代替テキスト
+  return `
+    <th class="text-center" style="width:80px;">
+      <img src="${src}" alt="${alt}" class="field-head-icon" loading="lazy" decoding="async">
+    </th>`;
+}).join('')}
+        </tr>
+      </thead>
+      <tbody>
         ${SLEEP_TYPES.map(style => {
           const totalCell = (() => {
             const d = calcForAll(style);
@@ -908,16 +713,6 @@ function renderSummary(state) {
       </tbody>
     </table>`;
   root.innerHTML = header;
-  
-  // ボタン配線（多重登録防止に onclick で）
-  document.getElementById('btnSaveSummaryImage').onclick = async () => {
-    try {
-      await saveSummaryAsImage();
-    } catch (e) {
-      alert('画像の作成に失敗しました。時間をおいて再度お試しください。');
-      console.error(e);
-    }
-  };
 }
 
 // ===================== 全寝顔チェックシート =====================
