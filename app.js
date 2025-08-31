@@ -848,8 +848,8 @@ function renderAllFaces(state) {
               <button type="button" class="btn btn-light btn-xxs icon-more"
                   data-entkey="${key}" aria-label="出現フィールド">▼</button>
             </div>
-              <div class="mt-1" style="font-size:9px; line-height:1.2; word-break:break-word; white-space:normal;">
-                <div class="text-muted">${no}</div>
+              <div class="pf-text mt-1" style="line-height:1.2; word-break:break-word; white-space:normal;">
+                <div class="pf-no text-muted">${no}</div>
                 <div class="pf-name fw-semibold" style="max-width:${ICON_SIZE + 8}px; margin:0 auto;">${escapeHtml(name)}</div>
               </div>
           </div>
