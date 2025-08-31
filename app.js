@@ -1290,7 +1290,7 @@ items.sort((a,b) => primary(a,b) || tieBreaker(a,b));
             <div class="byfield-icon">${iconSvg}</div>
             <div class="pf-text">
               <div class="pf-no text-muted">${r.No}</div>
-              <div class="pf-name pf-name-small">${escapeHtml(r.Name)}</div>
+              <div class="pf-name">${escapeHtml(r.Name)}</div>
             </div>
           </div>
         </td>
