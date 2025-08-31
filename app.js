@@ -1073,6 +1073,23 @@ function createStatusSelect() {
   return sel;
 }
 
+function createSortSelect() {
+  let sel = document.getElementById('searchSort');
+  if (sel) return sel;
+
+  sel = document.createElement('select');
+  sel.id = 'searchSort';
+  sel.className = 'form-select form-select-sm';
+  sel.innerHTML = [
+    { v:'no-asc',   t:'No昇順' },
+    { v:'no-desc',  t:'No降順' },
+    { v:'name-asc', t:'名前昇順' },
+    { v:'name-desc',t:'名前降順' },
+  ].map(o => `<option value="${o.v}">${o.t}</option>`).join('');
+  sel.value = 'no-asc';  // 既定
+  return sel;
+}
+
 // 逆引きフィルターのDOMを「フィールド／ランク／睡眠タイプ」で再構成（行全体を置き換え）
 function buildReverseFilterBar() {
   const fieldSel = document.getElementById('searchField');
@@ -1084,10 +1101,12 @@ function buildReverseFilterBar() {
 
   const typeSel   = createSleepTypeSelect();
   const statusSel = createStatusSelect();
+  const sortSel   = createSortSelect();   // ★ 追加
 
-  const makeGroup = (labelText, selectEl) => {
+  const makeGroup = (labelText, selectEl, extraClass = '') => {
     const wrap = document.createElement('div');
     wrap.className = 'filter-item';
+    if (extraClass) wrap.classList.add(extraClass);
     const lab = document.createElement('label');
     lab.textContent = labelText;
     lab.htmlFor = selectEl.id;
@@ -1099,20 +1118,31 @@ function buildReverseFilterBar() {
 
   const bar = document.createElement('div');
   bar.className = 'filter-bar';
+  bar.id = 'rankSearchFilters';                // compact 用フック
+
+  // 1〜2行目（2×2）
   bar.appendChild(makeGroup('フィールド', fieldSel));
   bar.appendChild(makeGroup('ランク',     rankSel));
   bar.appendChild(makeGroup('睡眠タイプ', typeSel));
   bar.appendChild(makeGroup('入手状況',   statusSel));
 
+  // 3行目（全幅）
+  bar.appendChild(makeGroup('ソート',     sortSel, 'filter-item--sort'));
+
   row.replaceWith(bar);
 
+  // リスナー
   typeSel.removeEventListener('change', _onTypeChange);
   typeSel.addEventListener('change', _onTypeChange);
 
   statusSel.removeEventListener('change', _onStatusChange);
   statusSel.addEventListener('change', _onStatusChange);
+
+  sortSel.removeEventListener('change', _onSortChange);  // ★ 追加
+  sortSel.addEventListener('change', _onSortChange);     // ★ 追加
 }
 function _onStatusChange(){ renderRankSearch(loadState()); }
+function _onSortChange(){ renderRankSearch(loadState()); }
 
 // 睡眠タイプ変更時のハンドラ
 function _onTypeChange() {
@@ -1156,6 +1186,7 @@ function renderRankSearch(state) {
   const rank  = Math.max(1, Math.min(35, parseInt(document.getElementById('searchRank').value||'1',10)));
   const typeFilter   = (document.getElementById('searchType')?.value || '');
   const statusFilter = (document.getElementById('searchStatus')?.value || 'すべて');
+  const sortMode     = (document.getElementById('searchSort')?.value || 'no-asc');
   const tbody = document.querySelector('#rankSearchTable tbody');
 
   // ヘッダーに「入手済？」列を用意（HTMLそのままでも動くように）
@@ -1192,13 +1223,21 @@ function renderRankSearch(state) {
 
   items.push(row);
 }
-  items.sort((a,b)=>{
-    const c1 = a.No.localeCompare(b.No,'ja'); if (c1) return c1;
-    const iA = RARITIES.indexOf(a.DisplayRarity), iB = RARITIES.indexOf(b.DisplayRarity);
-    const c2 = (iA-iB); if (c2) return c2;
-    return a.Style.localeCompare(b.Style,'ja');
-  });
+const cmpNoAsc    = (a,b) => a.No.localeCompare(b.No, 'ja');
+const cmpNoDesc   = (a,b) => b.No.localeCompare(a.No, 'ja');
+const cmpNameAsc  = (a,b) => a.Name.localeCompare(b.Name, 'ja');
+const cmpNameDesc = (a,b) => b.Name.localeCompare(a.Name, 'ja');
+const tieBreaker  = (a,b) => {
+  const iA = RARITIES.indexOf(a.DisplayRarity), iB = RARITIES.indexOf(b.DisplayRarity);
+  if (iA !== iB) return iA - iB;  // ☆1→☆4→☆5
+  return (a.Style || '').localeCompare(b.Style || '', 'ja');
+};
+const primary = sortMode === 'no-desc'   ? cmpNoDesc
+              : sortMode === 'name-asc'  ? cmpNameAsc
+              : sortMode === 'name-desc' ? cmpNameDesc
+              :                            cmpNoAsc;
 
+items.sort((a,b) => primary(a,b) || tieBreaker(a,b));
 if (items.length === 0) {
   if (statusFilter === '未入手') {
     tbody.innerHTML = `
@@ -1636,36 +1675,6 @@ window.addEventListener('load',   () => { refreshAllSticky(); applyStickyHeaders
     });
   });
 })();
-
-/*
-// ── 3タブの幅を同一に揃える ─────────────────────
-function equalizeMainTabWidths() {
-  const ids = ['tab-allfaces','tab-byfield','tab-search'];
-  const els = ids.map(id => document.getElementById(id)).filter(Boolean);
-  if (!els.length) return;
-
-  // 一旦リセットして自然な幅を取得
-  document.documentElement.style.setProperty('--tab-eq-width', 'auto');
-
-  // レイアウト確定後に計測
-  requestAnimationFrame(() => {
-    const maxW = Math.max(...els.map(el => Math.ceil(el.getBoundingClientRect().width)));
-    document.documentElement.style.setProperty('--tab-eq-width', maxW + 'px');
-  });
-}
-*/
-
-// 初期化の最後に必ず呼ぶ（あなたの main() の最後でもOK）
-document.addEventListener('DOMContentLoaded', () => {
-  equalizeMainTabWidths();
-});
-
-// フォント/画像で幅が変わる可能性があるので保険
-window.addEventListener('load', equalizeMainTabWidths);
-window.addEventListener('resize', equalizeMainTabWidths);
-
-// タブ内の文言や表示状態が動的に変わる場合も更新
-document.getElementById('mainTabs')?.addEventListener('shown.bs.tab', equalizeMainTabWidths);
 
 function afterRenderRankSearch() {
   styleRankMiniSummary();
