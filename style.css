@@ -597,3 +597,14 @@ thead.is-sticky { position: static !important; top: auto !important; }
 #pane-search   .pf-name .poke-name {
   font-size: inherit !important;
 }
+
+/* フィールド別寝顔一覧のタブ（ワカクサ本島〜EX）を 0.85x に */
+#pane-byfield #fieldTabs.tabs-compact {
+  gap: 6px;                  /* ボタン間の間隔を少し詰める */
+}
+#pane-byfield #fieldTabs.tabs-compact .nav-link {
+  font-size: 0.85em;         /* 文字サイズを 0.85x */
+  padding: .25rem .5rem;     /* 余白もやや小さめに */
+  line-height: 1.1;
+  white-space: nowrap;       /* タブ内で折り返さない */
+}
