@@ -1388,6 +1388,7 @@ function compactListFilters() {
   const afb = document.getElementById('allfacesBulkBar');
   const bf  = document.getElementById('byfieldFilters');
   [af, afb, bf].forEach(el => el?.classList.add('filters-compact'));
+  document.getElementById('fieldTabs')?.classList.add('tabs-compact'); //フィールド別のタブ群も 0.85x 縮小用クラスを付与
 }
 
 function shrinkRankHelpText() {
