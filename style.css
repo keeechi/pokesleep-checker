@@ -508,6 +508,20 @@ thead.is-sticky { position: static !important; top: auto !important; }
   line-height: 1.2;
 }
 
+/* ── 逆引きシート：フィルター上下の余白 ───────────────── */
+#pane-search #rankSearchFilters {
+  margin-top: .5rem;     /* ミニ要約(#rankMiniSummary)との間 */
+  margin-bottom: .5rem;  /* 結果テーブルとの間 */
+}
+
+/* 画面が狭いときは少しだけ詰める */
+@media (max-width: 576px) {
+  #pane-search #rankSearchFilters {
+    margin-top: .375rem;
+    margin-bottom: .5rem;
+  }
+}
+
 /* 説明文用 */
 #rankHelpText {
   font-size: 0.9rem;
