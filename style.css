@@ -687,3 +687,15 @@ body.is-howto-open { overflow: hidden; }
 .howto-sec--title{ font-weight: 700; font-size: calc(1rem + 2pt); margin: 8px 0 6px; }
 .howto-list{ margin: 0 0 10px 1em; padding: 0; }
 .howto-list li{ margin: 0.25em 0; list-style: none; }
+
+/* HowTo のリストを“本当の箇条書き”にする */
+#howtoSheet .howto-list { 
+  list-style: disc;      /* 箇条書きの点を表示 */
+  list-style-position: outside; /* 2行目以降はテキスト頭にそろう */
+  margin: 0 0 12px 1.25em;
+  padding: 0;
+}
+#howtoSheet .howto-list li {
+  list-style: inherit !important; /* 以前の list-style:none を強制上書き */
+  margin: .25rem 0;
+}
