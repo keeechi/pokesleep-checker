@@ -699,29 +699,3 @@ body.is-howto-open { overflow: hidden; }
   list-style: inherit !important; /* 以前の list-style:none を強制上書き */
   margin: .25rem 0;
 }
-
-/* === Summary A1: 「画像で保存」ボタン === */
-.summary-table th.summary-lefthead-col {
-  width: 56px; min-width: 56px; /* 既存どおり */
-  padding: 4px 4px;
-  text-align: center;
-  vertical-align: middle;
-}
-
-.a1-save-btn {
-  display: inline-block;
-  width: 100%;
-  padding: 6px 4px;
-  font-size: 10px;           /* できるだけ小さく */
-  line-height: 1.1;
-  white-space: normal;
-  word-break: keep-all;
-  border: 1px solid rgba(0,0,0,.15);
-  border-radius: 6px;
-  background: #f8f9fa;
-  color: #333;
-  cursor: pointer;
-  user-select: none;
-}
-.a1-save-btn:hover { background: #f1f3f5; }
-.a1-save-btn:active { background: #e9ecef; }
