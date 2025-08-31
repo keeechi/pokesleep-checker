@@ -450,93 +450,149 @@ window.addEventListener('resize',  _safeSchedule);
 document.getElementById('mainTabs')?.addEventListener('shown.bs.tab', _safeSchedule);
 
 // --- 依存ライブラリを動的読込（html-to-image UMD） ---
-function ensureHtmlToImage() {
+// --------- マルチCDNローダ＆フォールバック ---------
+function loadScriptSequential(urls, timeoutMs = 10000) {
   return new Promise((resolve, reject) => {
-    if (window.htmlToImage && typeof window.htmlToImage.toPng === 'function') {
-      resolve(); return;
-    }
-    const s = document.createElement('script');
-    s.src = 'https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.min.js';
-    s.async = true;
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error('html-to-image の読み込みに失敗しました'));
-    document.head.appendChild(s);
+    let i = 0, lastErr = null, timer = null;
+    const tryNext = () => {
+      if (timer) clearTimeout(timer);
+      if (i >= urls.length) return reject(lastErr || new Error('全てのCDNからの読み込みに失敗しました'));
+
+      const s = document.createElement('script');
+      s.src = urls[i++];
+      s.async = true;
+
+      const cleanup = () => {
+        s.onload = s.onerror = null;
+        if (timer) clearTimeout(timer);
+      };
+
+      s.onload = () => { cleanup(); resolve(); };
+      s.onerror = (e) => { cleanup(); lastErr = e || new Error('script load error'); tryNext(); };
+
+      // タイムアウトで次に回す
+      timer = setTimeout(() => {
+        s.onload = s.onerror = null;
+        tryNext();
+      }, timeoutMs);
+
+      document.head.appendChild(s);
+    };
+    tryNext();
   });
 }
 
-// dataURL → Blob 変換（共有や File 作成用）
+// html-to-image or dom-to-image-more のどちらかを必ず用意
+async function ensureCaptureLib() {
+  // 既にどちらか入っていればOK
+  if (window.htmlToImage?.toPng) return 'html-to-image';
+  if (window.domtoimage?.toPng)  return 'dom-to-image-more';
+
+  // 1) html-to-image を複数CDNから順に試す
+  try {
+    await loadScriptSequential([
+      'https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.min.js',
+      'https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js'
+    ]);
+    if (window.htmlToImage?.toPng) return 'html-to-image';
+  } catch (_) {
+    // 次へ
+  }
+
+  // 2) 代替：dom-to-image-more をCDNから
+  await loadScriptSequential([
+    'https://cdn.jsdelivr.net/npm/dom-to-image-more@3.4.5/dist/dom-to-image-more.min.js',
+    'https://unpkg.com/dom-to-image-more@3.4.5/dist/dom-to-image-more.min.js'
+  ]);
+  if (window.domtoimage?.toPng) return 'dom-to-image-more';
+
+  throw new Error('キャプチャ用ライブラリの読み込みに失敗しました');
+}
+
+// 統一呼び出し：どちらのライブラリでもPNG化できるように
+async function captureNodeToPng(node, options) {
+  if (window.htmlToImage?.toPng) {
+    return await window.htmlToImage.toPng(node, options);
+  }
+  if (window.domtoimage?.toPng) {
+    // dom-to-image-more は option名が近いのでそのまま使える
+    return await window.domtoimage.toPng(node, options);
+  }
+  throw new Error('キャプチャ用ライブラリが見つかりません');
+}
+
+// dataURL → Blob
 function dataUrlToBlob(dataUrl) {
   const [meta, b64] = dataUrl.split(',');
   const mime = (meta.match(/data:(.*?);base64/) || [,'image/png'])[1];
   const bin = atob(b64);
-  const len = bin.length;
-  const u8 = new Uint8Array(len);
-  for (let i=0;i<len;i++) u8[i] = bin.charCodeAt(i);
+  const u8 = new Uint8Array(bin.length);
+  for (let i=0;i<bin.length;i++) u8[i] = bin.charCodeAt(i);
   return new Blob([u8], { type: mime });
 }
 
-// 端末に応じた保存/共有フロー
+// 端末に合わせた保存/共有
 async function saveDataUrlSmart(dataUrl, filename = 'summary.png') {
   const blob = dataUrlToBlob(dataUrl);
 
-  // 1) Web Share API（ファイル共有）対応なら最優先
+  // Web Share API (ファイル共有)
   if (navigator.canShare && typeof navigator.canShare === 'function') {
     try {
       const file = new File([blob], filename, { type: 'image/png' });
       if (navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: 'サマリー画像',
-          text: 'ポケモンスリープ 寝顔サマリー',
-        });
+        await navigator.share({ files: [file], title: 'サマリー画像', text: 'ポケモンスリープ 寝顔サマリー' });
         return;
       }
-    } catch (_) { /* フォールバックへ */ }
+    } catch {}
   }
 
-  // 2) download対応ブラウザ（Android Chrome 等）
+  // a[download]（iOS Safari 以外）
   const a = document.createElement('a');
   a.href = dataUrl;
-  a.download = filename;     // iOS Safari は無視
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   a.remove();
 
-  // 3) iOS Safari 等：新規タブで開いて「長押しで保存」
+  // iOS Safari フォールバック：新規タブで開いて長押し保存
   if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
     const w = window.open();
-    if (w) { w.document.write(`<img src="${dataUrl}" style="width:100%;height:auto">`); }
+    if (w) w.document.write(`<img src="${dataUrl}" style="width:100%;height:auto" />`);
   }
 }
 
-// サマリー表をPNG化して保存/共有
+// 画像化＆保存メイン
 async function saveSummaryAsImage() {
-  await ensureHtmlToImage();
+  // 1) ライブラリを必ず用意（CDNフォールバック込み）
+  const libName = await ensureCaptureLib();
 
-  // 対象ノード：サマリーの <table class="summary-table"> 全体
+  // 2) キャプチャ対象
   const table = document.querySelector('#summaryGrid .summary-table') 
              || document.querySelector('.summary-table');
   if (!table) throw new Error('サマリー表が見つかりません');
 
-  // 画像に「保存ボタン」を写し込まないため一時的に隠す
+  // 3) キャプチャ直前にボタンだけ非表示（写り込み防止）
   const btn = document.getElementById('btnSaveSummaryImage');
   const oldVis = btn ? btn.style.visibility : '';
   if (btn) btn.style.visibility = 'hidden';
 
-  // DPI/白背景などを指定（スマホでくっきり）
+  // 4) PNG化
   const pixelRatio = Math.max(2, Math.min(3, window.devicePixelRatio || 1));
-  const dataUrl = await window.htmlToImage.toPng(table, {
+  const dataUrl = await captureNodeToPng(table, {
     pixelRatio,
-    backgroundColor: '#ffffff',
-    // 「見切れ」防止（余白を少し確保）
-    style: { padding: '8px' },
-    cacheBust: true
+    bgcolor: '#ffffff',              // dom-to-image-more 用
+    backgroundColor: '#ffffff',      // html-to-image 用
+    cacheBust: true,
+    style: { padding: '8px' }
   });
 
   if (btn) btn.style.visibility = oldVis;
 
+  // 5) 端末に合わせて保存/共有
   await saveDataUrlSmart(dataUrl, 'sleep_summary.png');
 }
+
 
 // ダークライ除外判定
 function isExcludedFromSummary(row) {
