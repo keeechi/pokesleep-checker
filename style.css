@@ -608,3 +608,44 @@ thead.is-sticky { position: static !important; top: auto !important; }
   line-height: 1.1;
   white-space: nowrap;       /* タブ内で折り返さない */
 }
+
+/* ===== Tabs: base ===== */
+#mainTabs { flex-wrap: nowrap !important; }
+#mainTabsWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+#mainTabsWrap::-webkit-scrollbar { display: none; }
+
+#mainTabs .nav-link { 
+  display:inline-flex; align-items:center; gap:8px;
+  line-height:1; white-space:nowrap;
+}
+#mainTabs .nav-link.tab-icon { justify-content:center; }
+
+/* ===== ≥769px (PC/タブレット) ===== */
+@media (min-width: 769px){
+  #mainTabs { gap: 8px; }
+  #mainTabs .nav-link { padding: 6px 12px; }
+  #mainTabs .nav-link.tab-icon { 
+    min-height: 65px; min-width: 50px;
+    width: var(--tab-eq-width, auto); /* 等幅はPCだけ */
+  }
+  #mainTabs .tab-img { width: 38px; height: 38px; }
+}
+
+/* ===== ≤768px (スマホ・薄型) — これを“最後”に置く ===== */
+@media (max-width: 768px){
+  #mainTabs.nav-tabs { gap: 4px; }
+
+  #mainTabs .nav-link {
+    padding: 6px 8px;
+    font-size: .82rem;
+  }
+  #mainTabs .nav-link.tab-icon {
+    padding: 6px 8px;
+    min-height: 44px;         /* ← 65pxを上書き */
+    min-width: 44px;
+    width: auto;              /* ← 等幅を解除 */
+    gap: 6px;
+  }
+  /* クラス名を .tab-img に統一 */
+  #mainTabs .tab-img { width: 24px; height: 24px; flex: 0 0 auto; }
+}
