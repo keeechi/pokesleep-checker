@@ -966,73 +966,35 @@ function renderFieldTables(state) {
     return a.no.localeCompare(b.no, 'ja');
   });
 
-  FIELD_KEYS.forEach(field=>{
-    const tbody = document.querySelector(`#fieldTabsContent tbody[data-field="${field}"]`);
-    const rows = [];
-    for (const ent of baseEntries) {
-      const appearAny = ent.rows.some(r => getFieldRankNum(r, field));
-      if (!appearAny) continue;
+FIELD_KEYS.forEach(field=>{
+  const tbody = document.querySelector(`#fieldTabsContent tbody[data-field="${field}"]`);
+  // ... rows を組み立てる ...
+  tbody.innerHTML = rows.join('');
 
-      const key = entKey(ent); // ★ 形態ごとのキー
-
-      const cells = CHECKABLE_STARS.map(star=>{
-        const hasRow = ent.rows.find(r => r.DisplayRarity === star);
-        if (!hasRow) return `<td class="text-center cell-absent">—</td>`;
-        const rankNum = getFieldRankNum(hasRow, field);
-        if (!rankNum) return `<td class="text-center cell-disabled">ー</td>`;
-
-        const checked = getChecked(state, key, star); // ★ key で判定
-        return `
-          <td class="text-center toggle-cell ${checked ? 'cell-checked' : ''}"
-              data-key="${key}" data-star="${star}">
-            ${renderRankChip(rankNum)}
-          </td>`;
-      }).join('');
-
-      rows.push(`
-        <tr>
-          <td class="byfield-name-cell text-center align-middle">
-            <div class="pf-wrap">
-              <div class="byfield-icon position-relative">
-                ${renderPokemonIconById(ent.iconNo || getIconKeyFromNo(ent.no), ICON_SIZE_FIELD)}
-                <button type="button" class="btn btn-light btn-xxs icon-more"
-                        data-entkey="${key}" aria-label="出現フィールド">▼</button>
-              </div>
-              <div class="pf-text">
-                <div class="pf-no text-muted">${ent.no}</div>
-                <div class="pf-name">${escapeHtml(ent.name)}</div>
-              </div>
-            </div>
-          </td>
-          <td class="type-cell text-center">${firstStyleKey(ent) || '-'}</td>
-          ${cells}
-        </tr>`);
-    }
-    tbody.innerHTML = rows.join('');
-
-    // ★ セル全体クリックで ON/OFF（data-key を使用）
-    tbody.querySelectorAll('td.toggle-cell').forEach(td=>{
-      td.addEventListener('click', ()=>{
-        const key  = td.dataset.key;
-        const star = td.dataset.star;
-        const now  = getChecked(state, key, star);
-        setChecked(state, key, star, !now);
-        td.classList.toggle('cell-checked', !now);
-        syncOtherViews(key, star, !now);             // ← 他シートへ差分同期
-        renderSummary(state);
-        renderRankSearch(state);
-      });
+  // 1) セル全体クリック（既存）
+  tbody.querySelectorAll('td.toggle-cell').forEach(td=>{
+    td.addEventListener('click', ()=>{
+      const key  = td.dataset.key;
+      const star = td.dataset.star;
+      const now  = getChecked(state, key, star);
+      setChecked(state, key, star, !now);
+      td.classList.toggle('cell-checked', !now);
+      syncOtherViews(key, star, !now);
+      renderSummary(state);
+      renderRankSearch(state);
     });
   });
-    // ▼ボタン（フィールド別）— モーダルを開く
-    tbody.querySelectorAll('button.icon-more').forEach(btn=>{
-      btn.addEventListener('click', (e)=>{
-        e.stopPropagation();
-        const k = e.currentTarget.dataset.entkey;
-        const ent = findEntryByEntKey(k);
-        if (ent) openFieldRankModal(ent);
-      });
+
+  // 2) ▼ボタン（フィールド別）— モーダルを開く  ←←← ここ！ループの内側！
+  tbody.querySelectorAll('button.icon-more').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const k = e.currentTarget.dataset.entkey;
+      const ent = findEntryByEntKey(k);
+      if (ent) openFieldRankModal(ent);
     });
+  });
+}); // ← ここで forEach が閉じる
   applyStickyHeaders();
   refreshAllSticky();
 }
