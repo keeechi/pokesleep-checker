@@ -1120,7 +1120,7 @@ function buildReverseFilterBar() {
 
   const bar = document.createElement('div');
   bar.className = 'filter-bar';
-  bar.id = 'rankSearchFilters';                // compact 用フック
+  bar.id = 'rankSearchFilters'; // compact 用
 
   // 1〜2行目（2×2）
   bar.appendChild(makeGroup('フィールド', fieldSel));
@@ -1128,12 +1128,8 @@ function buildReverseFilterBar() {
   bar.appendChild(makeGroup('睡眠タイプ', typeSel));
   bar.appendChild(makeGroup('入手状況',   statusSel));
 
-  const sortWrap = makeGroup('ソート', sortSel);
-  sortWrap.classList.add('filter-item--sort');
-  bar.appendChild(sortWrap);
-
-  // 3行目（全幅）
-  bar.appendChild(makeGroup('ソート',     sortSel, 'filter-item--sort'));
+  // 3行目（全幅）— ※1回だけ append する！
+  bar.appendChild(makeGroup('ソート', sortSel, 'filter-item--sort'));
 
   row.replaceWith(bar);
 
@@ -1230,22 +1226,31 @@ function renderRankSearch(state) {
 
   items.push(row);
 }
+const rn = r => getFieldRankNum(r, field) ?? 999; // 念のためのフォールバック
+
 const cmpNoAsc    = (a,b) => a.No.localeCompare(b.No, 'ja');
 const cmpNoDesc   = (a,b) => b.No.localeCompare(a.No, 'ja');
 const cmpNameAsc  = (a,b) => a.Name.localeCompare(b.Name, 'ja');
 const cmpNameDesc = (a,b) => b.Name.localeCompare(a.Name, 'ja');
-const tieBreaker  = (a,b) => {
-  const iA = RARITIES.indexOf(a.DisplayRarity), iB = RARITIES.indexOf(b.DisplayRarity);
-  if (iA !== iB) return iA - iB;  // ☆1→☆4→☆5
-  return (a.Style || '').localeCompare(b.Style || '', 'ja');
-};
-const primary = sortMode === 'no-desc'   ? cmpNoDesc
-              : sortMode === 'name-asc'  ? cmpNameAsc
-              : sortMode === 'name-desc' ? cmpNameDesc
-              :                            cmpNoAsc;
+const cmpRankAsc  = (a,b) => rn(a) - rn(b);       // ★ 出現(必要)ランク
+const cmpRankDesc = (a,b) => rn(b) - rn(a);
+
+const tieBreaker  = (a,b) =>
+  cmpNoAsc(a,b) ||
+  cmpNameAsc(a,b) ||
+  (RARITIES.indexOf(a.DisplayRarity) - RARITIES.indexOf(b.DisplayRarity)) ||
+  (a.Style || '').localeCompare(b.Style || '', 'ja');
+
+const primary =
+  sortMode === 'no-desc'   ? cmpNoDesc   :
+  sortMode === 'name-asc'  ? cmpNameAsc  :
+  sortMode === 'name-desc' ? cmpNameDesc :
+  sortMode === 'rank-asc'  ? cmpRankAsc  :
+  sortMode === 'rank-desc' ? cmpRankDesc :
+                              cmpNoAsc;
 
 items.sort((a,b) => primary(a,b) || tieBreaker(a,b));
-if (items.length === 0) {
+  if (items.length === 0) {
   if (statusFilter === '未入手') {
     tbody.innerHTML = `
       <tr>
