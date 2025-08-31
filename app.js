@@ -1383,6 +1383,13 @@ function compactRankFilters() {
   if (el) el.classList.add('filters-compact');
 }
 
+function compactListFilters() {
+  const af  = document.getElementById('allfacesFilters');
+  const afb = document.getElementById('allfacesBulkBar');
+  const bf  = document.getElementById('byfieldFilters');
+  [af, afb, bf].forEach(el => el?.classList.add('filters-compact'));
+}
+
 function shrinkRankHelpText() {
   // 既に #rankHelpText が存在すれば何もしない
   let el = document.getElementById('rankHelpText');
@@ -1595,6 +1602,9 @@ async function main() {
     const mini = ensureRankMiniSummaryContainer();
     setupPaneSticky('pane-search', [mini]);
   }
+  
+  // ★ スマホ縮小用クラス（0.85x）を全寝顔/フィールド別にも付与
+  compactListFilters();
 
   // === [B] いったん計測 → thead の top を適用 ===
   refreshAllSticky();
