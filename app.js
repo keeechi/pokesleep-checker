@@ -1683,118 +1683,6 @@ window.addEventListener('load',   () => { refreshAllSticky(); applyStickyHeaders
       menu.style.display = "none";
     }
   });
-
-// === HowTo(つかいかた) ボトムシート：独立イニシャライザ ===
-(function () {
-  // 必要なDOMが無ければ生成（本文もここで用意）
-  function ensureHowtoDOM() {
-    let backdrop = document.getElementById('howtoBackdrop');
-    let sheet    = document.getElementById('howtoSheet');
-
-    if (!backdrop) {
-      backdrop = document.createElement('div');
-      backdrop.id = 'howtoBackdrop';
-      backdrop.className = 'howto-backdrop';
-      backdrop.hidden = true;
-      document.body.appendChild(backdrop);
-    }
-    if (!sheet) {
-      sheet = document.createElement('div');
-      sheet.id = 'howtoSheet';
-      sheet.className = 'howto-sheet';
-      sheet.hidden = true;
-      sheet.innerHTML = `
-        <div class="howto-sheet__header">
-          <div class="howto-sheet__title">つかいかた</div>
-          <button type="button" class="howto-sheet__close" aria-label="閉じる">×</button>
-        </div>
-        <div class="howto-sheet__body">
-          <p class="howto-sec howto-sec--title"><strong>「全寝顔一覧」：</strong></p>
-          <ul class="howto-list">
-            <li>＊このシートから取得チェック(ON/OFF)を切り替えられます。</li>
-          </ul>
-
-          <p class="howto-sec howto-sec--title"><strong>「フィールド別寝顔一覧」：</strong></p>
-          <ul class="howto-list">
-            <li>＊各フィールドで出現する寝顔の一覧を確認できます。</li>
-            <li>＊このシートからも取得チェック(ON/OFF)を切り替えられます。</li>
-          </ul>
-
-          <p class="howto-sec howto-sec--title"><strong>「フィールド・ランクから検索」：</strong></p>
-          <ul class="howto-list">
-            <li>＊「フィールド・ランク」や「取得状況」などから検索ができます。</li>
-            <li>＊このシートからも取得チェック(ON/OFF)を切り替えられます。</li>
-            <li>＊未取得の寝顔数などを確認しつつ「今日はどの睡眠タイプを狙おうか」みたいな使い方もしてみてください！</li>
-          </ul>
-        </div>`;
-      document.body.appendChild(sheet);
-    }
-    return { backdrop, sheet };
-  }
-
-  function initHowto() {
-    const btn = document.getElementById('tab-howto');
-    if (!btn) return false;
-
-    // DOM必須要素を確保（無ければ作る）
-    const { backdrop, sheet } = ensureHowtoDOM();
-
-    // Bootstrapのタブ干渉を無効化（念のため除去）
-    btn.removeAttribute('data-bs-toggle');
-    btn.removeAttribute('data-bs-target');
-
-    // ハンバーガーが開いていたら閉じる（重なり回避）
-    const menu = document.getElementById('hamburgerMenu');
-    const closeMenuIfOpen = () => { if (menu) menu.style.display = 'none'; };
-
-    const open = () => {
-      closeMenuIfOpen();
-      backdrop.hidden = false;
-      sheet.hidden = false;
-      requestAnimationFrame(() => {
-        backdrop.classList.add('show');
-        sheet.classList.add('show');
-        document.body.classList.add('is-howto-open');
-        btn.setAttribute('aria-expanded', 'true');
-      });
-    };
-    const close = () => {
-      sheet.classList.remove('show');
-      backdrop.classList.remove('show');
-      btn.setAttribute('aria-expanded', 'false');
-      const onEnd = () => {
-        sheet.hidden = true;
-        backdrop.hidden = true;
-        document.body.classList.remove('is-howto-open');
-        sheet.removeEventListener('transitionend', onEnd);
-      };
-      sheet.addEventListener('transitionend', onEnd);
-    };
-
-    // ★ キャプチャ段階で先に拾い、Bootstrapのタブ処理より確実に先行
-    const onBtnClick = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      (sheet.hidden || !sheet.classList.contains('show')) ? open() : close();
-    };
-    btn.addEventListener('click', onBtnClick, { capture: true });
-
-    backdrop.addEventListener('click', close);
-    sheet.querySelector('.howto-sheet__close')?.addEventListener('click', close);
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && sheet.classList.contains('show')) close();
-    });
-
-    return true;
-  }
-
-  // その場で初期化。見つからなければロード完了後に再試行
-  if (!initHowto()) {
-    document.addEventListener('DOMContentLoaded', initHowto, { once: true });
-    window.addEventListener('load', initHowto, { once: true });
-  }
-})();
   
   // メニュークリック時に対象タブをアクティブ化
   document.querySelectorAll("#hamburgerMenu .hamburger-item").forEach(a=>{
@@ -1817,3 +1705,109 @@ function afterRenderRankSearch() {
   shrinkRankHelpText();
   markPokemonNameSpans();
 }
+
+// ===== HowTo（つかいかた）ボトムシート：イベントデリゲーション版 =====
+(function () {
+  // 必要DOMを保証（無ければ生成）
+  function ensureHowtoDOM() {
+    let backdrop = document.getElementById('howtoBackdrop');
+    let sheet    = document.getElementById('howtoSheet');
+
+    if (!backdrop) {
+      backdrop = document.createElement('div');
+      backdrop.id = 'howtoBackdrop';
+      backdrop.className = 'howto-backdrop';
+      backdrop.hidden = true;
+      document.body.appendChild(backdrop);
+    }
+    if (!sheet) {
+      sheet = document.createElement('div');
+      sheet.id = 'howtoSheet';
+      sheet.className = 'howto-sheet';
+      sheet.hidden = true;
+      sheet.innerHTML = `
+        <div class="howto-sheet__header">
+          <div class="howto-sheet__title">つかいかた</div>
+          <button type="button" class="howto-sheet__close" aria-label="閉じる">×</button>
+        </div>
+        <div class="howto-sheet__body">
+          <p class="howto-sec--title"><strong>「全寝顔一覧」：</strong></p>
+          <ul class="howto-list">
+            <li>＊このシートから取得チェック(ON/OFF)を切り替えられます。</li>
+          </ul>
+          <p class="howto-sec--title"><strong>「フィールド別寝顔一覧」：</strong></p>
+          <ul class="howto-list">
+            <li>＊各フィールドで出現する寝顔の一覧を確認できます。</li>
+            <li>＊このシートからも取得チェック(ON/OFF)を切り替えられます。</li>
+          </ul>
+          <p class="howto-sec--title"><strong>「フィールド・ランクから検索」：</strong></p>
+          <ul class="howto-list">
+            <li>＊「フィールド・ランク」や「取得状況」などから検索ができます。</li>
+            <li>＊このシートからも取得チェック(ON/OFF)を切り替えられます。</li>
+            <li>＊未取得の寝顔数などを確認しつつ「今日はどの睡眠タイプを狙おうか」みたいな使い方もしてみてください！</li>
+          </ul>
+        </div>`;
+      document.body.appendChild(sheet);
+    }
+    return { backdrop, sheet };
+  }
+
+  const isOpen = () => document.body.classList.contains('is-howto-open');
+
+  function openHowto() {
+    const { backdrop, sheet } = ensureHowtoDOM();
+    // ハンバーガーが開いていたら閉じる
+    const menu = document.getElementById('hamburgerMenu');
+    if (menu) menu.style.display = 'none';
+
+    backdrop.hidden = false;
+    sheet.hidden = false;
+    requestAnimationFrame(() => {
+      backdrop.classList.add('show');
+      sheet.classList.add('show');
+      document.body.classList.add('is-howto-open');
+    });
+  }
+
+  function closeHowto() {
+    const backdrop = document.getElementById('howtoBackdrop');
+    const sheet    = document.getElementById('howtoSheet');
+    if (!backdrop || !sheet) return;
+    sheet.classList.remove('show');
+    backdrop.classList.remove('show');
+    const onEnd = () => {
+      sheet.hidden = true;
+      backdrop.hidden = true;
+      document.body.classList.remove('is-howto-open');
+      sheet.removeEventListener('transitionend', onEnd);
+    };
+    sheet.addEventListener('transitionend', onEnd);
+  }
+
+  // 1) 「つかいかた」タブのクリックを document で先取り（キャプチャ段階）
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('#tab-howto');
+    if (!btn) return;
+
+    // Bootstrapのタブ制御を確実に止める
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    // タブ属性が付いていたら無効化（以降のクリックでも干渉しないように）
+    btn.removeAttribute('data-bs-toggle');
+    btn.removeAttribute('data-bs-target');
+    btn.removeAttribute('href');
+
+    isOpen() ? closeHowto() : openHowto();
+  }, true); // ← capture:true が重要
+
+  // 2) バックドロップ/✕ボタン/Escape で閉じる（動的生成に備えて委譲）
+  document.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'howtoBackdrop') closeHowto();
+    if (e.target && e.target.closest('#howtoSheet .howto-sheet__close')) closeHowto();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isOpen()) closeHowto();
+  });
+})();
