@@ -1677,6 +1677,48 @@ window.addEventListener('load',   () => { refreshAllSticky(); applyStickyHeaders
     menu.style.display = (menu.style.display === "block") ? "none" : "block";
   });
 
+  // つかいかた（HowTo）ボトムシート開閉
+(function(){
+  const btn = document.getElementById('tab-howto');
+  const sheet = document.getElementById('howtoSheet');
+  const backdrop = document.getElementById('howtoBackdrop');
+  if (!btn || !sheet || !backdrop) return;
+
+  const open = () => {
+    backdrop.hidden = false;
+    sheet.hidden = false;
+    requestAnimationFrame(() => {
+      backdrop.classList.add('show');
+      sheet.classList.add('show');
+      document.body.classList.add('is-howto-open');
+      btn.setAttribute('aria-expanded', 'true');
+    });
+  };
+  const close = () => {
+    sheet.classList.remove('show');
+    backdrop.classList.remove('show');
+    btn.setAttribute('aria-expanded', 'false');
+    const onEnd = () => {
+      sheet.hidden = true;
+      backdrop.hidden = true;
+      document.body.classList.remove('is-howto-open');
+      sheet.removeEventListener('transitionend', onEnd);
+    };
+    sheet.addEventListener('transitionend', onEnd);
+  };
+
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (sheet.hidden || !sheet.classList.contains('show')) open();
+    else close();
+  });
+  backdrop.addEventListener('click', close);
+  sheet.querySelector('.howto-sheet__close')?.addEventListener('click', close);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && sheet.classList.contains('show')) close();
+  });
+})();
+  
   // 外側クリックで閉じる
   document.addEventListener("click", (e)=>{
     if (!menu.contains(e.target) && e.target !== btn) {
