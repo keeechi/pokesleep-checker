@@ -289,15 +289,6 @@ td.toggle-cell:hover {
 .byfield-name-cell .pf-no { font-size:9pt; line-height:1.1; }
 .byfield-name-cell .pf-name { font-size:9pt; line-height:1.2; word-break:break-word; white-space:normal; max-width:calc(36px + 8px); }
 
-/* ミニ表（未入手カウント） */
-/*
-.rank-mini-summary:empty { display: none; }
-.rank-mini-summary tr.row-uto  > th, .rank-mini-summary tr.row-uto  > td  { background-color: #fff5db !important; }
-.rank-mini-summary tr.row-suya > th, .rank-mini-summary tr.row-suya > td { background-color: #e9f4ff !important; }
-.rank-mini-summary tr.row-gu   > th, .rank-mini-summary tr.row-gu   > td { background-color: #ecebff !important; }
-.rank-mini-summary table thead th { vertical-align: middle; }
-*/
-
 /* ▼ ミニ表（逆引きシート上部） */
 #rankMiniSummary {
   --uto-bg:  #fff7cc; /* うとうと：淡い黄色 */
@@ -496,16 +487,20 @@ thead.is-sticky { position: static !important; top: auto !important; }
 }
 
 /* フィルターUI全体を少し小さく（親に .filters-compact を付ける） */
-.filters-compact,
-.filters-compact label,
-.filters-compact .form-label,
-.filters-compact select,
-.filters-compact .form-select,
-.filters-compact .btn,
-.filters-compact .form-check-label,
-.filters-compact input[type="checkbox"] + label {
-  font-size: 0.9rem;
-  line-height: 1.2;
+@media (max-width: 576px) {
+  #pane-search #rankSearchFilters.filters-compact,
+  #pane-search #rankSearchFilters.filters-compact label,
+  #pane-search #rankSearchFilters.filters-compact .form-label,
+  #pane-search #rankSearchFilters.filters-compact select,
+  #pane-search #rankSearchFilters.filters-compact .form-select,
+  #pane-search #rankSearchFilters.filters-compact .btn,
+  #pane-search #rankSearchFilters.filters-compact .form-check-label,
+  #pane-search #rankSearchFilters.filters-compact input[type="checkbox"] + label,
+  /* ネイティブプルダウン内の項目（Android/PCは効く。iOSは制約あり） */
+  #pane-search #rankSearchFilters.filters-compact option {
+    font-size: 0.85em;
+    line-height: 1.15;
+  }
 }
 
 /* ── 逆引きシート：フィルター上下の余白 ───────────────── */
@@ -519,6 +514,22 @@ thead.is-sticky { position: static !important; top: auto !important; }
   #pane-search #rankSearchFilters {
     margin-top: .375rem;
     margin-bottom: .5rem;
+  }
+}
+
+/* スマホ時：ヘッダーを自動で少し縮小、折り返しは発生させない */
+@media (max-width: 576px) {
+  #rankSearchTable thead th {
+    white-space: nowrap;                       /* 折り返し禁止 */
+    font-size: clamp(10px, 2.6vw, 12px);       /* 端末幅に応じて 10〜12px の範囲で自動調整 */
+  }
+}
+
+/* スマホ時：ポケモン名は固定 9pt（≈12px） */
+@media (max-width: 576px) {
+  #pane-search .byfield-name-cell .pf-name {
+    font-size: 9pt !important;   /* pf-name-small(7pt) を上書き */
+    line-height: 1.2;
   }
 }
 
