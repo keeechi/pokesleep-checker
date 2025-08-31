@@ -484,6 +484,37 @@ thead.is-sticky { position: static !important; top: auto !important; }
   font-weight: 700;
 }
 
+@media (max-width: 576px) {
+  /* === 全寝顔一覧 === */
+  #pane-allfaces #allfacesFilters.filters-compact,
+  #pane-allfaces #allfacesFilters.filters-compact label,
+  #pane-allfaces #allfacesFilters.filters-compact .form-label,
+  #pane-allfaces #allfacesFilters.filters-compact .form-control,
+  #pane-allfaces #allfacesFilters.filters-compact select,
+  #pane-allfaces #allfacesFilters.filters-compact .form-select,
+  #pane-allfaces #allfacesFilters.filters-compact option,
+  /* 一括ON/OFFバーもまとめて 0.85x */
+  #pane-allfaces #allfacesBulkBar.filters-compact,
+  #pane-allfaces #allfacesBulkBar.filters-compact .btn,
+  #pane-allfaces #allfacesBulkBar.filters-compact .small,
+  #pane-allfaces #allfacesBulkBar.filters-compact .form-text {
+    font-size: 0.85em;
+    line-height: 1.15;
+  }
+
+  /* === フィールド別一覧 === */
+  #pane-byfield #byfieldFilters.filters-compact,
+  #pane-byfield #byfieldFilters.filters-compact label,
+  #pane-byfield #byfieldFilters.filters-compact .form-label,
+  #pane-byfield #byfieldFilters.filters-compact .form-control,
+  #pane-byfield #byfieldFilters.filters-compact select,
+  #pane-byfield #byfieldFilters.filters-compact .form-select,
+  #pane-byfield #byfieldFilters.filters-compact option {
+    font-size: 0.85em;
+    line-height: 1.15;
+  }
+}
+
 /* フィルターUI全体を少し小さく（親に .filters-compact を付ける） */
 @media (max-width: 576px) {
   #pane-search #rankSearchFilters.filters-compact,
