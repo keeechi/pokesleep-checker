@@ -45,18 +45,6 @@ const BADGE_SILVER = 'assets/icons/05-SilverBadge.png';
 // サマリーから除外（ダークライ）
 const EXCLUDED_SPECIES_FOR_SUMMARY = new Set(['0491']); // 4桁ゼロ埋め No
 
-// ★ 追加：イベント限定（常にサマリー除外）— IDで判定
-const EXCLUDED_EVENT_IDS = new Set([
-  '1002505', // ピカチュウ(ハロウィン23, ☆1)
-  '1002506', // ピカチュウ(ハロウィン23, ☆2)
-  '1002507', // ピカチュウ(ハロウィン24, ☆1)
-  '1002508', // ピカチュウ(ハロウィン24, ☆2)
-  '1002509', // ピカチュウ(ホリデー, ☆1)
-  '1002510', // ピカチュウ(ホリデー, ☆2)
-  '1013305', // イーブイ(ホリデー, ☆1)
-  '1013306', // イーブイ(ホリデー, ☆2)
-]);
-
 // ===================== 小ユーティリティ =====================
 // 4桁ゼロ埋め（1000以上はそのまま）
 function normalizeNo(noRaw) {
@@ -462,18 +450,15 @@ window.addEventListener('resize',  _safeSchedule);
 document.getElementById('mainTabs')?.addEventListener('shown.bs.tab', _safeSchedule);
 
 
-// ★ ID/Noベースのサマリー除外判定
-// scope: 'field'…フィールド列（ダークライ除外） / 'all'…全体列（ダークライを含める）
+// ★ サマリーの除外判定
+// scope: 'field' … フィールド列（ダークライ除外）
+//        'all'   … 全体列（ダークライを含める）
 function isExcludedFromSummary(row, scope = 'field') {
-  // 1) イベント限定は常に除外（全列）
-  const id = String(row?.ID ?? '').trim();
-  if (EXCLUDED_EVENT_IDS.has(id)) return true;
-
-  // 2) ダークライ：フィールド列では除外、全体列では含める
+  // イベント限定は除外しない（= 常に集計に含める）
   const isDarkrai =
     EXCLUDED_SPECIES_FOR_SUMMARY.has(row.No) || /ダークライ/i.test(row.Name || '');
-  if (scope === 'all') return false;   // 全体は含める
-  return isDarkrai;                    // フィールド列は除外
+  if (scope === 'all') return false;   // 全体はダークライも含める
+  return isDarkrai;                    // フィールド列はダークライのみ除外
 }
 
 // ===================== 状態保存（★キーは IconNo 優先） =====================
