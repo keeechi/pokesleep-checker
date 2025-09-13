@@ -177,6 +177,20 @@ function styleRankMiniSummary() {
   });
 }
 
+// 種（形態）ごとの「コンプリート済」判定
+// ルール：CHECKABLE_STARS(☆1〜☆4)のうち、そのポケモンに存在する星がすべてチェック済みなら true
+function isEntryComplete(state, ent) {
+  const key = entKey(ent);
+  let hasAny = false;
+  for (const star of CHECKABLE_STARS) {
+    if (!speciesHasStar(ent, star)) continue; // その星が存在しない
+    hasAny = true;
+    if (!getChecked(state, key, star)) return false; // 未チェックが1つでもあれば未コンプ
+  }
+  // 対象星が1つも無い場合は「取得対象なし＝コンプ扱い」とする
+  return true;
+}
+
 // ==== 固定（sticky）ユーティリティ ====
 
 // タブ高をCSS変数へ
@@ -809,11 +823,24 @@ function renderAllFaces(state) {
   const filterStyle = document.getElementById('filterStyle').value;
   const sortBy = document.getElementById('sortBy').value;
 
+  // ▼ 追加：取得状況プルダウン
+  const filterGetStatus = (document.getElementById('allfacesGetStatus')?.value || 'すべて');
+
   const normQuery = normalizeJP(searchName);
 
   let entries = Array.from(SPECIES_MAP.values());
   if (normQuery) entries = entries.filter(ent => normalizeJP(ent.name).includes(normQuery));
   if (filterStyle) entries = entries.filter(ent => ent.rows.some(r => r.Style === filterStyle));
+
+  // ▼ 追加：取得状況フィルター適用
+  if (filterGetStatus !== 'すべて') {
+    entries = entries.filter(ent => {
+      const completed = isEntryComplete(state, ent);
+      if (filterGetStatus === 'コンプリート済') return completed;
+      if (filterGetStatus === '未取得あり')   return !completed;
+      return true;
+    });
+  }
 
   entries.sort((a,b)=>{
     if (sortBy === 'name-asc')  return a.name.localeCompare(b.name, 'ja');
@@ -876,6 +903,10 @@ function renderAllFaces(state) {
       syncOtherViews(key, star, e.target.checked);  // ← 他シートへ差分同期
       renderSummary(state);
       renderRankSearch(state);
+      // ▼ 追加：取得状況フィルター中なら全体を再描画して行の見え方を更新
+      if ((document.getElementById('allfacesGetStatus')?.value || 'すべて') !== 'すべて') {
+        renderAllFaces(loadState());
+      }
     });
   });
 
@@ -1660,6 +1691,7 @@ async function main() {
   document.getElementById('searchName').addEventListener('input', ()=>renderAllFaces(loadState()));
   document.getElementById('filterStyle').addEventListener('change', ()=>renderAllFaces(loadState()));
   document.getElementById('sortBy').addEventListener('change', ()=>renderAllFaces(loadState()));
+  document.getElementById('allfacesGetStatus')?.addEventListener('change', ()=>renderAllFaces(loadState()));
 
   // ▼ 一括ON/OFF（元のまま）
   document.getElementById('btnAllOn').addEventListener('click', ()=>{
@@ -1846,3 +1878,87 @@ function afterRenderRankSearch() {
     if (e.key === 'Escape' && isOpen()) closeHowto();
   });
 })();
+
+// ==== PWA Install Banner (deferred prompt) ====
+
+// バナー要素
+const pwaBanner     = document.getElementById('pwaBanner');
+const pwaInstallBtn = document.getElementById('pwaInstallBtn');
+const pwaCloseBtn   = document.getElementById('pwaCloseBtn');
+const pwaIosHint    = document.getElementById('pwaIosHint');
+
+let _deferredInstallEvt = null;
+const _LS_HIDE_KEY = 'pwa-banner-hidden';
+
+// 簡易UA判定（iOS Safari は beforeinstallprompt が来ない）
+const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isInStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+// バナー表示/非表示
+function showPwaBanner(){
+  if (!pwaBanner) return;
+  if (localStorage.getItem(_LS_HIDE_KEY) === '1') return; // ユーザーが閉じたら出さない
+
+  // iOS は「ホーム画面に追加」の案内だけ出す
+  if (isIos && !isInStandalone) {
+    pwaIosHint?.classList.remove('d-none');
+    pwaInstallBtn?.classList.add('d-none'); // iOSではボタン非表示（prompt不可）
+    pwaBanner.classList.remove('d-none');
+    return;
+  }
+
+  // Android/デスクトップ… beforeinstallprompt を受け取っている時のみ出す
+  if (_deferredInstallEvt && !isInStandalone) {
+    pwaIosHint?.classList.add('d-none');
+    pwaInstallBtn?.classList.remove('d-none');
+    pwaBanner.classList.remove('d-none');
+  }
+}
+function hidePwaBanner(){
+  pwaBanner?.classList.add('d-none');
+}
+
+// beforeinstallprompt: 標準バナーを止め、自前で制御
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();                 // ← この時点で標準バナーは出ない
+  _deferredInstallEvt = e;            // ← 後でボタンから呼ぶため保持
+  showPwaBanner();                    // 自前バナーを表示
+});
+
+// ボタン押下で prompt() を1回だけ呼ぶ（ユーザー操作必須）
+pwaInstallBtn?.addEventListener('click', async () => {
+  if (!_deferredInstallEvt) return;
+  pwaInstallBtn.disabled = true;
+  try {
+    _deferredInstallEvt.prompt();                         // ← ここが無いと今回の警告が出ます
+    const choice = await _deferredInstallEvt.userChoice;  // accepted / dismissed
+    // console.log('A2HS result:', choice.outcome);
+  } finally {
+    // promptは1回しか使えない → 解放しておく
+    _deferredInstallEvt = null;
+    pwaInstallBtn.disabled = false;
+    hidePwaBanner();
+  }
+});
+
+pwaCloseBtn?.addEventListener('click', () => {
+  localStorage.setItem(_LS_HIDE_KEY, '1'); // 次回以降出さない
+  hidePwaBanner();
+});
+
+// インストール完了時はバナーを閉じる
+window.addEventListener('appinstalled', () => {
+  localStorage.setItem(_LS_HIDE_KEY, '1');
+  hidePwaBanner();
+});
+
+// 初期表示タイミング（iOS用に、ページロード時にも評価）
+document.addEventListener('DOMContentLoaded', () => {
+  if (isIos && !isInStandalone) showPwaBanner();
+});
+
+// DOMContentLoaded 内などで一度だけ
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js', { scope: './' })
+    .catch(console.error);
+}
