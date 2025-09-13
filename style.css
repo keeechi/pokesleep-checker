@@ -699,3 +699,6 @@ body.is-howto-open { overflow: hidden; }
   list-style: inherit !important; /* 以前の list-style:none を強制上書き */
   margin: .25rem 0;
 }
+
+/* PWAバナーを見やすく（任意） */
+#pwaBanner { position: relative; }
