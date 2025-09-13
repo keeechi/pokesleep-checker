@@ -13,6 +13,11 @@
   <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
+  <link rel="manifest" href="./manifest.webmanifest?v=3">
+  <link rel="apple-touch-icon" href="./assets/icons/apple-touch-icon-180.png">
+  <link rel="icon" sizes="192x192" href="./assets/icons/app-icon-192.png">
+  <link rel="icon" sizes="512x512" href="./assets/icons/app-icon-512.png">
+
 <script src="assets/icons/pokemon_icons/pokemon_icons.js"></script>
 
 <!-- 既存 -->
@@ -36,6 +41,20 @@
   </header>
 
   <main class="container">
+    <div id="pwaBanner" class="alert alert-info d-none" role="status" style="margin-bottom:12px;">
+  <div class="d-flex flex-column flex-md-row align-items-md-center gap-2">
+    <div class="flex-grow-1">
+      このツールはホーム画面に追加してアプリのように使えます。
+      <span id="pwaIosHint" class="text-muted d-none">
+        iPhone/iPad は Safari の共有ボタン →「ホーム画面に追加」
+      </span>
+    </div>
+    <div class="d-flex gap-2">
+      <button id="pwaInstallBtn" class="btn btn-primary btn-sm">ホームに追加</button>
+      <button id="pwaCloseBtn" class="btn btn-outline-secondary btn-sm">閉じる</button>
+    </div>
+  </div>
+</div>
     <!-- Summary（タイトル行は削除） -->
     <section id="summary" class="mb-3">
       <div class="card">
@@ -156,6 +175,14 @@
                   <option value="name-desc">名前降順</option>
                 </select>
               </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label">取得状況</label>
+                <select id="allfacesGetStatus" class="form-select">
+                  <option value="すべて">すべて</option>
+                  <option value="コンプリート済">コンプリート済</option>
+                  <option value="未取得あり">未取得あり</option>
+                </select>
+            </div>
             </div>
 
             <!-- 全体一括ON/OFF（確認ダイアログは維持） -->
