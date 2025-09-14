@@ -1487,6 +1487,38 @@ function decodeTextToState(text) {
   }
 }
 
+// ---- クリップボード：書き込み（writeText が失敗したら textarea 経由にフォールバック）
+async function copyToClipboard(text, fallbackTextarea) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      if (fallbackTextarea) {
+        const prev = fallbackTextarea.value;
+        fallbackTextarea.value = text;
+        fallbackTextarea.select();
+        const ok = document.execCommand && document.execCommand('copy');
+        fallbackTextarea.value = prev;
+        fallbackTextarea.blur();
+        return !!ok;
+      }
+    } catch {}
+    return false;
+  }
+}
+
+// ---- クリップボード：読み取り（空や拒否なら空文字を返す）
+async function readClipboardSafe() {
+  try {
+    // iOS/Safari でも「ボタン押下中」なら許可ダイアログ後に取得できる
+    const txt = await navigator.clipboard.readText();
+    return (txt || '').trim();
+  } catch {
+    return '';
+  }
+}
+
 // ===================== バックアップ/復旧 =====================
 function downloadText(filename, text) {
   const blob = new Blob([text], {type:'application/json;charset=utf-8'});
@@ -1500,40 +1532,55 @@ function setupBackupUI() {
   const btnImportText = document.getElementById('btnImportText');
   const ta            = document.getElementById('backupText');
 
-  // バックアップ用テキストを作成（= 現在の状態をテキスト化してテキストエリアに表示）
-  btnExportText?.addEventListener('click', () => {
+  // バックアップ用テキストを作成 → 自動コピーまでやる
+  btnExportText?.addEventListener('click', async () => {
     const state = loadState();
     const text  = encodeStateToText(state);
-    ta.value = text;
+    ta.value = text;                 // 一応テキストエリアにも表示しておく
 
-    // UX: 自動選択してコピーしやすく
-    ta.focus();
-    ta.select();
-
-    // 軽い案内
-    // （alertだと操作が中断するので、必要なければ省略可）
-    // alert('バックアップ用テキストを作成しました。テキストをコピーして保存してください。');
+    // 自動コピー（クリップボードAPI → 失敗時は textarea 経由）
+    const ok = await copyToClipboard(text, ta);
+    if (ok) {
+      // 最短のフィードバック（alert は操作を止めるので控えめに）
+      console.log('バックアップをクリップボードにコピーしました。');
+      // 任意：バナーやトーストに置き換えてOK
+      alert('バックアップ用テキストを作成し、クリップボードにコピーしました。\nPWA側で「テキストから復旧」を押すだけで取り込めます。');
+    } else {
+      // コピーできなかったら選択状態にして手動コピーを促す
+      ta.focus(); ta.select();
+      alert('自動コピーに失敗しました。表示されたテキストを手動でコピーしてください。');
+    }
   });
 
-  // テキストから復旧（= テキストエリアの内容を解析して置き換え）
-  btnImportText?.addEventListener('click', () => {
+  // 復旧ボタン → まずはクリップボードを自動読取→ 復旧
+  btnImportText?.addEventListener('click', async () => {
     try {
-      const incoming = decodeTextToState(ta.value);
-      if (!incoming || typeof incoming !== 'object') throw new Error('データ形式が正しくありません。');
+      // 1) まずクリップボードを読む（ユーザーのクリック中なので許可されやすい）
+      let text = await readClipboardSafe();
 
-      // 置き換えのみ（マージは廃止）
+      // 2) 空だったらテキストエリアの内容を使う（旧動作のフォールバック）
+      if (!text) text = (ta.value || '').trim();
+
+      if (!text) {
+        alert('クリップボードやテキストエリアが空でした。\nSafari側で「バックアップ用テキストを作成」→コピーしてから、もう一度お試しください。');
+        return;
+      }
+
+      const incoming = decodeTextToState(text);
+      if (!incoming || typeof incoming !== 'object') throw new Error('format');
+
+      // 置き換え保存＆再描画
       localStorage.setItem(STORAGE_KEY, JSON.stringify(incoming));
-
-      // 画面を再描画
       const state = loadState();
       renderAllFaces(state);
       renderFieldTables(state);
       renderSummary(state);
       renderRankSearch(state);
 
-      alert('復旧しました。');
+      alert('復旧しました！（クリップボード／テキスト）');
     } catch (e) {
-      alert('復旧に失敗しました。テキストが正しいかご確認ください。');
+      console.error(e);
+      alert('復旧に失敗しました。テキストが正しいか、再度お試しください。');
     }
   });
 }
