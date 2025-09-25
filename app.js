@@ -279,7 +279,9 @@ function buildAmberMiniTable(state){
     return `<tr><th class="text-start">${rowLabel}</th>${tds}</tr>`;
   }).join('');
 
+  
   return `
+  <h6 class="fw-bold mb-2">未取得の寝顔の数</h6>
     <div class="table-responsive mini-grid">
       <table class="table table-sm align-middle">
         ${thead}
