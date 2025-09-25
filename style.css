@@ -738,6 +738,8 @@ body.is-howto-open { overflow: hidden; }
 }
 #amberPopup .goal-badge::before{ content:"🎉"; }
 
+<h6 class="fw-bold mb-2">未取得の寝顔の数</h6>
+
 #amberPopup .mini-grid .table{
   font-size: .9rem;
 }
