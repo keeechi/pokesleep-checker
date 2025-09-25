@@ -1,10 +1,16 @@
 // ===================== 設定 =====================
 const DATA_URL = './pokemon_data_cleaned.json';
+
 const STORAGE_KEY = 'psleep-check-v1';
+
 const FIELD_KEYS = [
   'ワカクサ本島', 'シアンの砂浜', 'トープ洞窟', 'ウノハナ雪原',
   'ラピスラズリ湖畔', 'ゴールド旧発電所', 'ワカクサ本島EX'
 ];
+
+// === Amber渓谷（特設ポップアップ） ===
+const AMBER_GOAL = 450; // 目標寝顔数
+
 const FIELD_SHORT = {
   'ワカクサ本島': 'ワカクサ',
   'シアンの砂浜': 'シアン',
@@ -189,6 +195,148 @@ function isEntryComplete(state, ent) {
   }
   // 対象星が1つも無い場合は「取得対象なし＝コンプ扱い」とする
   return true;
+}
+
+// ===================== Amber 渓谷：特設CTA & ポップアップ =====================
+
+// CTAをサマリー直下・メインタブの直前に挿入
+function ensureAmberCTA(){
+  if (document.getElementById('amberCtaContainer')) return;
+  const summary = document.getElementById('summary');
+  const mainTabsWrap = document.getElementById('mainTabsWrap');
+  if (!summary || !mainTabsWrap) return;
+
+  const box = document.createElement('div');
+  box.id = 'amberCtaContainer';
+  box.innerHTML = `
+    <a id="amberCtaLink" class="link-primary" href="#">
+      11/6(木)よりアンバー渓谷が開放！<br>寝顔の取得数をチェックする
+    </a>
+  `;
+  summary.insertAdjacentElement('afterend', box);
+
+  box.querySelector('#amberCtaLink').addEventListener('click', (e)=>{
+    e.preventDefault();
+    openAmberPopup(loadState());
+  });
+}
+
+// 現在の寝顔「取得済み」総数（☆1〜☆4のみ）
+function countObtainedFaces(state){
+  let n = 0;
+  for (const row of RAW_ROWS){
+    const star = row.DisplayRarity;
+    if (!CHECKABLE_STARS.includes(star)) continue;
+    if (getChecked(state, rowKey(row), star)) n++;
+  }
+  return n;
+}
+
+// Amber用ミニ表データ：行レンジ定義
+const _AMBER_ROWS = [
+  { labelStage:'ノーマル', label:'1~5',    from:1,  to:5   },
+  { labelStage:'スーパー', label:'1~5',    from:6,  to:10  },
+  { labelStage:'ハイパー', label:'1~5',    from:11, to:15  },
+  { labelStage:'マスター', label:'1~10',   from:16, to:25  },
+  { labelStage:'マスター', label:'11~20',  from:26, to:35  },
+];
+
+// Amber用ミニ表のHTMLを構築（各フィールドの“未取得数”を集計）
+// Amber用ミニ表のHTMLを構築（各フィールドの“未取得数”を集計）
+function buildAmberMiniTable(state){
+  // 見出しを1文字（最後だけ改行入り）に
+  const AMBER_COL_ABBR = ['島', '浜', '洞', '雪', '湖', '電', '島<br>EX'];
+
+  // テーブルヘッダ（A1は空欄にする）
+  const thead = `
+    <thead class="table-light">
+      <tr>
+        <th style="min-width:88px;"></th>
+        ${AMBER_COL_ABBR.map(t => `<th class="text-center">${t}</th>`).join('')}
+      </tr>
+    </thead>`;
+
+  // 各レンジ行
+  const bodyRows = _AMBER_ROWS.map(rg => {
+    // 行ラベル（◓は1個だけ。ラベル文字列は数値レンジのみ）
+    const rowLabel = `
+      <span class="rank-chip--rowlabel" data-stage="${rg.labelStage}">
+        <span class="ball">◓</span><span>${rg.label}</span>
+      </span>`;
+
+    const tds = FIELD_KEYS.map(field => {
+      let notObtained = 0;
+      for (const row of RAW_ROWS){
+        const star = row.DisplayRarity;
+        if (!CHECKABLE_STARS.includes(star)) continue;
+        const rn = getFieldRankNum(row, field);
+        if (!rn || rn < rg.from || rn > rg.to) continue;
+        if (!getChecked(state, rowKey(row), star)) notObtained++;
+      }
+      return `<td class="text-center fw-semibold">${notObtained}</td>`;
+    }).join('');
+
+    return `<tr><th class="text-start">${rowLabel}</th>${tds}</tr>`;
+  }).join('');
+
+  return `
+    <div class="table-responsive mini-grid">
+      <table class="table table-sm align-middle">
+        ${thead}
+        <tbody>${bodyRows}</tbody>
+      </table>
+    </div>`;
+}
+
+// モーダルDOMを一度だけ用意（Bootstrap）
+let _amberModalEl = null, _amberModal = null;
+function ensureAmberModal(){
+  if (_amberModalEl) return { el:_amberModalEl, modal:_amberModal };
+  const el = document.createElement('div');
+  el.className = 'modal fade';
+  el.id = 'amberPopup';
+  el.tabIndex = -1;
+  el.innerHTML = `
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header py-2">
+          <h5 class="modal-title">アンバー渓谷 開放チェック</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
+        </div>
+        <div class="modal-body">
+          <div class="amber-head">
+            <span class="amber-target-badge">目標 <strong>${AMBER_GOAL}</strong></span>
+            <span id="amberGoalBadge" class="goal-badge d-none">目標達成！</span>
+          </div>
+          <div id="amberCounter" class="amber-counter">— / ${AMBER_GOAL}</div>
+          <div id="amberMiniTable"><!-- mini table --></div>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(el);
+  _amberModalEl = el;
+  _amberModal = new bootstrap.Modal(el, { backdrop:true, keyboard:true });
+  return { el:_amberModalEl, modal:_amberModal };
+}
+
+// モーダルの中身を最新stateで更新
+function updateAmberPopup(state){
+  const { el } = ensureAmberModal();
+  const got = countObtainedFaces(state);
+  const counter = el.querySelector('#amberCounter');
+  const badge   = el.querySelector('#amberGoalBadge');
+  if (counter) counter.textContent = `${got} / ${AMBER_GOAL}`;
+  if (badge)   badge.classList.toggle('d-none', !(got >= AMBER_GOAL));
+
+  const miniWrap = el.querySelector('#amberMiniTable');
+  if (miniWrap) miniWrap.innerHTML = buildAmberMiniTable(state);
+}
+
+// 開く
+function openAmberPopup(state){
+  const { modal } = ensureAmberModal();
+  updateAmberPopup(state);
+  modal.show();
 }
 
 // ==== 固定（sticky）ユーティリティ ====
@@ -903,6 +1051,7 @@ function renderAllFaces(state) {
       syncOtherViews(key, star, e.target.checked);  // ← 他シートへ差分同期
       renderSummary(state);
       renderRankSearch(state);
+      updateAmberPopup(state);
       // ▼ 追加：取得状況フィルター中なら全体を再描画して行の見え方を更新
       if ((document.getElementById('allfacesGetStatus')?.value || 'すべて') !== 'すべて') {
         renderAllFaces(loadState());
@@ -925,6 +1074,7 @@ function renderAllFaces(state) {
       });
       renderSummary(state);
       renderRankSearch(state);
+      updateAmberPopup(state);
     });
   });
     // ▼ボタン：出現フィールド・ランクのミニ表（モーダル）
@@ -1059,6 +1209,7 @@ function renderFieldTables(state) {
         syncOtherViews(key, star, !now);             // ← 他シートへ差分同期
         renderSummary(state);
         renderRankSearch(state);
+        updateAmberPopup(state);
       });
     });
     // ▼ボタン（フィールド別）— モーダルを開く
@@ -1370,6 +1521,7 @@ tbody.querySelectorAll('input.mark-obtained').forEach(chk=>{
     setChecked(s, key, star, on);
     syncOtherViews(key, star, on);
     renderSummary(s);
+    updateAmberPopup(s);
 
     // ミニ要約だけは更新する（行は消さない＝仕様どおり）
     const fieldNow  = document.getElementById('searchField').value || FIELD_KEYS[0];
@@ -1576,6 +1728,7 @@ function setupBackupUI() {
       renderFieldTables(state);
       renderSummary(state);
       renderRankSearch(state);
+      updateAmberPopup(state);
 
       alert('復旧しました！（クリップボード／テキスト）');
     } catch (e) {
@@ -1730,6 +1883,8 @@ async function main() {
   renderAllFaces(state);
   renderFieldTables(state);
   renderRankSearch(state);
+  updateAmberPopup(state);
+  ensureAmberCTA();
 
   // 描画により高さが変わったので、もう一度上書き
   applyStickyHeaders();
@@ -1758,7 +1913,11 @@ async function main() {
       const key = entKey(ent);
       CHECKABLE_STARS.forEach(star=>{ if (speciesHasStar(ent, star)) setChecked(state, key, star, false); });
     }
-    renderAllFaces(state); renderFieldTables(state); renderSummary(state); renderRankSearch(state);
+    renderAllFaces(state);
+    renderFieldTables(state);
+    renderSummary(state);
+    renderRankSearch(state);
+    updateAmberPopup(state);
     applyStickyHeaders();
   });
 
