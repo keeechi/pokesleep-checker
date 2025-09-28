@@ -10,6 +10,7 @@ const FIELD_KEYS = [
 
 // === Amber渓谷（特設ポップアップ） ===
 const AMBER_GOAL = 450; // 目標寝顔数
+const AMBER_HIDE_ZERO = true; // 下段の(0)は非表示にする
 
 const FIELD_SHORT = {
   'ワカクサ本島': 'ワカクサ',
@@ -241,8 +242,7 @@ const _AMBER_ROWS = [
   { labelStage:'マスター', label:'11~20',  from:26, to:35  },
 ];
 
-// Amber用ミニ表のHTMLを構築（各フィールドの“未取得数”を集計）
-// Amber用ミニ表のHTMLを構築（各フィールドの“未取得数”を集計）
+// Amber用ミニ表のHTMLを構築（各フィールドの“未取得数”＋“限定かつ未取得”を集計）
 function buildAmberMiniTable(state){
   // 見出しを1文字（最後だけ改行入り）に
   const AMBER_COL_ABBR = ['島', '浜', '洞', '雪', '湖', '電', '島<br>EX'];
@@ -264,24 +264,51 @@ function buildAmberMiniTable(state){
         <span class="ball">◓</span><span>${rg.label}</span>
       </span>`;
 
+    // ★ ここを必ず閉じる（}).join('') を忘れない
     const tds = FIELD_KEYS.map(field => {
       let notObtained = 0;
+      let limitedNotObtained = 0;
+
       for (const row of RAW_ROWS){
         const star = row.DisplayRarity;
         if (!CHECKABLE_STARS.includes(star)) continue;
+
         const rn = getFieldRankNum(row, field);
         if (!rn || rn < rg.from || rn > rg.to) continue;
-        if (!getChecked(state, rowKey(row), star)) notObtained++;
+
+        const unchecked = !getChecked(state, rowKey(row), star);
+        if (!unchecked) continue;
+
+        // 上段：通常の未取得カウント
+        notObtained++;
+
+        // 下段：その寝顔（行）が“このフィールド限定”なら加算
+        const limitedField = getRowLimitedField(row); // 既存ユーティリティ
+        if (limitedField === field) limitedNotObtained++;
       }
-      return `<td class="text-center fw-semibold">${notObtained}</td>`;
+
+      const bottomHtml = (limitedNotObtained > 0 || !AMBER_HIDE_ZERO)
+        ? `<div class="cell-bottom amber-limited-count">(${limitedNotObtained})</div>`
+        : '';
+
+      return `
+        <td class="text-center fw-semibold amber-cell">
+          <div class="cell-top">${notObtained}</div>
+          ${bottomHtml}
+        </td>`;
     }).join('');
 
+    // ここは _AMBER_ROWS.map(...) の中：1行分の <tr> を返す
     return `<tr><th class="text-start">${rowLabel}</th>${tds}</tr>`;
   }).join('');
 
-  
   return `
-  <h6 class="fw-bold mb-2">未取得の寝顔の数</h6>
+    <div class="amber-mini-head">
+      <div class="amber-table-title">未取得の寝顔の数</div>
+      <div class="amber-note text-muted">
+        <span class="note-red">(数字)</span>はそのフィールドでしか出現しない未取得の寝顔の数です。
+      </div>
+    </div>
     <div class="table-responsive mini-grid">
       <table class="table table-sm align-middle">
         ${thead}
@@ -464,6 +491,34 @@ function updateStickyCloneSizes(table){
   });
 }
 
+// ==== 限定バッジ：スプライト読み込み ====
+const BADGE_SPRITE_16 = './assets/icons/table_icons/limited-badge-16-master.svg';
+const BADGE_SPRITE_20 = './assets/icons/table_icons/limited-badge-20-master.svg';
+
+function _isDesktop(){ return window.matchMedia && window.matchMedia('(min-width: 769px)').matches; }
+
+let _badgeSpriteLoaded16 = false;
+let _badgeSpriteLoaded20 = false;
+
+async function ensureBadgeSpriteLoaded(){
+  const want20 = _isDesktop();
+  const url    = want20 ? BADGE_SPRITE_20 : BADGE_SPRITE_16;
+  const flag   = want20 ? '_badgeSpriteLoaded20' : '_badgeSpriteLoaded16';
+
+  if (want20 && _badgeSpriteLoaded20) return;
+  if (!want20 && _badgeSpriteLoaded16) return;
+
+  try {
+    const res = await fetch(url, { cache: 'force-cache' });
+    const txt = await res.text();
+    const wrap = document.createElement('div');
+    wrap.style.display = 'none';
+    wrap.innerHTML = txt;            // ← <svg><symbol ...> がそのまま入る
+    document.body.appendChild(wrap);
+    if (want20) _badgeSpriteLoaded20 = true; else _badgeSpriteLoaded16 = true;
+  } catch (e) { console.error('badge sprite load failed:', e); }
+}
+
 // ====== 固定ヘッダー（iOS安定版：GPU transform + rAF + DPR丸め） ======
 // === rAF スケジューラ（イベント登録より前に定義しておく） ===
 let _rafScheduled = false;
@@ -625,6 +680,47 @@ function isExcludedFromSummary(row, scope = 'field') {
   return isDarkrai;                    // フィールド列はダークライのみ除外
 }
 
+// 種(形態)+☆ が 1フィールド限定なら、そのフィールドキーを返す。そうでなければ null
+function getEntStarLimitedField(ent, star){
+  const fields = [];
+  for (const f of FIELD_KEYS){
+    const has = ent.rows.some(r => r.DisplayRarity === star && getFieldRankNum(r, f));
+    if (has) fields.push(f);
+    if (fields.length > 1) break;
+  }
+  return fields.length === 1 ? fields[0] : null;
+}
+
+// 1行(row)が 1フィールド限定なら、そのフィールドキーを返す。そうでなければ null
+function getRowLimitedField(row){
+  const fields = FIELD_KEYS.filter(f => !!getFieldRankNum(row, f));
+  return fields.length === 1 ? fields[0] : null;
+}
+
+// フィールドキー → スプライトID名の末尾
+const FIELD_BADGE_SUFFIX = {
+  'ワカクサ本島': 'wakakusa',
+  'シアンの砂浜': 'cyan',
+  'トープ洞窟': 'taupe',
+  'ウノハナ雪原': 'unohana',
+  'ラピスラズリ湖畔': 'rapis',
+  'ゴールド旧発電所': 'gold',
+  'ワカクサ本島EX': 'wakakusaex',
+};
+
+function renderLimitedBadgeByField(fieldKey){
+  if (!fieldKey) return '';
+  const suf = FIELD_BADGE_SUFFIX[fieldKey];
+  if (!suf) return '';
+
+  const useId = _isDesktop() ? `lb20-${suf}` : `lb16-${suf}`;
+  const size  = _isDesktop() ? 20 : 16;
+
+  return `
+    <svg class="limited-badge" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true" focusable="false">
+      <use href="#${useId}"></use>
+    </svg>`;
+}
 // ===================== 状態保存（★キーは IconNo 優先） =====================
 function rowKey(row){ return String(row.IconNo || row.No); }                 // 行用キー
 function entKey(ent){ return String(ent.iconNo || ent.no); }                 // まとめ用キー（形態ごと）
@@ -721,6 +817,28 @@ function getFieldRankNum(row, fieldKey) {
 }
 function speciesHasStar(entry, star) { return entry.rows.some(r => r.DisplayRarity === star); }
 
+// 1つの行（=寝顔1件）について、出現フィールド数を数える
+function countAppearingFieldsForRow(row){
+  let c = 0;
+  for (const f of FIELD_KEYS){
+    if (getFieldRankNum(row, f)) c++;
+  }
+  return c;
+}
+function isRowLimited(row){ return countAppearingFieldsForRow(row) === 1; }
+
+// 種（形態）＋☆ごとに、全フィールド横断で出現フィールド数を数える
+function isEntStarLimited(ent, star){
+  const fields = new Set();
+  for (const r of ent.rows){
+    if (r.DisplayRarity !== star) continue;
+    for (const f of FIELD_KEYS){
+      if (getFieldRankNum(r, f)) fields.add(f);
+    }
+  }
+  return fields.size === 1;
+}
+
 // ===================== アイコン生成関連 =====================
 function getIconKeyFromNo(no) {
   if (no == null) return null;
@@ -779,6 +897,16 @@ function renderPokemonIconById(iconId, sizePx = ICON_SIZE) {
     <rect x="0" y="0" width="${sizePx}" height="${sizePx}" fill="#eee" stroke="#bbb"/>
     <text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" font-size="10" fill="#666">${iconId ?? '----'}</text>
   </svg>`;
+}
+
+// 限定バッジ画像
+const LIMITED_BADGE_16 = './assets/icons/table_icons/limited-badge-16.svg';
+const LIMITED_BADGE_20 = './assets/icons/table_icons/limited-badge-20.svg';
+function getLimitedBadgeSrc(){
+  // スマホ/PCで画像サイズを切替（ブレークポイントは他と合わせて 769px）
+  return (window.matchMedia && window.matchMedia('(min-width: 769px)').matches)
+    ? LIMITED_BADGE_20
+    : LIMITED_BADGE_16;
 }
 
 // ===================== サマリー =====================
@@ -1001,47 +1129,56 @@ function renderAllFaces(state) {
 
   LAST_RENDER_ENTRIES = entries;
 
-  tbody.innerHTML = entries.map(ent => {
-    const key = entKey(ent);               // ★ 形態ごとのキー
-    const no = ent.no, name = ent.name;
+tbody.innerHTML = entries.map(ent => {
+  const key = entKey(ent);
+  const no = ent.no, name = ent.name;
 
-    const cells = CHECKABLE_STARS.map(star => {
-      const exists = speciesHasStar(ent, star);
-      if (!exists) return `<td class="text-center cell-absent">—</td>`;
-      const checked = getChecked(state, key, star); // ★ key で判定
-      return `
-        <td class="text-center ${checked ? 'cell-checked' : ''}">
-          <input type="checkbox" class="form-check-input"
-            data-key="${key}" data-star="${star}"
-            ${checked ? 'checked' : ''}>
-        </td>`;
-    }).join('');
+  // ☆1〜☆4 の各セルだけを作る
+  const cells = CHECKABLE_STARS.map(star => {
+    const exists = speciesHasStar(ent, star);
+    if (!exists) return `<td class="text-center cell-absent">—</td>`;
 
-    const bulkBtn = `
-      <div class="btn-group-vertical btn-group-sm bulk-group-vert" role="group" aria-label="行まとめ">
-        <button type="button" class="btn btn-outline-primary" data-bulk="on"  data-key="${key}">一括ON</button>
-        <button type="button" class="btn btn-outline-secondary" data-bulk="off" data-key="${key}">一括OFF</button>
-      </div>`;
+    const checked = getChecked(state, key, star);
+    const limitedField = getEntStarLimitedField(ent, star);
+    const badge = limitedField ? renderLimitedBadgeByField(limitedField) : '';
 
     return `
-      <tr>
-        <td class="name-cell text-center align-middle">
-          <div style="width:${ICON_SIZE + 16}px; margin: 0 auto;">
-            <div class="poke-icon mx-auto position-relative" style="width:${ICON_SIZE}px;height:${ICON_SIZE}px;line-height:0;">
-              ${renderPokemonIconById(ent.iconNo || getIconKeyFromNo(no), ICON_SIZE)}
-              <button type="button" class="btn btn-light btn-xxs icon-more"
-                  data-entkey="${key}" aria-label="出現フィールド">▼</button>
-            </div>
-              <div class="pf-text mt-1" style="line-height:1.2; word-break:break-word; white-space:normal;">
-                <div class="pf-no text-muted">${no}</div>
-                <div class="pf-name fw-semibold" style="max-width:${ICON_SIZE + 8}px; margin:0 auto;">${escapeHtml(name)}</div>
-              </div>
-          </div>
-        </td>
-        ${cells}
-        <td class="text-center td-bulk">${bulkBtn}</td>
-      </tr>`;
+      <td class="text-center ${checked ? 'cell-checked' : ''} ${badge ? 'badge-host' : ''}">
+        <input type="checkbox" class="form-check-input"
+               data-key="${key}" data-star="${star}"
+               ${checked ? 'checked' : ''}>
+        ${badge}
+      </td>`;
   }).join('');
+
+  // 行まとめボタン
+  const bulkBtn = `
+    <div class="btn-group-vertical btn-group-sm bulk-group-vert" role="group" aria-label="行まとめ">
+      <button type="button" class="btn btn-outline-primary" data-bulk="on"  data-key="${key}">一括ON</button>
+      <button type="button" class="btn btn-outline-secondary" data-bulk="off" data-key="${key}">一括OFF</button>
+    </div>`;
+
+  // 行全体を返す（★ ここは map の外）
+  return `
+    <tr>
+      <td class="name-cell text-center align-middle">
+        <div style="width:${ICON_SIZE + 16}px; margin: 0 auto;">
+          <div class="poke-icon mx-auto position-relative" style="width:${ICON_SIZE}px;height:${ICON_SIZE}px;line-height:0;">
+            ${renderPokemonIconById(ent.iconNo || getIconKeyFromNo(no), ICON_SIZE)}
+            <button type="button" class="btn btn-light btn-xxs icon-more"
+                    data-entkey="${key}" aria-label="出現フィールド">▼</button>
+          </div>
+          <div class="pf-text mt-1" style="line-height:1.2; word-break:break-word; white-space:normal;">
+            <div class="pf-no text-muted">${no}</div>
+            <div class="pf-name fw-semibold" style="max-width:${ICON_SIZE + 8}px; margin:0 auto;">${escapeHtml(name)}</div>
+          </div>
+        </div>
+      </td>
+      ${cells}
+      <td class="text-center td-bulk">${bulkBtn}</td>
+    </tr>`;
+}).join('');
+
 
   // チェック（★ data-key を使う）
   tbody.querySelectorAll('input[type="checkbox"]').forEach(chk => {
@@ -1130,9 +1267,11 @@ function setupFieldTabs() {
 const _q = document.getElementById('byfieldSearchName');
 const _s = document.getElementById('byfieldFilterStyle');
 const _o = document.getElementById('byfieldSortBy');
-_q && _q.addEventListener('input', ()=>renderFieldTables(loadState()));
-_s && _s.addEventListener('change', ()=>renderFieldTables(loadState()));
-_o && _o.addEventListener('change', ()=>renderFieldTables(loadState()));
+    _q && _q.addEventListener('input', ()=>renderFieldTables(loadState()));
+    _s && _s.addEventListener('change', ()=>renderFieldTables(loadState()));
+    _o && _o.addEventListener('change', ()=>renderFieldTables(loadState()));
+const _g = document.getElementById('byfieldGetStatus');
+    _g && _g.addEventListener('change', ()=>renderFieldTables(loadState()));
 
 function renderFieldTables(state) {
   const qEl = document.getElementById('byfieldSearchName');
@@ -1142,6 +1281,8 @@ function renderFieldTables(state) {
   const searchName = (qEl?.value || '').trim();
   const filterStyle = sEl?.value || '';
   const sortBy = oEl?.value || 'no-asc';
+  const gEl = document.getElementById('byfieldGetStatus');
+  const getStatus = gEl?.value || 'すべて';
 
   const normQuery = normalizeJP(searchName);
 
@@ -1150,11 +1291,21 @@ function renderFieldTables(state) {
   if (filterStyle) baseEntries = baseEntries.filter(ent => ent.rows.some(r => r.Style === filterStyle));
 
   baseEntries.sort((a,b)=>{
-    if (sortBy === 'name-asc')  return a.name.localeCompare(b.name, 'ja');
-    if (sortBy === 'name-desc') return b.name.localeCompare(a.name, 'ja');
-    if (sortBy === 'no-desc')   return b.no.localeCompare(a.no, 'ja');
-    return a.no.localeCompare(b.no, 'ja');
+  if (sortBy === 'name-asc')  return a.name.localeCompare(b.name, 'ja');
+  if (sortBy === 'name-desc') return b.name.localeCompare(a.name, 'ja');
+  if (sortBy === 'no-desc')   return b.no.localeCompare(a.no, 'ja');
+  return a.no.localeCompare(b.no, 'ja');
+});
+
+// ★ 取得状況フィルターは sort の後に適用
+if (getStatus !== 'すべて') {
+  baseEntries = baseEntries.filter(ent => {
+    const completed = isEntryComplete(state, ent);
+    if (getStatus === 'コンプリート済') return completed;
+    if (getStatus === '未取得あり')     return !completed;
+    return true;
   });
+}
 
   FIELD_KEYS.forEach(field=>{
     const tbody = document.querySelector(`#fieldTabsContent tbody[data-field="${field}"]`);
@@ -1165,55 +1316,65 @@ function renderFieldTables(state) {
 
       const key = entKey(ent); // ★ 形態ごとのキー
 
-      const cells = CHECKABLE_STARS.map(star=>{
-        const hasRow = ent.rows.find(r => r.DisplayRarity === star);
-        if (!hasRow) return `<td class="text-center cell-absent">—</td>`;
-        const rankNum = getFieldRankNum(hasRow, field);
-        if (!rankNum) return `<td class="text-center cell-disabled">ー</td>`;
+const cells = CHECKABLE_STARS.map(star=>{
+  const hasRow = ent.rows.find(r => r.DisplayRarity === star);
+  if (!hasRow) return `<td class="text-center cell-absent">—</td>`;
+  const rankNum = getFieldRankNum(hasRow, field);
+  if (!rankNum) return `<td class="text-center cell-disabled">ー</td>`;
 
-        const checked = getChecked(state, key, star); // ★ key で判定
-        return `
-          <td class="text-center toggle-cell ${checked ? 'cell-checked' : ''}"
-              data-key="${key}" data-star="${star}">
-            ${renderRankChip(rankNum)}
-          </td>`;
-      }).join('');
+  const checked = getChecked(state, key, star);
+  const limitedField = getEntStarLimitedField(ent, star);
+  const badge = limitedField ? renderLimitedBadgeByField(limitedField) : '';
 
-      rows.push(`
-        <tr>
-          <td class="byfield-name-cell text-center align-middle">
-            <div class="pf-wrap">
-              <div class="byfield-icon position-relative">
-                ${renderPokemonIconById(ent.iconNo || getIconKeyFromNo(ent.no), ICON_SIZE_FIELD)}
-                <button type="button" class="btn btn-light btn-xxs icon-more"
-                        data-entkey="${key}" aria-label="出現フィールド">▼</button>
-              </div>
-              <div class="pf-text">
-                <div class="pf-no text-muted">${ent.no}</div>
-                <div class="pf-name">${escapeHtml(ent.name)}</div>
-              </div>
-            </div>
-          </td>
-          <td class="type-cell text-center">${firstStyleKey(ent) || '-'}</td>
-          ${cells}
-        </tr>`);
-    }
-    tbody.innerHTML = rows.join('');
+  return `
+    <td class="text-center toggle-cell ${checked ? 'cell-checked' : ''} ${badge ? 'badge-host' : ''}"
+        data-key="${key}" data-star="${star}">
+      ${renderRankChip(rankNum)}
+      ${badge}
+    </td>`;
+}).join('');
+
+// ★ 行はここで push（map の外）
+rows.push(`
+  <tr>
+    <td class="byfield-name-cell text-center align-middle">
+      <div class="pf-wrap">
+        <div class="byfield-icon position-relative">
+          ${renderPokemonIconById(ent.iconNo || getIconKeyFromNo(ent.no), ICON_SIZE_FIELD)}
+          <button type="button" class="btn btn-light btn-xxs icon-more"
+                  data-entkey="${key}" aria-label="出現フィールド">▼</button>
+        </div>
+        <div class="pf-text">
+          <div class="pf-no text-muted">${ent.no}</div>
+          <div class="pf-name">${escapeHtml(ent.name)}</div>
+        </div>
+      </div>
+    </td>
+    <td class="type-cell text-center">${firstStyleKey(ent) || '-'}</td>
+    ${cells}
+  </tr>`);
+  }
+    
+  tbody.innerHTML = rows.join('');
 
     // ★ セル全体クリックで ON/OFF（data-key を使用）
-    tbody.querySelectorAll('td.toggle-cell').forEach(td=>{
-      td.addEventListener('click', ()=>{
-        const key  = td.dataset.key;
-        const star = td.dataset.star;
-        const now  = getChecked(state, key, star);
-        setChecked(state, key, star, !now);
-        td.classList.toggle('cell-checked', !now);
-        syncOtherViews(key, star, !now);             // ← 他シートへ差分同期
-        renderSummary(state);
-        renderRankSearch(state);
-        updateAmberPopup(state);
-      });
-    });
+tbody.querySelectorAll('td.toggle-cell').forEach(td=>{
+  td.addEventListener('click', ()=>{
+    const key  = td.dataset.key;
+    const star = td.dataset.star;
+    const now  = getChecked(state, key, star);
+    setChecked(state, key, star, !now);
+    td.classList.toggle('cell-checked', !now);
+    syncOtherViews(key, star, !now);
+    renderSummary(state);
+    renderRankSearch(state);
+    updateAmberPopup(state);
+
+    if ((document.getElementById('byfieldGetStatus')?.value || 'すべて') !== 'すべて') {
+      renderFieldTables(loadState());
+    }
+  });
+});
     // ▼ボタン（フィールド別）— モーダルを開く
     tbody.querySelectorAll('button.icon-more').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
@@ -1476,17 +1637,20 @@ items.sort((a,b) => primary(a,b) || tieBreaker(a,b));
   return;
 }
 
-  tbody.innerHTML = items.map(r=>{
-    const needRank = getFieldRankNum(r, field);
-    const iconSvg = renderPokemonIconById(r.IconNo || getIconKeyFromNo(r.No), ICON_SIZE_FIELD);
-
-    const k = rowKey(r);
-    const star = r.DisplayRarity;
-    const checkable = CHECKABLE_STARS.includes(star);
-    // 未入手一覧なので通常は false のはずだが、念のため同期
-    const isChecked = checkable ? getChecked(state, k, star) : false;
+    tbody.innerHTML = items.map(r=>{
+      const needRank = getFieldRankNum(r, field);
+      const iconSvg = renderPokemonIconById(r.IconNo || getIconKeyFromNo(r.No), ICON_SIZE_FIELD);
     
-    return `
+      const k = rowKey(r);
+      const star = r.DisplayRarity;
+      const checkable = CHECKABLE_STARS.includes(star);
+      const isChecked = checkable ? getChecked(state, k, star) : false;
+    
+      // ★ この場で限定バッジを算出
+      const limitedField = getRowLimitedField(r);
+      const badge = limitedField ? renderLimitedBadgeByField(limitedField) : '';
+
+  return `
       <tr>
         <td class="byfield-name-cell text-center align-middle">
           <div class="pf-wrap">
@@ -1502,17 +1666,21 @@ items.sort((a,b) => primary(a,b) || tieBreaker(a,b));
           </div>
         </td>
         <td class="text-center">${r.Style || '-'}</td>
-        <td class="text-center">${r.DisplayRarity || '-'}</td>
-        <td class="text-center">${renderRankChip(needRank)}</td>
-        <td class="text-center">
+      <td class="text-center ${badge ? 'badge-host' : ''}">
+        ${r.DisplayRarity || '-'}
+        ${badge}
+      </td>
+
+      <td class="text-center">${renderRankChip(needRank)}</td>
+      <td class="text-center">
         ${ checkable
             ? `<input type="checkbox" class="form-check-input mark-obtained"
                       data-key="${k}" data-star="${escapeHtml(star)}"
                       ${isChecked ? 'checked' : ''}>`
             : `<span class="text-muted">—</span>` }
-        </td>
-      </tr>`;
-  }).join('');
+      </td>
+    </tr>`;
+}).join('');
   // ここでは再描画しない（＝行は残す）。ただしサマリーは更新。
 tbody.querySelectorAll('input.mark-obtained').forEach(chk=>{
   chk.addEventListener('change', (e) => {
@@ -1818,6 +1986,23 @@ style.textContent = `
   .filter-item label { margin:0 !important; font-weight:500; }
   .filter-item .form-select { width:auto; display:inline-block; }
 
+  /* ==== Amber mini table: limited count on second line ==== */
+  .amber-mini-head { margin-bottom: .25rem; }
+  .amber-table-title {
+    font-weight: 600;
+    margin-top: .25rem;
+    margin-bottom: .1rem;
+  }
+  .amber-note { font-size: 0.92rem; }
+  /* text-muted の !important を打ち消すため、こちらも !important を付与 */
+  .amber-note .note-red { color: #d00 !important; font-weight: 600; }
+
+  .mini-grid td.amber-cell { line-height: 1.05; }
+  .mini-grid td.amber-cell .cell-top { font-size: 1rem; }
+  .mini-grid td.amber-cell .cell-bottom { font-size: 0.85rem; margin-top: 2px; }
+  /* 下段 (n) を小さめ＆赤に（特異性を少し上げ、色は確実に赤へ） */
+  .mini-grid td.amber-cell .amber-limited-count { color: #d00 !important; font-size: 0.85rem; }
+
 `;
   document.head.appendChild(style);
   _listLayoutStyleInjected = true;
@@ -1849,6 +2034,7 @@ async function main() {
 
   await loadPokemonIconsScriptOnce();
   await loadData();
+  await ensureBadgeSpriteLoaded();
 
   setupFieldTabs();
   setupRankSearchControls();
