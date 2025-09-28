@@ -781,3 +781,14 @@ body.is-howto-open { overflow: hidden; }
 
 /* スマホ時の表スクロールを確保 */
 #amberPopup .table-responsive{ max-height: 55vh; overflow:auto; }
+
+/* ==== 限定フィールドバッジ ==== */
+.badge-host { position: relative; }
+.limited-badge{
+  position: absolute; top: 2px; right: 2px;
+  width: 16px; height: 16px;
+  pointer-events: none; z-index: 3;
+}
+@media (min-width: 769px){
+  .limited-badge{ width: 20px; height: 20px; }
+}
