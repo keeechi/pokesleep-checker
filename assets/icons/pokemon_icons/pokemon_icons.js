@@ -526,7 +526,7 @@ window.pokemonRectData = {
         {x: 0.5, y: 0.9, w: 0.5, h: 0.1, color: '#df7753'},
     ],
     // Naty
-    '0177': [
+    '177': [
         {x: 0, y: 0, w: 1, h: 1, color: '#c9ef64'},
         {x: 0.4, y: -0.05, w: 0.2, h: 0.3, r: 0.3, color: '#d56a79'},
         {x: 0.3, y: 0.4792, w: 0.4, h: 0.2, r: 0.3, color: '#f6e86d'},
@@ -534,7 +534,7 @@ window.pokemonRectData = {
         {x: 0, y: 0.9708, w: 1, h: 0.1, color: '#fbfbfb'},
     ],
     // Natio
-    '0178': [
+    '178': [
         {x: 0, y: 0, w: 1, h: 1, color: '#c9ef64'},
         {x: 0.4, y: 0.2, w: 0.2, h: 0.2396, r: 0.3, color: '#f6e86d'},
         {x: 0, y: 0.8, w: 1, h: 0.05, color: '#f6e86d'},
