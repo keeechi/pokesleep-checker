@@ -782,6 +782,26 @@ body.is-howto-open { overflow: hidden; }
 /* スマホ時の表スクロールを確保 */
 #amberPopup .table-responsive{ max-height: 55vh; overflow:auto; }
 
+/* ▼ 早見表の“青数字（☆4未取得）” */
+.mini-grid td.amber-cell .amber-star4-count { 
+  color: #0d6efd !important;   /* Bootstrap系の青 */
+  font-size: 0.85rem; 
+}
+
+/* 注釈の強調 */
+.amber-note .note-red { color: #d00 !important; font-weight: 600; }
+.amber-note .note-blue { color: #0d6efd !important; font-weight: 600; }
+
+/* ▼ タブを1つ増やしたので、スマホ時にさらにコンパクト化 */
+@media (max-width: 768px){
+  #mainTabs .nav-link { padding: 5px 6px; font-size: .78rem; }
+  #mainTabs .nav-link.tab-icon { min-height: 42px; min-width: 42px; gap: 5px; }
+  #mainTabs .tab-img { width: 22px; height: 22px; }      /* 既存より少し小さめ */
+  #mainTabs .tab-label .l1,
+  #mainTabs .tab-label .l2,
+  #mainTabs .tab-label .l3 { font-size: 9px; }           /* ラベルも微縮小 */
+}
+
 /* ==== 限定フィールドバッジ ==== */
 .badge-host { position: relative; }
 .limited-badge{
