@@ -369,6 +369,128 @@ function openAmberPopup(state){
   modal.show();
 }
 
+// --- 早見表（常設版）：未取得数 + 限定未取得(赤) + ☆4未取得(青) を表示 ---
+function buildQuickMissingTable(state){
+  const AMBER_COL_ABBR = ['島', '浜', '洞', '雪', '湖', '電', '島<br>EX'];
+
+  const thead = `
+    <thead class="table-light">
+      <tr>
+        <th style="min-width:88px;"></th>
+        ${AMBER_COL_ABBR.map(t => `<th class="text-center">${t}</th>`).join('')}
+      </tr>
+    </thead>`;
+
+  const bodyRows = _AMBER_ROWS.map(rg => {
+    const rowLabel = `
+      <span class="rank-chip--rowlabel" data-stage="${rg.labelStage}">
+        <span class="ball">◓</span><span>${rg.label}</span>
+      </span>`;
+
+    const tds = FIELD_KEYS.map(field => {
+      let notObtained = 0;
+      let limitedNotObtained = 0;
+      let star4NotObtained = 0;      // ★ 追加：☆4未取得
+
+      for (const row of RAW_ROWS){
+        const star = row.DisplayRarity;
+        if (!CHECKABLE_STARS.includes(star)) continue;
+
+        const rn = getFieldRankNum(row, field);
+        if (!rn || rn < rg.from || rn > rg.to) continue;
+
+        const unchecked = !getChecked(state, rowKey(row), star);
+        if (!unchecked) continue;
+
+        // 上段：未取得カウント
+        notObtained++;
+
+        // (赤)：フィールド限定の未取得
+        const limitedField = getRowLimitedField(row);
+        if (limitedField === field) limitedNotObtained++;
+
+        // (青)：☆4の未取得
+        if (star === '☆4') star4NotObtained++;
+      }
+
+      const bottomRed = (limitedNotObtained > 0 || !AMBER_HIDE_ZERO)
+          ? `<div class="cell-bottom amber-limited-count">(${limitedNotObtained})</div>`
+          : '';
+      const bottomBlue = (star4NotObtained > 0 || !AMBER_HIDE_ZERO)
+          ? `<div class="cell-bottom amber-star4-count">(${star4NotObtained})</div>`
+          : '';
+
+      return `
+        <td class="text-center fw-semibold amber-cell">
+          <div class="cell-top">${notObtained}</div>
+          ${bottomRed}
+          ${bottomBlue}
+        </td>`;
+    }).join('');
+
+    return `<tr><th class="text-start">${rowLabel}</th>${tds}</tr>`;
+  }).join('');
+
+  return `
+    <div class="amber-mini-head">
+      <div class="amber-table-title">未取得の寝顔の数</div>
+      <div class="amber-note text-muted">
+        <span class="note-red">(赤数字)</span>はそのフィールドでしか出現しない未取得の寝顔の数です。<br>
+        <span class="note-blue">(青数字)</span>は未取得☆4の寝顔の数です。
+      </div>
+    </div>
+    <div class="table-responsive mini-grid">
+      <table class="table table-sm align-middle">
+        ${thead}
+        <tbody>${bodyRows}</tbody>
+      </table>
+    </div>`;
+}
+
+// --- 常設早見表：モーダル（Bootstrap） ---
+let _qmModalEl = null, _qmModal = null;
+function ensureQuickMissingModal(){
+  if (_qmModalEl) return { el:_qmModalEl, modal:_qmModal };
+  const el = document.createElement('div');
+  el.className = 'modal fade';
+  el.id = 'quickMissingPopup';
+  el.tabIndex = -1;
+  el.innerHTML = `
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header py-2">
+          <h5 class="modal-title">未取得の寝顔の数 〜 早見表</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
+        </div>
+        <div class="modal-body">
+          <div id="quickMissingMiniTable"><!-- JS --></div>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(el);
+  _qmModalEl = el;
+  _qmModal = new bootstrap.Modal(el, { backdrop:true, keyboard:true });
+  return { el:_qmModalEl, modal:_qmModal };
+}
+
+function openQuickMissingPopup(state){
+  const { el, modal } = ensureQuickMissingModal();
+  const wrap = el.querySelector('#quickMissingMiniTable');
+  wrap.innerHTML = buildQuickMissingTable(state);
+  styleRankMiniSummary();  // 既存の列配色を流用
+  refreshAllSticky();      // レイアウト再計算
+  modal.show();
+}
+
+// タブクリックでモーダルを開く（HowToと同じパターン）
+document.addEventListener('click', function (e) {
+  const btn = e.target.closest('#tab-quickmissing');
+  if (!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  openQuickMissingPopup(loadState());
+}, true);
+
 // ==== 固定（sticky）ユーティリティ ====
 
 // タブ高をCSS変数へ
