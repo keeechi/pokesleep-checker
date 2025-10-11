@@ -91,7 +91,7 @@ function labelForRank(n) {
   return `${stage}${idx}`;
 }
 
-function buildRankMiniSummaryHTML(field, rank, state, sleepTypeFilter = '', statusFilter = 'すべて') {
+function buildRankMiniSummaryHTML(field, rank, state, sleepTypeFilter = '', statusFilter = 'すべて', rarityFilter = '') {
   // 対象は「そのフィールドで rank 以下に出現する ☆1〜☆4」
   // 列: うとうと / すやすや / ぐっすり / 合計
   // 行: 入手済 / 未入手 / 合計
@@ -106,6 +106,7 @@ function buildRankMiniSummaryHTML(field, rank, state, sleepTypeFilter = '', stat
     if (!rNum || rNum > rank) continue;
     if (!CHECKABLE_STARS.includes(row.DisplayRarity)) continue;  // ☆1〜☆4のみ
     if (sleepTypeFilter && row.Style !== sleepTypeFilter) continue;
+    if (rarityFilter && row.DisplayRarity !== rarityFilter) continue; // レア度フィルタ
 
     const style = row.Style;
     const k = rowKey(row);
@@ -1468,6 +1469,7 @@ function buildReverseFilterBar() {
   const typeSel   = createSleepTypeSelect();
   const statusSel = createStatusSelect();
   const sortSel   = createSortSelect();
+  const raritySel = createRarityFilterSelect();
 
   const makeGroup = (labelText, selectEl, extraClass = '') => {
     const wrap = document.createElement('div');
@@ -1491,6 +1493,7 @@ function buildReverseFilterBar() {
   bar.appendChild(makeGroup('ランク',     rankSel));
   bar.appendChild(makeGroup('睡眠タイプ', typeSel));
   bar.appendChild(makeGroup('入手状況',   statusSel));
+  bar.appendChild(makeGroup('レア度',     raritySel));
 
   // 3行目（全幅）— ※1回だけ append する！
   bar.appendChild(makeGroup('ソート', sortSel, 'filter-item--sort'));
@@ -1506,14 +1509,36 @@ function buildReverseFilterBar() {
 
   sortSel.removeEventListener('change', _onSortChange);
   sortSel.addEventListener('change', _onSortChange);
+
+  raritySel.removeEventListener('change', _onRarityChange);
+  raritySel.addEventListener('change', _onRarityChange);
 }
 
 function _onStatusChange(){ renderRankSearch(loadState()); }
 function _onSortChange(){ renderRankSearch(loadState()); }
+function _onRarityChange(){ renderRankSearch(loadState());}
 
 // 睡眠タイプ変更時のハンドラ
 function _onTypeChange() {
   renderRankSearch(loadState());
+}
+
+
+// ===================== レア度フィルター =====================
+function createRarityFilterSelect() {
+    let sel = document.getElementById('searchFilterRarity');
+    if (sel) return sel;
+  
+    sel = document.createElement('select');
+    sel.id = 'searchFilterRarity';
+    sel.className = 'form-select form-select-sm';
+    sel.innerHTML = '<option value="">すべて</option>\
+                      <option value="☆1">☆1</option>\
+                      <option value="☆2">☆2</option>\
+                      <option value="☆3">☆3</option>\
+                      <option value="☆4">☆4</option>';
+    sel.value = '';
+    return sel;
 }
 
 // ===================== ランク検索（未入手のみ） =====================
@@ -1554,6 +1579,7 @@ function renderRankSearch(state) {
   const typeFilter   = (document.getElementById('searchType')?.value || '');
   const statusFilter = (document.getElementById('searchStatus')?.value || 'すべて');
   const sortMode     = (document.getElementById('searchSort')?.value || 'no-asc');
+  const rarityFilter = (document.getElementById('searchFilterRarity')?.value || '');
   const tbody = document.querySelector('#rankSearchTable tbody');
 
   // ヘッダーに「入手済？」列を用意（HTMLそのままでも動くように）
@@ -1561,7 +1587,7 @@ function renderRankSearch(state) {
 
   const miniWrap = ensureRankMiniSummaryContainer();
   if (miniWrap) {
-    miniWrap.innerHTML = buildRankMiniSummaryHTML(field, rank, state, typeFilter, statusFilter) || '';
+    miniWrap.innerHTML = buildRankMiniSummaryHTML(field, rank, state, typeFilter, statusFilter, rarityFilter) || '';
     styleRankMiniSummary();
     refreshAllSticky();
   }
@@ -1571,6 +1597,7 @@ function renderRankSearch(state) {
   const rNum = getFieldRankNum(row, field);
     if (!rNum || rNum > rank) continue;
     if (typeFilter && row.Style !== typeFilter) continue;
+    if (rarityFilter && row.DisplayRarity !== rarityFilter) continue;
 
   const k = rowKey(row);
   const star = row.DisplayRarity;
@@ -1698,9 +1725,10 @@ tbody.querySelectorAll('input.mark-obtained').forEach(chk=>{
     const rankNow   = Math.max(1, Math.min(35, parseInt(document.getElementById('searchRank').value||'1',10)));
     const typeNow   = (document.getElementById('searchType')?.value || '');
     const statusNow = (document.getElementById('searchStatus')?.value || 'すべて'); // ← 追加（任意）
+    const rarityNow = (document.getElementById('searchFilterRarity')?.value || '');
     const wrap = ensureRankMiniSummaryContainer();
     if (wrap) {
-      wrap.innerHTML = buildRankMiniSummaryHTML(fieldNow, rankNow, s, typeNow, statusNow) || '';
+      wrap.innerHTML = buildRankMiniSummaryHTML(fieldNow, rankNow, s, typeNow, statusNow, rarityNow) || '';
       // ★ 差し替え直後に必ず色付け
       styleRankMiniSummary();
     }
