@@ -421,6 +421,15 @@ window.pokemonRectData = {
         {x: 0.55, y: 0.8, w: 0.5, h: 0.1, r: 0.05, color: '#fefcf3'},
         {x: 0.72, y: 0.48, w: 0.15, h: 0.15, r: 0.1, color: '#fefcf3'}
     ],
+    // Eevee(Haloween)
+    '013303': [
+        {x: 0, y: 0, w: 1, h: 1, color: '#e9b860'},
+        {x: 0, y: 0.6, w: 1, h: 0.4, color: '#f8eabf'},
+        {x: 0.55, y: 0.8, w: 0.5, h: 0.1, r: 0.05, color: '#5a5a60'},
+        {x: 0.65, y: 0.55, w: 0.3, h: 0.35, r: 0.15, color: '#5a5a60'},
+        {x: 0.65, y: 0.75, w: 0.3, h: 0.05, color: '#eab253'},
+        {x: 0.82, y: 0.72, w: 0.12, h: 0.12, r: 0.1, color: '#f7ea74'}
+    ],
     // Vaporeon
     '0134': [
         {x: 0, y: 0, w: 1, h: 1, color: '#93cae0'},
