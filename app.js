@@ -5,7 +5,7 @@ const STORAGE_KEY = 'psleep-check-v1';
 
 const FIELD_KEYS = [
   'ワカクサ本島', 'シアンの砂浜', 'トープ洞窟', 'ウノハナ雪原',
-  'ラピスラズリ湖畔', 'ゴールド旧発電所', 'ワカクサ本島EX'
+  'ラピスラズリ湖畔', 'ゴールド旧発電所', 'ワカクサ本島EX', 'アンバー渓谷'
 ];
 
 // === Amber渓谷（特設ポップアップ） ===
@@ -19,7 +19,8 @@ const FIELD_SHORT = {
   'ウノハナ雪原': 'ウノハナ',
   'ラピスラズリ湖畔': 'ラピス',
   'ゴールド旧発電所': 'ゴールド',
-  'ワカクサ本島EX': 'ワカクサEX'
+  'ワカクサ本島EX': 'ワカクサEX',
+  'アンバー渓谷': 'アンバー'
 };
 const SLEEP_TYPES = ['うとうと', 'すやすや', 'ぐっすり'];
 const RARITIES = ['☆1', '☆2', '☆3', '☆4', '☆5']; // 表示用
@@ -32,13 +33,14 @@ const STYLE_ICON = {
 const POKEMON_ICONS_JS = './assets/icons/pokemon_icons/pokemon_icons.js';
 
 const FIELD_HEAD_ICON = {
-  'ワカクサ本島':   'assets/icons/001-wakakusa.png',
-  'シアンの砂浜':   'assets/icons/002-cyan.png',
-  'トープ洞窟':     'assets/icons/003-taupe.png',
-  'ウノハナ雪原':   'assets/icons/004-unohana.png',
-  'ラピスラズリ湖畔': 'assets/icons/005-rapis.png',
-  'ゴールド旧発電所': 'assets/icons/006-gold.png',
-  'ワカクサ本島EX': 'assets/icons/007-wakakusaex.png',
+  'ワカクサ本島':   'assets/icons/Field_Icons/001-wakakusa.png',
+  'シアンの砂浜':   'assets/icons/Field_Icons/002-cyan.png',
+  'トープ洞窟':     'assets/icons/Field_Icons/003-taupe.png',
+  'ウノハナ雪原':   'assets/icons/Field_Icons/004-unohana.png',
+  'ラピスラズリ湖畔': 'assets/icons/Field_Icons/005-rapis.png',
+  'ゴールド旧発電所': 'assets/icons/Field_Icons/006-gold.png',
+  'ワカクサ本島EX': 'assets/icons/Field_Icons/007-wakakusaex.png',
+  'アンバー渓谷': 'assets/icons/Field_Icons/008-amber.png',
 };
 
 // アイコンサイズ
@@ -46,8 +48,8 @@ const ICON_SIZE = 45;         // 全寝顔
 const ICON_SIZE_FIELD = 36;   // フィールド別
 
 // 王冠アイコン
-const BADGE_GOLD   = 'assets/icons/04-GoldBadge.png';
-const BADGE_SILVER = 'assets/icons/05-SilverBadge.png';
+const BADGE_GOLD   = 'assets/icons/table-icons/04-GoldBadge.png';
+const BADGE_SILVER = 'assets/icons/table-icons/05-SilverBadge.png';
 
 // サマリーから除外（ダークライ）
 const EXCLUDED_SPECIES_FOR_SUMMARY = new Set(['0491']); // 4桁ゼロ埋め No
@@ -246,7 +248,7 @@ const _AMBER_ROWS = [
 // Amber用ミニ表のHTMLを構築（各フィールドの“未取得数”＋“限定かつ未取得”を集計）
 function buildAmberMiniTable(state){
   // 見出しを1文字（最後だけ改行入り）に
-  const AMBER_COL_ABBR = ['島', '浜', '洞', '雪', '湖', '電', '島<br>EX'];
+  const AMBER_COL_ABBR = ['島', '浜', '洞', '雪', '湖', '電', '島<br>EX', '渓'];
 
   // テーブルヘッダ（A1は空欄にする）
   const thead = `
@@ -371,7 +373,7 @@ function openAmberPopup(state){
 
 // --- 早見表（常設版）：未取得数 + 限定未取得(赤) + ☆4未取得(青) を表示 ---
 function buildQuickMissingTable(state){
-  const AMBER_COL_ABBR = ['島', '浜', '洞', '雪', '湖', '電', '島<br>EX'];
+  const AMBER_COL_ABBR = ['島', '浜', '洞', '雪', '湖', '電', '島<br>EX', '渓'];
 
   const thead = `
     <thead class="table-light">
@@ -615,8 +617,8 @@ function updateStickyCloneSizes(table){
 }
 
 // ==== 限定バッジ：スプライト読み込み ====
-const BADGE_SPRITE_16 = './assets/icons/table_icons/limited-badge-16-master.svg';
-const BADGE_SPRITE_20 = './assets/icons/table_icons/limited-badge-20-master.svg';
+const BADGE_SPRITE_16 = './assets/icons/Table_Icons/limited-badge-16-master.svg';
+const BADGE_SPRITE_20 = './assets/icons/Table_Icons/limited-badge-20-master.svg';
 
 function _isDesktop(){ return window.matchMedia && window.matchMedia('(min-width: 769px)').matches; }
 
@@ -829,6 +831,7 @@ const FIELD_BADGE_SUFFIX = {
   'ラピスラズリ湖畔': 'rapis',
   'ゴールド旧発電所': 'gold',
   'ワカクサ本島EX': 'wakakusaex',
+  'アンバー渓谷': 'amber',
 };
 
 function renderLimitedBadgeByField(fieldKey){
@@ -1023,8 +1026,8 @@ function renderPokemonIconById(iconId, sizePx = ICON_SIZE) {
 }
 
 // 限定バッジ画像
-const LIMITED_BADGE_16 = './assets/icons/table_icons/limited-badge-16.svg';
-const LIMITED_BADGE_20 = './assets/icons/table_icons/limited-badge-20.svg';
+const LIMITED_BADGE_16 = './assets/icons/Table_Icons/limited-badge-16.svg';
+const LIMITED_BADGE_20 = './assets/icons/Table_Icons/limited-badge-20.svg';
 function getLimitedBadgeSrc(){
   // スマホ/PCで画像サイズを切替（ブレークポイントは他と合わせて 769px）
   return (window.matchMedia && window.matchMedia('(min-width: 769px)').matches)
