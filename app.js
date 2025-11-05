@@ -48,8 +48,8 @@ const ICON_SIZE = 45;         // 全寝顔
 const ICON_SIZE_FIELD = 36;   // フィールド別
 
 // 王冠アイコン
-const BADGE_GOLD   = 'assets/icons/table-icons/04-GoldBadge.png';
-const BADGE_SILVER = 'assets/icons/table-icons/05-SilverBadge.png';
+const BADGE_GOLD   = 'assets/icons/Table_Icons/04-GoldBadge.png';
+const BADGE_SILVER = 'assets/icons/Table_Icons/05-SilverBadge.png';
 
 // サマリーから除外（ダークライ）
 const EXCLUDED_SPECIES_FOR_SUMMARY = new Set(['0491']); // 4桁ゼロ埋め No
