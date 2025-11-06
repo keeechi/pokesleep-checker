@@ -408,6 +408,14 @@ window.pokemonRectData = {
         {x: 0.58, y: 0.3, w: 0.06, h: 0.06, r: 0.03, color: '#494447'},
         {x: 0.18, y: 0.45, w: 0.6, h: 0.03, r: 0.03, color: '#494447'},
     ],
+    // Ditto
+    '013209': [
+        {x: 0, y: 0, w: 1, h: 1, color: '#c8bbf5'},
+        {x: 0, y: 0.9, w: 1, h: 0.2, color: '#b6a6ea'},
+        {x: 0.28, y: 0.3, w: 0.06, h: 0.06, r: 0.03, color: '#494447'},
+        {x: 0.58, y: 0.3, w: 0.06, h: 0.06, r: 0.03, color: '#494447'},
+        {x: 0.18, y: 0.45, w: 0.6, h: 0.03, r: 0.03, color: '#494447'},
+    ],
     // Eevee
     '013301': [
         {x: 0, y: 0, w: 1, h: 1, color: '#e9b860'},
@@ -893,6 +901,29 @@ window.pokemonRectData = {
         {x: 0, y: 0, w: 1, h: 1, color: '#b9abd9'},
         {x: 0, y: 0.8, w: 1, h: 0.2, color: '#5e5c5d'},
     ],
+    // Trapinch
+    '0328': [
+        {x: 0.5, y: 0.8, w: 0.5, h: 0.2, color: '#e0e0e0'},
+        {x: 0, y: 0.25, w: 0.85, h: 0.75, r: 0.37, color: '#e6a466'},
+        {x: 0, y: 0.55, w: 0.85, h: 0.45, r: 0.2, color: '#e6a466'},
+        {x: 0.6, y: 0.45, w: 0.5, h: 0.5, r: 0.4, color: '#e6a466'},
+        {x: 0.05, y: 0.77, w: 0.7, h: 0.05, color: '#da7f4a'},
+    ],
+    // Vibrava
+    '0329': [
+        {x: 0, y: 0, w: 1, h: 1, color: '#fcfcb8'},
+        {x: 0, y: 0, w: 0.35, h: 1, color: '#84c772'},
+        {x: 0, y: 0, w: 0.05, h: 1, color: '#656d61'},
+        {x: 0.65, y: 0, w: 0.4, h: 1, color: '#84c772'},
+        {x: 0.95, y: 0, w: 0.05, h: 1, color: '#656d61'},
+    ],
+    // Flygon
+    '0330': [
+        {x: 0, y: 0, w: 1, h: 1, color: '#def1b1'},
+        {x: 0, y: -0.35, w: 1, h: 1, r: 0.45, color: '#7fbb71'},
+        {x: -0.12, y: 0.2, w: 0.3, h: 0.5, r: 0.2, color: '#dc7890'},
+        {x: 0.82, y: 0.2, w: 0.3, h: 0.5, r: 0.2, color: '#dc7890'},
+    ],
     // Swablu
     '0333': [
         {x: 0, y: 0, w: 1, h: 1, color: '#f4f4f4'},
@@ -941,6 +972,23 @@ window.pokemonRectData = {
         {x: 0, y: 0, w: 1, h: 1, color: '#fafafa'},
         {x: 0, y: 0.45, w: 1, h: 0.1, color: '#fff1d4'},
         {x: 0, y: 0.55, w: 1, h: 0.55, color: '#6dcce8'},
+    ],
+    // Bagon
+    '0371': [
+        {x: 0, y: 0, w: 1, h: 1, color: '#9adaf8'},
+        {x: 0, y: 0, w: 1, h: 0.35, color: '#e8e8e8'},
+        {x: 0, y: 0.95, w: 1, h: 0.55, color: '#f8ee8a'},
+    ],
+    // Shelgon
+    '0372': [
+        {x: 0, y: 0, w: 1, h: 1, color: '#f6f6f6'},
+        {x: 0.25, y: 0.35, w: 0.5, h: 0.5, r: 0.24, color: '#a7a8aa'},
+    ],
+    // Salamence
+    '0373': [
+        {x: 0, y: 0, w: 1, h: 1, color: '#79cce2'},
+        {x: 0, y: 0, w: 1, h: 0.2, color: '#cd5f6f'},
+        {x: 0, y: 0.8, w: 1, h: 0.2, color: '#e7eaef'},
     ],
     // Shinx
     '0403': [
@@ -1112,6 +1160,18 @@ window.pokemonRectData = {
         {x: 0.65, y: 0, w: 0.5, h: 1, color: '#9483cb'},
         {x: 0.65, y: 0.8, w: 0.5, h: 0.3, color: '#e696ab'},
         {x: 0, y: 0, w: 0.15, h: 1, color: '#e698ad'},
+    ],
+    // Dwebble
+    '0557': [
+        {x: 0, y: 0, w: 1, h: 1, color: '#9e968f'},
+        {x: 0, y: 0.65, w: 1, h: 1, color: '#e7b474'},
+    ],
+    // Crustle
+    '0558': [
+        {x: 0, y: 0, w: 1, h: 1, color: '#a99073'},
+        {x: 0, y: 0, w: 1, h: 0.1, color: '#c5ad8b'},
+        {x: 0, y: 0.41, w: 1, h: 0.1, color: '#f0d083'},
+        {x: 0, y: 0.8, w: 1, h: 1, color: '#e29672'},
     ],
     // Rufflet
     '0627': [
