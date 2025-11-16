@@ -26,9 +26,9 @@ const SLEEP_TYPES = ['うとうと', 'すやすや', 'ぐっすり'];
 const RARITIES = ['☆1', '☆2', '☆3', '☆4', '☆5']; // 表示用
 const CHECKABLE_STARS = ['☆1','☆2','☆3','☆4'];   // チェック対象
 const STYLE_ICON = {
-  'うとうと': 'assets/icons/01-uto-v2.png',
-  'すやすや': 'assets/icons/02-suya-v2.png',
-  'ぐっすり': 'assets/icons/03-gu-v2.png',
+  'うとうと': 'assets/icons/Table_Icons/01-uto-v2.png',
+  'すやすや': 'assets/icons/Table_Icons/02-suya-v2.png',
+  'ぐっすり': 'assets/icons/Table_Icons/03-gu-v2.png',
 };
 const POKEMON_ICONS_JS = './assets/icons/pokemon_icons/pokemon_icons.js';
 
