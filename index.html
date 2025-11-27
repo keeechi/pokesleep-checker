@@ -204,7 +204,12 @@
                   <option value="コンプリート済">コンプリート済</option>
                   <option value="未取得あり">未取得あり</option>
                 </select>
-            </div>
+              <!-- ★ フィルターリセットボタン -->
+                <button id="allfacesFilterReset" type="button"
+                        class="btn btn-outline-secondary btn-sm mt-2 w-100">
+                  フィルターをリセット
+                </button>
+              </div>
             </div>
 
             <!-- 全体一括ON/OFF（確認ダイアログは維持） -->
@@ -267,6 +272,11 @@
                 <option value="コンプリート済">コンプリート済</option>
                 <option value="未取得あり">未取得あり</option>
               </select>
+            <!-- ★ フィルターリセットボタン -->
+              <button id="byfieldFilterReset" type="button"
+                      class="btn btn-outline-secondary btn-sm mt-2 w-100">
+                フィルターをリセット
+              </button>
             </div>
           </div>
             <ul class="nav nav-pills mb-3" id="fieldTabs" role="tablist"><!-- JS --></ul>
