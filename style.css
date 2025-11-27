@@ -7,6 +7,39 @@
   background: #f1f3f5;
 }
 
+/* === 大きめチェックボックス（全寝顔一覧 ＆ フィールド・ランクから検索） === */
+.check-cell,
+.rank-check-cell {
+  text-align: center;
+}
+
+/* チェックボックスをセル中央に配置するラッパ */
+.check-cell .check-inner,
+.rank-check-cell .check-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 0;  /* 上下ちょい余白 */
+}
+
+/* 実際のチェックボックスサイズを拡大（セルの ~80% 目安） */
+.check-cell .form-check-input,
+.rank-check-cell .form-check-input {
+  width: 1.4rem;
+  height: 1.4rem;
+  margin: 0;
+  cursor: pointer;
+}
+
+/* スマホではさらに少しだけ大きく */
+@media (max-width: 576px) {
+  .check-cell .form-check-input,
+  .rank-check-cell .form-check-input {
+    width: 1.6rem;
+    height: 1.6rem;
+  }
+}
+
 /* 小さめ端末の余白 */
 @media (max-width: 576px) {
   #summary .card-body { padding: 0.75rem; }
