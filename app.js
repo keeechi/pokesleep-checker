@@ -851,15 +851,222 @@ function renderLimitedBadgeByField(fieldKey){
 function rowKey(row){ return String(row.IconNo || row.No); }                 // 行用キー
 function entKey(ent){ return String(ent.iconNo || ent.no); }                 // まとめ用キー（形態ごと）
 
+// ★ フィルター用のデフォルト値
+function createDefaultFilters() {
+  const firstField = FIELD_KEYS[0] || '';  // 例: 'ワカクサ本島'
+
+  return {
+    allfaces: {
+      searchName: '',
+      style: '',
+      sortBy: 'no-asc',
+      getStatus: 'すべて',
+    },
+    byfield: {
+      searchName: '',
+      style: '',
+      sortBy: 'no-asc',
+      getStatus: 'すべて',
+      // ▼ フィールド別タブで、どのマップが選択されているか
+      field: firstField,
+    },
+    rank: {
+      field: firstField,
+      rank: 1,
+      type: '',
+      status: 'すべて',
+      sort: 'no-asc',
+      rarity: '',
+    },
+  };
+}
+
+// ★ state の形を整える（旧データとの互換用）
+function normalizeState(obj) {
+  const base = (obj && typeof obj === 'object') ? obj : {};
+  if (!base.checked || typeof base.checked !== 'object') {
+    base.checked = {};
+  }
+  if (!base.filters || typeof base.filters !== 'object') {
+    base.filters = {};
+  }
+
+  const def = createDefaultFilters();
+
+  base.filters.allfaces = Object.assign({}, def.allfaces, base.filters.allfaces || {});
+  base.filters.byfield  = Object.assign({}, def.byfield,  base.filters.byfield  || {});
+  base.filters.rank     = Object.assign({}, def.rank,     base.filters.rank     || {});
+
+  return base;
+}
+
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : { checked: {} };
+    const parsed = raw ? JSON.parse(raw) : { checked: {} };
+    return normalizeState(parsed);
   } catch {
-    return { checked: {} };
+    return normalizeState({ checked: {} });
   }
 }
-function saveState(state) { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function saveState(state) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+// ===== フィルター状態 ⇔ DOM の同期ユーティリティ =====
+
+// --- 全寝顔一覧 ---
+function applyAllfacesFiltersFromState(state) {
+  const f = state.filters?.allfaces || {};
+  const nameEl   = document.getElementById('searchName');
+  const styleEl  = document.getElementById('filterStyle');
+  const sortEl   = document.getElementById('sortBy');
+  const statusEl = document.getElementById('allfacesGetStatus');
+
+  if (nameEl && typeof f.searchName === 'string') nameEl.value = f.searchName;
+  if (styleEl && typeof f.style === 'string')     styleEl.value = f.style;
+  if (sortEl && typeof f.sortBy === 'string')     sortEl.value = f.sortBy;
+  if (statusEl && typeof f.getStatus === 'string') statusEl.value = f.getStatus;
+}
+
+function updateAllfacesFiltersFromDOM(state) {
+  if (!state.filters) state.filters = {};
+  const def = createDefaultFilters();
+  if (!state.filters.allfaces) state.filters.allfaces = Object.assign({}, def.allfaces);
+  const f = state.filters.allfaces;
+
+  const nameEl   = document.getElementById('searchName');
+  const styleEl  = document.getElementById('filterStyle');
+  const sortEl   = document.getElementById('sortBy');
+  const statusEl = document.getElementById('allfacesGetStatus');
+
+  f.searchName = nameEl ? nameEl.value : '';
+  f.style      = styleEl ? styleEl.value : '';
+  f.sortBy     = sortEl ? sortEl.value : 'no-asc';
+  f.getStatus  = statusEl ? statusEl.value : 'すべて';
+
+  saveState(state);
+}
+
+function resetAllfacesFilters(state) {
+  if (!state.filters) state.filters = {};
+  const def = createDefaultFilters();
+  state.filters.allfaces = Object.assign({}, def.allfaces);
+  saveState(state);
+  applyAllfacesFiltersFromState(state);
+}
+
+// ★ byfield.filters.field から「アクティブなフィールドタブ」を切り替える
+function setActiveFieldTab(fieldKey) {
+  const idx = FIELD_KEYS.indexOf(fieldKey);
+  const index = idx >= 0 ? idx : 0;
+
+  const btns = document.querySelectorAll('#fieldTabs button[data-bs-toggle="tab"]');
+  const btn = btns[index];
+  if (!btn) return;
+
+  // Bootstrap 5 の Tab API で公式に切り替える
+  const tab = bootstrap.Tab.getOrCreateInstance(btn);
+  tab.show();
+}
+
+// --- フィールド別寝顔一覧 ---
+function applyByfieldFiltersFromState(state) {
+  const f = state.filters?.byfield || {};
+  const nameEl   = document.getElementById('byfieldSearchName');
+  const styleEl  = document.getElementById('byfieldFilterStyle');
+  const sortEl   = document.getElementById('byfieldSortBy');
+  const statusEl = document.getElementById('byfieldGetStatus');
+
+  if (nameEl && typeof f.searchName === 'string') nameEl.value = f.searchName;
+  if (styleEl && typeof f.style === 'string')     styleEl.value = f.style;
+  if (sortEl && typeof f.sortBy === 'string')     sortEl.value = f.sortBy;
+  if (statusEl && typeof f.getStatus === 'string') statusEl.value = f.getStatus;
+}
+
+function updateByfieldFiltersFromDOM(state) {
+  if (!state.filters) state.filters = {};
+  const def = createDefaultFilters();
+  if (!state.filters.byfield) state.filters.byfield = Object.assign({}, def.byfield);
+  const f = state.filters.byfield;
+
+  const nameEl   = document.getElementById('byfieldSearchName');
+  const styleEl  = document.getElementById('byfieldFilterStyle');
+  const sortEl   = document.getElementById('byfieldSortBy');
+  const statusEl = document.getElementById('byfieldGetStatus');
+
+  f.searchName = nameEl ? nameEl.value : '';
+  f.style      = styleEl ? styleEl.value : '';
+  f.sortBy     = sortEl ? sortEl.value : 'no-asc';
+  f.getStatus  = statusEl ? statusEl.value : 'すべて';
+
+  saveState(state);
+}
+
+function resetByfieldFilters(state) {
+  if (!state.filters) state.filters = {};
+  const def = createDefaultFilters();
+
+  // ★ フィルター値をデフォルトに戻す（field も含む）
+  state.filters.byfield = Object.assign({}, def.byfield);
+  saveState(state);
+
+  // 入力欄を反映
+  applyByfieldFiltersFromState(state);
+
+  // ★ タブもデフォルトフィールドに戻す
+  setActiveFieldTab(def.byfield.field);
+}
+
+// --- フィールド・ランクから検索（逆引き） ---
+function applyRankFiltersFromState(state) {
+  const f = state.filters?.rank || {};
+  const fieldEl  = document.getElementById('searchField');
+  const rankEl   = document.getElementById('searchRank');
+  const typeEl   = document.getElementById('searchType');
+  const statusEl = document.getElementById('searchStatus');
+  const sortEl   = document.getElementById('searchSort');
+  const rarityEl = document.getElementById('searchFilterRarity');
+
+  if (fieldEl && f.field)  fieldEl.value  = f.field;
+  if (rankEl && f.rank)    rankEl.value   = String(f.rank);
+  if (typeEl && typeof f.type === 'string')     typeEl.value   = f.type;
+  if (statusEl && typeof f.status === 'string') statusEl.value = f.status;
+  if (sortEl && typeof f.sort === 'string')     sortEl.value   = f.sort;
+  if (rarityEl && typeof f.rarity === 'string') rarityEl.value = f.rarity;
+}
+
+function updateRankFiltersFromDOM(state) {
+  if (!state.filters) state.filters = {};
+  const def = createDefaultFilters();
+  if (!state.filters.rank) state.filters.rank = Object.assign({}, def.rank);
+  const f = state.filters.rank;
+
+  const fieldEl  = document.getElementById('searchField');
+  const rankEl   = document.getElementById('searchRank');
+  const typeEl   = document.getElementById('searchType');
+  const statusEl = document.getElementById('searchStatus');
+  const sortEl   = document.getElementById('searchSort');
+  const rarityEl = document.getElementById('searchFilterRarity');
+
+  f.field  = fieldEl ? fieldEl.value : f.field;
+  const r  = rankEl ? parseInt(rankEl.value || '1', 10) : f.rank;
+  f.rank   = Number.isFinite(r) ? r : f.rank;
+  f.type   = typeEl   ? typeEl.value   : f.type;
+  f.status = statusEl ? statusEl.value : f.status;
+  f.sort   = sortEl   ? sortEl.value   : f.sort;
+  f.rarity = rarityEl ? rarityEl.value : f.rarity;
+
+  saveState(state);
+}
+
+function resetRankFilters(state) {
+  if (!state.filters) state.filters = {};
+  const def = createDefaultFilters();
+  state.filters.rank = Object.assign({}, def.rank);
+  saveState(state);
+  applyRankFiltersFromState(state);
+}
 
 // 変更があったチェック（key, star, on）を他シートにだけ反映（差分更新）
 function syncOtherViews(key, star, on) {
@@ -1365,14 +1572,33 @@ function firstStyleKey(ent){
 }
 
 function setupFieldTabs() {
-  const tabsUl = document.getElementById('fieldTabs');
+  const tabsUl  = document.getElementById('fieldTabs');
   const content = document.getElementById('fieldTabsContent');
-  tabsUl.innerHTML = FIELD_KEYS.map((f,i)=>`
+  if (!tabsUl || !content) return;
+
+  // ★ 保存済みの「選択中フィールド」を見る
+  const state = loadState();
+  const activeField = state?.filters?.byfield?.field || FIELD_KEYS[0];
+
+  // タブ（ボタン）側
+  tabsUl.innerHTML = FIELD_KEYS.map((f, i) => `
     <li class="nav-item" role="presentation">
-      <button class="nav-link ${i===0?'active':''}" data-bs-toggle="tab" data-bs-target="#pane-field-${i}" type="button" role="tab">${FIELD_SHORT[f]}</button>
-    </li>`).join('');
-  content.innerHTML = FIELD_KEYS.map((f,i)=>`
-    <div class="tab-pane fade ${i===0?'show active':''}" id="pane-field-${i}" role="tabpanel">
+      <button
+        class="nav-link ${f === activeField ? 'active' : ''}"
+        data-bs-toggle="tab"
+        data-bs-target="#pane-field-${i}"
+        type="button"
+        role="tab"
+      >
+        ${FIELD_SHORT[f]}
+      </button>
+    </li>
+  `).join('');
+
+  // パネル側
+  content.innerHTML = FIELD_KEYS.map((f, i) => `
+    <div class="tab-pane fade ${f === activeField ? 'show active' : ''}"
+         id="pane-field-${i}" role="tabpanel">
       <div class="table-responsive">
         <table class="table table-sm align-middle table-hover mb-0">
           <thead class="table-light">
@@ -1388,18 +1614,56 @@ function setupFieldTabs() {
           <tbody data-field="${f}"></tbody>
         </table>
       </div>
-    </div>`).join('');
+    </div>
+  `).join('');
+
+  // ★ タブ切り替え時に state.filters.byfield.field を更新
+  tabsUl.addEventListener('shown.bs.tab', (e) => {
+    const btn    = e.target;                               // アクティブになったタブボタン
+    const target = btn.getAttribute('data-bs-target') || '';
+    const m = target.match(/pane-field-(\d+)/);
+    if (!m) return;
+
+    const idx = parseInt(m[1], 10);
+    const fieldKey = FIELD_KEYS[idx];
+    if (!fieldKey) return;
+
+    const st  = loadState();
+    const def = createDefaultFilters();
+    if (!st.filters) st.filters = {};
+    if (!st.filters.byfield) st.filters.byfield = Object.assign({}, def.byfield);
+
+    st.filters.byfield.field = fieldKey;
+    saveState(st);
+  });
 }
 
-// フィールド別のフィルター UI（存在すれば）
+// フィールド別のフィルター UI
 const _q = document.getElementById('byfieldSearchName');
 const _s = document.getElementById('byfieldFilterStyle');
 const _o = document.getElementById('byfieldSortBy');
-    _q && _q.addEventListener('input', ()=>renderFieldTables(loadState()));
-    _s && _s.addEventListener('change', ()=>renderFieldTables(loadState()));
-    _o && _o.addEventListener('change', ()=>renderFieldTables(loadState()));
 const _g = document.getElementById('byfieldGetStatus');
-    _g && _g.addEventListener('change', ()=>renderFieldTables(loadState()));
+
+_q && _q.addEventListener('input', () => {
+  const st = loadState();
+  updateByfieldFiltersFromDOM(st);
+  renderFieldTables(st);
+});
+_s && _s.addEventListener('change', () => {
+  const st = loadState();
+  updateByfieldFiltersFromDOM(st);
+  renderFieldTables(st);
+});
+_o && _o.addEventListener('change', () => {
+  const st = loadState();
+  updateByfieldFiltersFromDOM(st);
+  renderFieldTables(st);
+});
+_g && _g.addEventListener('change', () => {
+  const st = loadState();
+  updateByfieldFiltersFromDOM(st);
+  renderFieldTables(st);
+});
 
 function renderFieldTables(state) {
   const qEl = document.getElementById('byfieldSearchName');
@@ -1602,10 +1866,14 @@ function buildReverseFilterBar() {
     const wrap = document.createElement('div');
     wrap.className = 'filter-item';
     if (extraClass) wrap.classList.add(extraClass);
+
     const lab = document.createElement('label');
     lab.textContent = labelText;
     lab.htmlFor = selectEl.id;
-    selectEl.classList.add('form-select','form-select-sm');
+
+    // ここで小さめ select に
+    selectEl.classList.add('form-select', 'form-select-sm');
+
     wrap.appendChild(lab);
     wrap.appendChild(selectEl);
     return wrap;
@@ -1613,21 +1881,35 @@ function buildReverseFilterBar() {
 
   const bar = document.createElement('div');
   bar.className = 'filter-bar';
-  bar.id = 'rankSearchFilters'; // compact 用
+  bar.id = 'rankSearchFilters'; // .filters-compact 用
 
-  // 1〜2行目（2×2）
+  // --- 1〜2行目（2×2） ---
   bar.appendChild(makeGroup('フィールド', fieldSel));
   bar.appendChild(makeGroup('ランク',     rankSel));
   bar.appendChild(makeGroup('睡眠タイプ', typeSel));
   bar.appendChild(makeGroup('入手状況',   statusSel));
   bar.appendChild(makeGroup('レア度',     raritySel));
 
-  // 3行目（全幅）— ※1回だけ append する！
+  // --- 3行目（全幅） ソート ---
   bar.appendChild(makeGroup('ソート', sortSel, 'filter-item--sort'));
 
+  // --- フィルターをリセット ボタン ---
+  const resetWrap = document.createElement('div');
+  resetWrap.className = 'filter-item';
+  const resetBtn = document.createElement('button');
+  resetBtn.type = 'button';
+  resetBtn.id = 'rankResetBtn';
+  resetBtn.className = 'btn btn-outline-secondary btn-sm';
+  resetBtn.textContent = 'フィルターをリセット';
+  resetWrap.appendChild(resetBtn);
+  bar.appendChild(resetWrap);
+
+  // 元の .row と入れ替え
   row.replaceWith(bar);
 
-  // リスナー
+  // ------ リスナー設定 ------
+
+  // それぞれのセレクトに既存のハンドラを結びつけ
   typeSel.removeEventListener('change', _onTypeChange);
   typeSel.addEventListener('change', _onTypeChange);
 
@@ -1639,15 +1921,37 @@ function buildReverseFilterBar() {
 
   raritySel.removeEventListener('change', _onRarityChange);
   raritySel.addEventListener('change', _onRarityChange);
+
+  // ★ リセットボタンのリスナー
+  resetBtn.addEventListener('click', () => {
+    const st = loadState();
+    resetRankFilters(st);   // ← 既存の「逆引きフィルター初期化」関数を想定
+    renderRankSearch(st);   // ← 逆引きテーブルを再描画
+    saveState(st);          // ← 状態を保存
+  });
 }
 
-function _onStatusChange(){ renderRankSearch(loadState()); }
-function _onSortChange(){ renderRankSearch(loadState()); }
-function _onRarityChange(){ renderRankSearch(loadState());}
+function _onStatusChange(){
+  const st = loadState();
+  updateRankFiltersFromDOM(st);
+  renderRankSearch(st);
+}
+function _onSortChange(){
+  const st = loadState();
+  updateRankFiltersFromDOM(st);
+  renderRankSearch(st);
+}
+function _onRarityChange(){
+  const st = loadState();
+  updateRankFiltersFromDOM(st);
+  renderRankSearch(st);
+}
 
 // 睡眠タイプ変更時のハンドラ
 function _onTypeChange() {
-  renderRankSearch(loadState());
+  const st = loadState();
+  updateRankFiltersFromDOM(st);
+  renderRankSearch(st);
 }
 
 
@@ -1670,21 +1974,29 @@ function createRarityFilterSelect() {
 
 // ===================== ランク検索（未入手のみ） =====================
 function setupRankSearchControls() {
-  // フィールド
-  const sel = document.getElementById('searchField');
-  sel.innerHTML = FIELD_KEYS.map(f=>`<option value="${f}">${FIELD_SHORT[f]}</option>`).join('');
-  sel.addEventListener('change', ()=>renderRankSearch(loadState()));
+// フィールド
+const sel = document.getElementById('searchField');
+sel.innerHTML = FIELD_KEYS.map(f=>`<option value="${f}">${FIELD_SHORT[f]}</option>`).join('');
+sel.addEventListener('change', () => {
+  const st = loadState();
+  updateRankFiltersFromDOM(st);
+  renderRankSearch(st);
+});
 
-  // ランク
-  const rankSel = document.getElementById('searchRank');
-  const opts = [];
-  for (let n = 1; n <= 35; n++) opts.push(`<option value="${n}">${labelForRank(n)}</option>`);
-  rankSel.innerHTML = opts.join('');
-  rankSel.value = '1';
-  rankSel.addEventListener('change', ()=>renderRankSearch(loadState()));
+// ランク
+const rankSel = document.getElementById('searchRank');
+const opts = [];
+for (let n = 1; n <= 35; n++) opts.push(`<option value="${n}">${labelForRank(n)}</option>`);
+rankSel.innerHTML = opts.join('');
+rankSel.value = '1';
+rankSel.addEventListener('change', () => {
+  const st = loadState();
+  updateRankFiltersFromDOM(st);
+  renderRankSearch(st);
+});
 
-  // 3ブロック（フィールド/ランク/睡眠タイプ）に再構成
-  buildReverseFilterBar();
+// 3ブロック（フィールド/ランク/睡眠タイプ）に再構成
+buildReverseFilterBar();
 }
 
 // 「入手済？」ヘッダーを足す（重複追加しない）
@@ -2053,6 +2365,12 @@ function setupBackupUI() {
       // 置き換え保存＆再描画
       localStorage.setItem(STORAGE_KEY, JSON.stringify(incoming));
       const state = loadState();
+
+      // ★ 復旧したフィルター状態を DOM に反映
+      applyAllfacesFiltersFromState(state);
+      applyByfieldFiltersFromState(state);
+      applyRankFiltersFromState(state);
+
       renderAllFaces(state);
       renderFieldTables(state);
       renderSummary(state);
@@ -2226,6 +2544,12 @@ async function main() {
 
   // === [C] 各シートを描画（ここで高さが変わる） ===
   const state = loadState();
+
+  // ★ 保存されているフィルター状態を DOM に反映
+  applyAllfacesFiltersFromState(state);
+  applyByfieldFiltersFromState(state);
+  applyRankFiltersFromState(state);
+
   renderSummary(state);
   renderAllFaces(state);
   renderFieldTables(state);
@@ -2236,13 +2560,50 @@ async function main() {
   // 描画により高さが変わったので、もう一度上書き
   applyStickyHeaders();
 
-  // ▼ 全寝顔の検索・フィルタ（元のまま）
-  document.getElementById('searchName').addEventListener('input', ()=>renderAllFaces(loadState()));
-  document.getElementById('filterStyle').addEventListener('change', ()=>renderAllFaces(loadState()));
-  document.getElementById('sortBy').addEventListener('change', ()=>renderAllFaces(loadState()));
-  document.getElementById('allfacesGetStatus')?.addEventListener('change', ()=>renderAllFaces(loadState()));
+  // ▼ 全寝顔の検索・フィルタ（フィルター状態も保存）
+  const sn = document.getElementById('searchName');
+  const fs = document.getElementById('filterStyle');
+  const sb = document.getElementById('sortBy');
+  const gs = document.getElementById('allfacesGetStatus');
 
-  // ▼ 一括ON/OFF（元のまま）
+  sn && sn.addEventListener('input', () => {
+    const st = loadState();
+    updateAllfacesFiltersFromDOM(st);
+    renderAllFaces(st);
+  });
+  fs && fs.addEventListener('change', () => {
+    const st = loadState();
+    updateAllfacesFiltersFromDOM(st);
+    renderAllFaces(st);
+  });
+  sb && sb.addEventListener('change', () => {
+    const st = loadState();
+    updateAllfacesFiltersFromDOM(st);
+    renderAllFaces(st);
+  });
+  gs && gs.addEventListener('change', () => {
+    const st = loadState();
+    updateAllfacesFiltersFromDOM(st);
+    renderAllFaces(st);
+  });
+
+// ★ 全寝顔フィルターのリセットボタン
+  const resetAllfacesBtn = document.getElementById('allfacesFilterReset');
+  resetAllfacesBtn && resetAllfacesBtn.addEventListener('click', () => {
+    const st = loadState();
+    resetAllfacesFilters(st);
+    renderAllFaces(st);
+  });
+
+// ★ フィールド別フィルターのリセットボタン
+  const resetByfieldBtn = document.getElementById('byfieldFilterReset');
+  resetByfieldBtn && resetByfieldBtn.addEventListener('click', () => {
+    const st = loadState();
+    resetByfieldFilters(st);
+    renderFieldTables(st);
+  });
+
+// ▼ 一括ON/OFF（元のまま）
   document.getElementById('btnAllOn').addEventListener('click', ()=>{
     if (!confirm('すべての寝顔をチェックします。よろしいですか？')) return;
     const state = loadState();
