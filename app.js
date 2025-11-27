@@ -1260,22 +1260,24 @@ tbody.innerHTML = entries.map(ent => {
   const no = ent.no, name = ent.name;
 
   // ☆1〜☆4 の各セルだけを作る
-  const cells = CHECKABLE_STARS.map(star => {
-    const exists = speciesHasStar(ent, star);
-    if (!exists) return `<td class="text-center cell-absent">—</td>`;
+const cells = CHECKABLE_STARS.map(star => {
+  const exists = speciesHasStar(ent, star);
+  if (!exists) return `<td class="text-center cell-absent">—</td>`;
 
-    const checked = getChecked(state, key, star);
-    const limitedField = getEntStarLimitedField(ent, star);
-    const badge = limitedField ? renderLimitedBadgeByField(limitedField) : '';
+  const checked = getChecked(state, key, star);
+  const limitedField = getEntStarLimitedField(ent, star);
+  const badge = limitedField ? renderLimitedBadgeByField(limitedField) : '';
 
-    return `
-      <td class="text-center ${checked ? 'cell-checked' : ''} ${badge ? 'badge-host' : ''}">
-        <input type="checkbox" class="form-check-input"
-               data-key="${key}" data-star="${star}"
-               ${checked ? 'checked' : ''}>
+  return `
+      <td class="text-center check-cell ${checked ? 'cell-checked' : ''} ${badge ? 'badge-host' : ''}">
+        <div class="check-inner">
+          <input type="checkbox" class="form-check-input"
+                 data-key="${key}" data-star="${star}"
+                 ${checked ? 'checked' : ''}>
+        </div>
         ${badge}
       </td>`;
-  }).join('');
+}).join('');
 
   // 行まとめボタン
   const bulkBtn = `
@@ -1824,12 +1826,16 @@ items.sort((a,b) => primary(a,b) || tieBreaker(a,b));
       </td>
 
       <td class="text-center">${renderRankChip(needRank)}</td>
-      <td class="text-center">
-        ${ checkable
-            ? `<input type="checkbox" class="form-check-input mark-obtained"
-                      data-key="${k}" data-star="${escapeHtml(star)}"
-                      ${isChecked ? 'checked' : ''}>`
-            : `<span class="text-muted">—</span>` }
+      <td class="text-center rank-check-cell">
+        ${
+          checkable
+            ? `<div class="check-inner">
+                 <input type="checkbox" class="form-check-input mark-obtained"
+                        data-key="${k}" data-star="${escapeHtml(star)}"
+                        ${isChecked ? 'checked' : ''}>
+               </div>`
+            : `<span class="text-muted">—</span>`
+        }
       </td>
     </tr>`;
 }).join('');
