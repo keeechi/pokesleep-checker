@@ -1060,7 +1060,7 @@ window.pokemonRectData = {
         {x: 0, y: 0.7, w: 1, h: 0.3, color: '#e593a6'},
     ],
     // Spiritomb
-    '0442': [
+    '442': [
         {x: 0.32, y: 0.2, w: 0.39, h: 0.78, r: 0.1, color: '#e7decf'},
         {x: 0.02, y: 0, w: 0.96, h: 0.8, r: 0.3, color: '#e0abd6'},
         {x: 0.11, y: 0.4, w: 0.24, h: 0.24, r: 0.2, color: '#aace4e'},
@@ -1283,6 +1283,12 @@ window.pokemonRectData = {
         {x: 0.66, y: 0, w: 0.34, h: 0.34, color: '#f5d266'},
         {x: 0.34, y: 0, w: 0.34, h: 0.34, color: '#feadd3'},
     ],
+    // Togedemaru
+    '0777': [
+        {x: 0, y: 0, w: 1, h: 1, color: '#c6c8c5'},
+        {x: 0.08, y: 0.3, w: 0.8, h: 0.74, r: 0.15, color: '#fafbfc'},
+        {x: 0, y: 0, w: 1, h: 0.05, color: '#f7ea68'},
+    ],
     // Mimikyu
     '0778': [
         {x: 0, y: 0, w: 1, h: 1, color: '#f6f0a1'},
@@ -1442,6 +1448,18 @@ window.pokemonRectData = {
         {x: 0.38, y: 0.25, w: 0.24, h: 0.16, r: 0.2, color: '#feffe1'},
         {x: -0.1, y: 0.65, w: 0.3, h: 0.3, r: 0.2, color: '#feffe1'},
         {x: 0.8, y: 0.65, w: 0.3, h: 0.3, r: 0.2, color: '#feffe1'},
+    ],
+    // Cetoddle
+    '0974': [
+        {x: 0, y: 0, w: 1, h: 1, color: '#fbfbfb'},
+        {x: 0.8, y: 0, w: 0.3, h: 1, color: '#d8dce0'},
+        {x: 0.94, y: 0, w: 0.1, h: 1, color: '#e89ce0'},
+    ],
+    // Cetitan
+    '0975': [
+        {x: 0, y: 0, w: 1, h: 1, color: '#d8dce0'},
+        {x: 0, y: 0, w: 1, h: 0.5, color: '#f0f0f0'},
+        {x: 0.9, y: 0, w: 0.1, h: 1, color: '#e89ce0'},
     ],
     // Clodsire
     '0980': [
