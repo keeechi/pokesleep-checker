@@ -1355,7 +1355,6 @@ const cells = CHECKABLE_STARS.map(star => {
       syncOtherViews(key, star, e.target.checked);  // ← 他シートへ差分同期
       renderSummary(state);
       renderRankSearch(state);
-      updateAmberPopup(state);
       // ▼ 追加：取得状況フィルター中なら全体を再描画して行の見え方を更新
       if ((document.getElementById('allfacesGetStatus')?.value || 'すべて') !== 'すべて') {
         renderAllFaces(loadState());
@@ -1378,7 +1377,6 @@ const cells = CHECKABLE_STARS.map(star => {
       });
       renderSummary(state);
       renderRankSearch(state);
-      updateAmberPopup(state);
     });
   });
     // ▼ボタン：出現フィールド・ランクのミニ表（モーダル）
@@ -1590,7 +1588,6 @@ tbody.querySelectorAll('td.toggle-cell').forEach(td=>{
     syncOtherViews(key, star, !now);
     renderSummary(state);
     renderRankSearch(state);
-    updateAmberPopup(state);
 
     if ((document.getElementById('byfieldGetStatus')?.value || 'すべて') !== 'すべて') {
       renderFieldTables(loadState());
@@ -2205,7 +2202,6 @@ function setupBackupUI() {
       renderFieldTables(state);
       renderSummary(state);
       renderRankSearch(state);
-      updateAmberPopup(state);
 
       alert('復旧しました！（クリップボード／テキスト）');
     } catch (e) {
@@ -2384,7 +2380,6 @@ async function main() {
   renderAllFaces(state);
   renderFieldTables(state);
   renderRankSearch(state);
-  updateAmberPopup(state);
 
   // 描画により高さが変わったので、もう一度上書き
   applyStickyHeaders();
@@ -2454,7 +2449,6 @@ async function main() {
     renderFieldTables(state);
     renderSummary(state);
     renderRankSearch(state);
-    updateAmberPopup(state);
     applyStickyHeaders();
   });
 
