@@ -1070,7 +1070,7 @@ window.pokemonRectData = {
         {x: 0, y: 0.7, w: 1, h: 0.3, color: '#e593a6'},
     ],
     // Spiritomb
-    '442': [
+    '0442': [
         {x: 0.32, y: 0.2, w: 0.39, h: 0.78, r: 0.1, color: '#e7decf'},
         {x: 0.02, y: 0, w: 0.96, h: 0.8, r: 0.3, color: '#e0abd6'},
         {x: 0.11, y: 0.4, w: 0.24, h: 0.24, r: 0.2, color: '#aace4e'},
