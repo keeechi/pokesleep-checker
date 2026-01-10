@@ -654,8 +654,8 @@ window.pokemonRectData = {
         {x: 0, y: 0, w: 1, h: 1, color: '#b6bccd'},
         {x: 0, y: 0.6, w: 1, h: 0.4, color: '#858da5'},
     ],
-    // Shuckel(ツボツボ)
-    '0231': [
+    // Shuckle(ツボツボ)
+    '0213': [
         {x: 0.35, y: 0, w: 0.3, h: 1, r: 0.15, color: '#ffe035'},
         {x: 0.25, y: 0, w: 0.4, h: 0.4, r: 0.2, color: '#ffe035'},
         {x: 0, y: 0.5, w: 1, h: 0.5, r: 0.4, color: '#ed5554'},
