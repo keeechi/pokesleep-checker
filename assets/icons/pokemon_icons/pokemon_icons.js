@@ -1024,6 +1024,11 @@ window.pokemonRectData = {
         {x: 0, y: 0, w: 1, h: 0.2, color: '#cd5f6f'},
         {x: 0, y: 0.8, w: 1, h: 0.2, color: '#e7eaef'},
     ],
+    // Latias
+    '380': [
+        {x: 0, y: 0, w: 1, h: 1, color: '#da5b66'},
+        {x: 0, y: 0, w: 1, h: 0.48, color: '#ffffff'},
+    ],
     // Shinx
     '0403': [
         {x: 0, y: 0, w: 1, h: 1, color: '#9fe3fe'},
