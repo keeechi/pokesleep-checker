@@ -34,9 +34,47 @@
   <link rel="stylesheet" href="./style.css"><!-- あれば -->
 </head>
 <body>
-  <header class="container py-3">
-    <h1 class="h3 mb-0">寝顔チェッカー for ポケモンスリープ</h1>
-  </header>
+<header class="container py-3">
+  <h1 class="h3 mb-0">寝顔チェッカー for ポケモンスリープ</h1>
+
+  <section id="transferNotice" class="transfer-notice mt-3" aria-label="ツール移管のお知らせ">
+    <h2 class="transfer-notice__title">ツール移管のお知らせ</h2>
+
+    <p>
+      「寝顔チェッカーforポケモンスリープ」は、制作者
+      （X: <a href="https://x.com/keeechi_pok2" target="_blank" rel="noopener noreferrer">@keeechi_pok2</a>）
+      のゲーム引退に伴い、開発のサポートをいただいておりました
+      あちゃ（X: <a href="https://x.com/Acha_PokeSleep" target="_blank" rel="noopener noreferrer">@Acha_PokeSleep</a>）
+      さんに今後の開発・運営を引き継ぎいたします。新寝顔チェッカーのURLは以下になります。<br>
+      <a href="https://pokesleep-checker-2nd-0a5a44.gitlab.io/" target="_blank" rel="noopener noreferrer">
+        https://pokesleep-checker-2nd-0a5a44.gitlab.io/
+      </a>
+    </p>
+
+    <p class="mb-2">
+      データの移行は以下の手順で行うことが可能です。
+    </p>
+
+    <ol class="transfer-notice__steps">
+      <li>
+        <a href="#" id="transferBackupLink">こちら</a>からバックアップ用テキストを作成＆コピーする
+        <span id="transferBackupStatus" class="transfer-notice__status" aria-live="polite"></span>
+      </li>
+      <li>
+        <a href="https://pokesleep-checker-2nd-0a5a44.gitlab.io/" target="_blank" rel="noopener noreferrer">
+          新寝顔チェッカー
+        </a>
+        の「≡」メニュー→「バックアップ」にペーストする
+      </li>
+    </ol>
+
+    <p class="mb-0">
+      引き継ぎに関してご快諾をいただきましたあちゃさんにもこの場をお借りして御礼申し上げます。<br>
+      また、長らく寝顔チェッカーをご利用いただいたユーザーのみなさま、長い間ありがとうございました！
+      あちゃさんより大変強力なサポートをいただき使用感そのままで使える形になっていますので、今後とも寝顔チェッカーをどうぞよろしくお願いします！
+    </p>
+  </section>
+</header>
 
   <main class="container">
     <div id="pwaBanner" class="alert alert-info d-none" role="status" style="margin-bottom:12px;">
