@@ -2211,6 +2211,51 @@ function setupBackupUI() {
   });
 }
 
+function setupTransferNoticeUI() {
+  const link = document.getElementById('transferBackupLink');
+  const status = document.getElementById('transferBackupStatus');
+  const backupTextarea = document.getElementById('backupText');
+
+  if (!link) return;
+
+  link.addEventListener('click', async (e) => {
+    e.preventDefault();
+
+    try {
+      const state = loadState();
+      const text = encodeStateToText(state);
+
+      if (backupTextarea) {
+        backupTextarea.value = text;
+      }
+
+      const ok = await copyToClipboard(text, backupTextarea);
+
+      if (status) {
+        status.textContent = ok
+          ? 'コピーしました'
+          : 'コピーに失敗しました。バックアップ画面から手動コピーしてください。';
+        status.classList.toggle('is-error', !ok);
+      }
+
+      if (ok) {
+        alert('バックアップ用テキストを作成し、クリップボードにコピーしました。\n新寝顔チェッカーの「≡」メニュー →「バックアップ」に貼り付けて復旧してください。');
+      } else {
+        alert('自動コピーに失敗しました。\n「≡」メニュー →「バックアップ」から手動でバックアップ用テキストをコピーしてください。');
+      }
+    } catch (err) {
+      console.error(err);
+
+      if (status) {
+        status.textContent = '作成に失敗しました';
+        status.classList.add('is-error');
+      }
+
+      alert('バックアップ用テキストの作成に失敗しました。');
+    }
+  });
+}
+
 // ===================== レイアウト用の軽い注入CSS =====================
 let _listLayoutStyleInjected = false;
 function injectListLayoutCSS() {
@@ -2343,6 +2388,7 @@ async function main() {
   setupRankSearchControls();
   ensureRankSearchHeaderHasObtainedColumn();
   setupBackupUI();
+  setupTransferNoticeUI();
 
   // === [A] 固定ブロックを「先に」組み立てる ===
   {
