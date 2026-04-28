@@ -779,3 +779,62 @@ body.is-howto-open { overflow: hidden; }
 @media (min-width: 769px){
   .limited-badge{ width: 20px; height: 20px; }
 }
+
+/* ===== ツール移管のお知らせ ===== */
+.transfer-notice {
+  border: 1px solid #f0d58a;
+  background: #fff9e8;
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
+}
+
+.transfer-notice__title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: #7a5200;
+}
+
+.transfer-notice p {
+  margin-bottom: 0.75rem;
+}
+
+.transfer-notice a {
+  font-weight: 700;
+}
+
+.transfer-notice__steps {
+  margin: 0 0 0.75rem 1.4rem;
+  padding: 0;
+}
+
+.transfer-notice__steps li {
+  margin: 0.25rem 0;
+}
+
+.transfer-notice__status {
+  display: inline-block;
+  margin-left: 0.5em;
+  font-size: 0.85em;
+  font-weight: 700;
+  color: #198754;
+}
+
+.transfer-notice__status.is-error {
+  color: #dc3545;
+}
+
+@media (max-width: 576px) {
+  .transfer-notice {
+    padding: 12px;
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+
+  .transfer-notice__title {
+    font-size: 1rem;
+  }
+}
